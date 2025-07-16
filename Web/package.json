@@ -1,0 +1,35 @@
+{
+  "name": "flexport-web-game",
+  "version": "1.0.0",
+  "description": "Flexport: The Video Game - Web Implementation",
+  "main": "src/main.ts",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "typecheck": "tsc --noEmit",
+    "server": "cd server && npm install && npm start",
+    "dev:full": "concurrently \"npm run server\" \"npm run dev\"",
+    "server:install": "cd server && npm install"
+  },
+  "dependencies": {
+    "canvas": "^3.1.2",
+    "chart.js": "^4.4.0",
+    "pixi.js": "^8.0.0",
+    "uuid": "^9.0.1",
+    "ws": "^8.15.0",
+    "zustand": "^4.4.7"
+  },
+  "devDependencies": {
+    "@types/uuid": "^9.0.7",
+    "@types/ws": "^8.5.10",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "concurrently": "^8.2.2",
+    "eslint": "^8.45.0",
+    "typescript": "^5.0.2",
+    "vite": "^5.0.0"
+  }
+}

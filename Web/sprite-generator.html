@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlexPort Maritime Sprite Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f0f8ff;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .sprite-section {
+            margin: 30px 0;
+            padding: 20px;
+            border: 2px solid #4682b4;
+            border-radius: 10px;
+            background-color: white;
+        }
+        canvas {
+            border: 1px solid #ccc;
+            margin: 10px;
+            background-color: transparent;
+        }
+        .download-section {
+            margin: 20px 0;
+        }
+        button {
+            background-color: #4682b4;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #315f7a;
+        }
+        .preview {
+            display: inline-block;
+            margin: 10px;
+            text-align: center;
+        }
+        .preview h3 {
+            margin: 5px 0;
+            color: #2c5282;
+        }
+        .scale-preview {
+            margin: 10px 0;
+        }
+        .scale-preview canvas {
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>FlexPort Maritime Sprite Generator</h1>
+        <p>Generate realistic sprites for the FlexPort maritime game</p>
+
+        <div class="sprite-section">
+            <div class="preview">
+                <h3>Container Ship (64x32px)</h3>
+                <canvas id="shipCanvas" width="64" height="32"></canvas>
+                <div class="scale-preview">
+                    <span>Scale previews: </span>
+                    <canvas id="shipPreview1x" width="64" height="32"></canvas>
+                    <canvas id="shipPreview2x" width="128" height="64"></canvas>
+                    <canvas id="shipPreview3x" width="192" height="96"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="sprite-section">
+            <div class="preview">
+                <h3>Port (32x32px)</h3>
+                <canvas id="portCanvas" width="32" height="32"></canvas>
+                <div class="scale-preview">
+                    <span>Scale previews: </span>
+                    <canvas id="portPreview1x" width="32" height="32"></canvas>
+                    <canvas id="portPreview2x" width="64" height="64"></canvas>
+                    <canvas id="portPreview3x" width="96" height="96"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="sprite-section">
+            <div class="preview">
+                <h3>Wave Particle (16x16px)</h3>
+                <canvas id="waveCanvas" width="16" height="16"></canvas>
+                <div class="scale-preview">
+                    <span>Scale previews: </span>
+                    <canvas id="wavePreview1x" width="16" height="16"></canvas>
+                    <canvas id="wavePreview2x" width="32" height="32"></canvas>
+                    <canvas id="wavePreview4x" width="64" height="64"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="download-section">
+            <h3>Download Sprites</h3>
+            <button onclick="downloadSprite('shipCanvas', 'ship.png')">Download Ship Sprite</button>
+            <button onclick="downloadSprite('portCanvas', 'port.png')">Download Port Sprite</button>
+            <button onclick="downloadSprite('waveCanvas', 'wave.png')">Download Wave Particle</button>
+            <button onclick="downloadAllSprites()">Download All Sprites</button>
+        </div>
+
+        <div class="sprite-section">
+            <h3>Base64 Data URLs (for embedding)</h3>
+            <div>
+                <h4>Ship Sprite:</h4>
+                <textarea id="shipDataUrl" rows="3" style="width: 100%; font-family: monospace; font-size: 12px;" readonly></textarea>
+            </div>
+            <div>
+                <h4>Port Sprite:</h4>
+                <textarea id="portDataUrl" rows="3" style="width: 100%; font-family: monospace; font-size: 12px;" readonly></textarea>
+            </div>
+            <div>
+                <h4>Wave Particle:</h4>
+                <textarea id="waveDataUrl" rows="3" style="width: 100%; font-family: monospace; font-size: 12px;" readonly></textarea>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Ship sprite generation (64x32px)
+        function generateShipSprite() {
+            const canvas = document.getElementById('shipCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, 64, 32);
+            
+            // Hull (dark blue-gray)
+            ctx.fillStyle = '#2d3748';
+            ctx.fillRect(4, 18, 56, 10);
+            
+            // Ship bow (pointed front)
+            ctx.beginPath();
+            ctx.moveTo(60, 18);
+            ctx.lineTo(62, 23);
+            ctx.lineTo(60, 28);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Ship stern (back)
+            ctx.fillRect(4, 18, 2, 10);
+            
+            // Hull highlights
+            ctx.fillStyle = '#4a5568';
+            ctx.fillRect(4, 18, 56, 2);
+            
+            // Container stacks (colorful containers)
+            const containerColors = ['#e53e3e', '#3182ce', '#38a169', '#d69e2e', '#805ad5'];
+            
+            // First container stack
+            for (let i = 0; i < 3; i++) {
+                ctx.fillStyle = containerColors[i % containerColors.length];
+                ctx.fillRect(8 + i * 2, 12 - i * 2, 8, 6);
+                // Container outline
+                ctx.strokeStyle = '#1a202c';
+                ctx.lineWidth = 0.5;
+                ctx.strokeRect(8 + i * 2, 12 - i * 2, 8, 6);
+            }
+            
+            // Second container stack
+            for (let i = 0; i < 4; i++) {
+                ctx.fillStyle = containerColors[(i + 2) % containerColors.length];
+                ctx.fillRect(20 + i * 2, 14 - i * 2, 8, 6);
+                ctx.strokeStyle = '#1a202c';
+                ctx.lineWidth = 0.5;
+                ctx.strokeRect(20 + i * 2, 14 - i * 2, 8, 6);
+            }
+            
+            // Third container stack
+            for (let i = 0; i < 2; i++) {
+                ctx.fillStyle = containerColors[(i + 1) % containerColors.length];
+                ctx.fillRect(32 + i * 2, 13 - i * 2, 8, 6);
+                ctx.strokeStyle = '#1a202c';
+                ctx.lineWidth = 0.5;
+                ctx.strokeRect(32 + i * 2, 13 - i * 2, 8, 6);
+            }
+            
+            // Fourth container stack
+            for (let i = 0; i < 3; i++) {
+                ctx.fillStyle = containerColors[(i + 3) % containerColors.length];
+                ctx.fillRect(44 + i * 2, 12 - i * 2, 8, 6);
+                ctx.strokeStyle = '#1a202c';
+                ctx.lineWidth = 0.5;
+                ctx.strokeRect(44 + i * 2, 12 - i * 2, 8, 6);
+            }
+            
+            // Bridge/superstructure
+            ctx.fillStyle = '#e2e8f0';
+            ctx.fillRect(48, 8, 8, 8);
+            ctx.strokeStyle = '#1a202c';
+            ctx.lineWidth = 0.5;
+            ctx.strokeRect(48, 8, 8, 8);
+            
+            // Bridge windows
+            ctx.fillStyle = '#63b3ed';
+            ctx.fillRect(49, 9, 2, 2);
+            ctx.fillRect(53, 9, 2, 2);
+            
+            // Wake (white foam behind ship)
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+            ctx.fillRect(2, 20, 3, 2);
+            ctx.fillRect(1, 22, 4, 2);
+            ctx.fillRect(2, 26, 3, 2);
+            
+            return canvas.toDataURL();
+        }
+
+        // Port sprite generation (32x32px)
+        function generatePortSprite() {
+            const canvas = document.getElementById('portCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, 32, 32);
+            
+            // Port circle background (harbor water)
+            ctx.fillStyle = '#3182ce';
+            ctx.beginPath();
+            ctx.arc(16, 16, 14, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Port outline
+            ctx.strokeStyle = '#1e3a8a';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // Dock structures
+            ctx.fillStyle = '#8b5a3c';
+            ctx.fillRect(6, 14, 20, 4);
+            ctx.fillRect(14, 6, 4, 20);
+            
+            // Dock highlights
+            ctx.fillStyle = '#a0744a';
+            ctx.fillRect(6, 14, 20, 1);
+            ctx.fillRect(14, 6, 1, 20);
+            
+            // Port buildings/warehouses
+            ctx.fillStyle = '#4a5568';
+            ctx.fillRect(8, 8, 6, 6);
+            ctx.fillRect(18, 8, 6, 6);
+            ctx.fillRect(8, 18, 6, 6);
+            ctx.fillRect(18, 18, 6, 6);
+            
+            // Building roofs
+            ctx.fillStyle = '#e53e3e';
+            ctx.fillRect(8, 8, 6, 2);
+            ctx.fillRect(18, 8, 6, 2);
+            ctx.fillRect(8, 18, 6, 2);
+            ctx.fillRect(18, 18, 6, 2);
+            
+            // Cranes (simplified)
+            ctx.strokeStyle = '#2d3748';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(11, 11);
+            ctx.lineTo(11, 6);
+            ctx.lineTo(16, 6);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(21, 11);
+            ctx.lineTo(21, 6);
+            ctx.lineTo(26, 6);
+            ctx.stroke();
+            
+            // Port identification dot in center
+            ctx.fillStyle = '#ffd700';
+            ctx.beginPath();
+            ctx.arc(16, 16, 2, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            return canvas.toDataURL();
+        }
+
+        // Wave particle generation (16x16px)
+        function generateWaveParticle() {
+            const canvas = document.getElementById('waveCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, 16, 16);
+            
+            // Create gradient for wave foam effect
+            const gradient = ctx.createRadialGradient(8, 8, 0, 8, 8, 8);
+            gradient.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
+            gradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.6)');
+            gradient.addColorStop(1, 'rgba(255, 255, 255, 0.1)');
+            
+            // Main foam bubble
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(8, 8, 6, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Smaller foam bubbles for realistic effect
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.beginPath();
+            ctx.arc(5, 6, 2, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.arc(11, 10, 1.5, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.arc(6, 11, 1, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.arc(10, 5, 1, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Subtle wave texture lines
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.lineWidth = 0.5;
+            ctx.beginPath();
+            ctx.moveTo(2, 8);
+            ctx.quadraticCurveTo(8, 6, 14, 8);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(3, 10);
+            ctx.quadraticCurveTo(8, 12, 13, 10);
+            ctx.stroke();
+            
+            return canvas.toDataURL();
+        }
+
+        // Scale sprite to preview canvas
+        function scaleSprite(sourceCanvas, targetCanvas, scale) {
+            const srcCtx = sourceCanvas.getContext('2d');
+            const tgtCtx = targetCanvas.getContext('2d');
+            
+            tgtCtx.clearRect(0, 0, targetCanvas.width, targetCanvas.height);
+            tgtCtx.imageSmoothingEnabled = false; // Pixel perfect scaling
+            tgtCtx.drawImage(sourceCanvas, 0, 0, sourceCanvas.width * scale, sourceCanvas.height * scale);
+        }
+
+        // Download sprite as PNG
+        function downloadSprite(canvasId, filename) {
+            const canvas = document.getElementById(canvasId);
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+
+        // Download all sprites as a zip (simplified - individual downloads)
+        function downloadAllSprites() {
+            downloadSprite('shipCanvas', 'ship.png');
+            setTimeout(() => downloadSprite('portCanvas', 'port.png'), 100);
+            setTimeout(() => downloadSprite('waveCanvas', 'wave.png'), 200);
+        }
+
+        // Update data URL textareas
+        function updateDataUrls() {
+            document.getElementById('shipDataUrl').value = generateShipSprite();
+            document.getElementById('portDataUrl').value = generatePortSprite();
+            document.getElementById('waveDataUrl').value = generateWaveParticle();
+        }
+
+        // Initialize sprites and previews
+        window.onload = function() {
+            // Generate sprites
+            const shipDataUrl = generateShipSprite();
+            const portDataUrl = generatePortSprite();
+            const waveDataUrl = generateWaveParticle();
+            
+            // Update preview canvases
+            const shipCanvas = document.getElementById('shipCanvas');
+            const portCanvas = document.getElementById('portCanvas');
+            const waveCanvas = document.getElementById('waveCanvas');
+            
+            // Create scaled previews
+            scaleSprite(shipCanvas, document.getElementById('shipPreview1x'), 1);
+            scaleSprite(shipCanvas, document.getElementById('shipPreview2x'), 2);
+            scaleSprite(shipCanvas, document.getElementById('shipPreview3x'), 3);
+            
+            scaleSprite(portCanvas, document.getElementById('portPreview1x'), 1);
+            scaleSprite(portCanvas, document.getElementById('portPreview2x'), 2);
+            scaleSprite(portCanvas, document.getElementById('portPreview3x'), 3);
+            
+            scaleSprite(waveCanvas, document.getElementById('wavePreview1x'), 1);
+            scaleSprite(waveCanvas, document.getElementById('wavePreview2x'), 2);
+            scaleSprite(waveCanvas, document.getElementById('wavePreview4x'), 4);
+            
+            // Update data URLs
+            updateDataUrls();
+        };
+    </script>
+</body>
+</html>

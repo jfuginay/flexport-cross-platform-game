@@ -16,6 +16,7 @@ import com.flexport.game.ui.screens.GameScreen
 import com.flexport.game.ui.screens.MainMenuScreen
 import com.flexport.game.ui.screens.MultiplayerLobbyScreen
 import com.flexport.game.ui.screens.EconomicDashboardScreen
+import com.flexport.game.ui.screens.FleetManagementScreen
 import com.flexport.assets.ui.AssetManagementScreen
 
 class MainActivity : ComponentActivity() {
@@ -52,6 +53,9 @@ fun FlexPortApp() {
                 onAssetManagement = {
                     navController.navigate(FlexPortDestinations.ASSET_MANAGEMENT_ROUTE)
                 },
+                onFleetManagement = {
+                    navController.navigate(FlexPortDestinations.FLEET_MANAGEMENT_ROUTE)
+                },
                 onSettings = {
                     // Settings navigation will be implemented later
                 }
@@ -84,6 +88,14 @@ fun FlexPortApp() {
         composable(FlexPortDestinations.ASSET_MANAGEMENT_ROUTE) {
             AssetManagementScreen()
         }
+        
+        composable(FlexPortDestinations.FLEET_MANAGEMENT_ROUTE) {
+            FleetManagementScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
     }
 }
 
@@ -96,6 +108,7 @@ fun DefaultPreview() {
             onStartMultiplayer = {},
             onEconomicDashboard = {},
             onAssetManagement = {},
+            onFleetManagement = {},
             onSettings = {}
         )
     }

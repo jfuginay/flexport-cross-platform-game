@@ -29,6 +29,7 @@ fun MainMenuScreen(
     onStartMultiplayer: () -> Unit = {},
     onEconomicDashboard: () -> Unit = {},
     onAssetManagement: () -> Unit = {},
+    onFleetManagement: () -> Unit = {},
     onSettings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -208,6 +209,33 @@ fun MainMenuScreen(
             
             Spacer(modifier = Modifier.height(16.dp))
             
+            // Fleet Management Button
+            Button(
+                onClick = onFleetManagement,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .padding(horizontal = 32.dp),
+                colors = ButtonDefaults.buttonColors(
+                    backgroundColor = MaterialTheme.colors.secondary
+                ),
+                shape = RoundedCornerShape(28.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.DirectionsBoat,
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Fleet Management",
+                    style = MaterialTheme.typography.h6,
+                    color = Color.White
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
             // Settings Button
             OutlinedButton(
                 onClick = onSettings,
@@ -244,6 +272,7 @@ fun MainMenuScreenPreview() {
             onStartMultiplayer = {},
             onEconomicDashboard = {},
             onAssetManagement = {},
+            onFleetManagement = {},
             onSettings = {}
         )
     }

@@ -1,0 +1,17 @@
+{
+  "name": "flexport-multiplayer-server",
+  "version": "1.0.0",
+  "description": "WebSocket server for FlexPort multiplayer functionality",
+  "main": "websocket-server.js",
+  "scripts": {
+    "start": "node websocket-server.js",
+    "dev": "node websocket-server.js"
+  },
+  "dependencies": {
+    "ws": "^8.15.0",
+    "uuid": "^9.0.1"
+  },
+  "keywords": ["websocket", "multiplayer", "game", "logistics"],
+  "author": "FlexPort Team",
+  "license": "MIT"
+}

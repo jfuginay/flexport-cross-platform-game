@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlexPort Maritime Sprites Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(to bottom, #87CEEB 0%, #1e3a8a 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        .demo-section {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            backdrop-filter: blur(5px);
+        }
+        .sprite-showcase {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        .sprite-demo {
+            text-align: center;
+            margin: 10px;
+            background: rgba(255,255,255,0.2);
+            padding: 15px;
+            border-radius: 10px;
+        }
+        .sprite-container {
+            position: relative;
+            display: inline-block;
+            margin: 10px;
+        }
+        canvas {
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 5px;
+            background: rgba(255,255,255,0.1);
+        }
+        .game-simulation {
+            position: relative;
+            width: 800px;
+            height: 600px;
+            background: #1e3a8a;
+            border: 2px solid #fff;
+            border-radius: 10px;
+            margin: 20px auto;
+            overflow: hidden;
+        }
+        .ocean-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 1px, transparent 1px),
+                radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 1px, transparent 1px),
+                radial-gradient(circle at 40% 40%, rgba(255,255,255,0.1) 1px, transparent 1px),
+                linear-gradient(180deg, #3182ce 0%, #1e3a8a 100%);
+            animation: waves 3s ease-in-out infinite;
+        }
+        @keyframes waves {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; }
+        }
+        .ship {
+            position: absolute;
+            transition: all 2s ease-in-out;
+            cursor: pointer;
+        }
+        .port {
+            position: absolute;
+            cursor: pointer;
+        }
+        .wave-particle {
+            position: absolute;
+            opacity: 0.7;
+            animation: float 2s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+        }
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+        button {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 2px solid white;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            backdrop-filter: blur(5px);
+        }
+        button:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        .info-panel {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .sprite-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚢 FlexPort Maritime Sprites Demo 🏗️</h1>
+        
+        <div class="demo-section">
+            <h2>Sprite Gallery</h2>
+            <div class="sprite-showcase">
+                <div class="sprite-demo">
+                    <h3>Container Ship</h3>
+                    <canvas id="shipDisplay" width="128" height="64"></canvas>
+                    <p>64x32px • Scalable • Rotatable</p>
+                </div>
+                <div class="sprite-demo">
+                    <h3>Port Facility</h3>
+                    <canvas id="portDisplay" width="96" height="96"></canvas>
+                    <p>32x32px • Circular Design • Docks & Cranes</p>
+                </div>
+                <div class="sprite-demo">
+                    <h3>Wave Particle</h3>
+                    <canvas id="waveDisplay" width="64" height="64"></canvas>
+                    <p>16x16px • Translucent • Particle Effects</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>Interactive Game Simulation</h2>
+            <div class="controls">
+                <button onclick="moveShip()">Move Ship</button>
+                <button onclick="rotateShip()">Rotate Ship</button>
+                <button onclick="addWaves()">Add Wave Effects</button>
+                <button onclick="resetDemo()">Reset</button>
+            </div>
+            <div class="game-simulation" id="gameCanvas">
+                <div class="ocean-background"></div>
+                <!-- Ports will be added by JavaScript -->
+                <!-- Ships will be added by JavaScript -->
+                <!-- Wave particles will be added by JavaScript -->
+            </div>
+        </div>
+
+        <div class="info-panel">
+            <h2>Sprite Technical Details</h2>
+            <div class="sprite-info">
+                <div>
+                    <h3>🚢 Container Ship</h3>
+                    <ul>
+                        <li>Dimensions: 64x32 pixels</li>
+                        <li>Features: Cargo containers, bridge, hull</li>
+                        <li>Colors: Maritime blue, gray, container colors</li>
+                        <li>Usage: Main game entity, rotatable, scalable</li>
+                        <li>Wake effects for movement indication</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3>🏗️ Port Facility</h3>
+                    <ul>
+                        <li>Dimensions: 32x32 pixels</li>
+                        <li>Features: Circular harbor, docks, cranes</li>
+                        <li>Colors: Harbor blue, dock brown, building gray</li>
+                        <li>Usage: Trade destinations, scalable by importance</li>
+                        <li>Golden center dot for identification</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3>🌊 Wave Particle</h3>
+                    <ul>
+                        <li>Dimensions: 16x16 pixels</li>
+                        <li>Features: Translucent foam, gradient effect</li>
+                        <li>Colors: White with varying opacity</li>
+                        <li>Usage: Ocean effects, ship wakes, animation</li>
+                        <li>Optimized for particle systems</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>Implementation Examples</h2>
+            <div style="text-align: left;">
+                <h3>Web Implementation (Base64):</h3>
+                <pre style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 5px; overflow-x: auto; font-size: 12px;">
+// Load sprites from base64 data URLs
+const sprites = {
+    ship: new Image(),
+    port: new Image(),
+    wave: new Image()
+};
+
+// Set sprite sources (truncated for display)
+sprites.ship.src = "data:image/png;base64,iVBORw0K...";
+sprites.port.src = "data:image/png;base64,iVBORw0K...";
+sprites.wave.src = "data:image/png;base64,iVBORw0K...";
+
+// Draw on canvas
+ctx.drawImage(sprites.ship, x, y, width, height);
+                </pre>
+
+                <h3>iOS Swift Implementation:</h3>
+                <pre style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 5px; overflow-x: auto; font-size: 12px;">
+// Load sprites from bundle
+let shipTexture = SKTexture(imageNamed: "ship")
+let portTexture = SKTexture(imageNamed: "port")
+let waveTexture = SKTexture(imageNamed: "wave")
+
+// Create sprite nodes
+let ship = SKSpriteNode(texture: shipTexture)
+ship.size = CGSize(width: 64, height: 32)
+                </pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Load sprite data from JSON
+        let spriteData = null;
+        
+        fetch('public/assets/sprites/sprite-data-urls.json')
+            .then(response => response.json())
+            .then(data => {
+                spriteData = data;
+                initializeDemo();
+            })
+            .catch(error => {
+                console.log('Loading sprites from local generation...');
+                initializeDemo();
+            });
+
+        // Ship position and rotation
+        let shipX = 100;
+        let shipY = 300;
+        let shipRotation = 0;
+        let waveCount = 0;
+
+        function initializeDemo() {
+            drawSprites();
+            setupGameSimulation();
+        }
+
+        function drawSprites() {
+            // Draw ship sprite
+            const shipCanvas = document.getElementById('shipDisplay');
+            const shipCtx = shipCanvas.getContext('2d');
+            shipCtx.imageSmoothingEnabled = false;
+            
+            if (spriteData) {
+                const shipImg = new Image();
+                shipImg.onload = () => {
+                    shipCtx.drawImage(shipImg, 0, 0, 128, 64);
+                };
+                shipImg.src = spriteData.ship;
+            } else {
+                generateShipOnCanvas(shipCtx, 128, 64);
+            }
+
+            // Draw port sprite
+            const portCanvas = document.getElementById('portDisplay');
+            const portCtx = portCanvas.getContext('2d');
+            portCtx.imageSmoothingEnabled = false;
+            
+            if (spriteData) {
+                const portImg = new Image();
+                portImg.onload = () => {
+                    portCtx.drawImage(portImg, 0, 0, 96, 96);
+                };
+                portImg.src = spriteData.port;
+            } else {
+                generatePortOnCanvas(portCtx, 96, 96);
+            }
+
+            // Draw wave sprite
+            const waveCanvas = document.getElementById('waveDisplay');
+            const waveCtx = waveCanvas.getContext('2d');
+            waveCtx.imageSmoothingEnabled = false;
+            
+            if (spriteData) {
+                const waveImg = new Image();
+                waveImg.onload = () => {
+                    waveCtx.drawImage(waveImg, 0, 0, 64, 64);
+                };
+                waveImg.src = spriteData.wave;
+            } else {
+                generateWaveOnCanvas(waveCtx, 64, 64);
+            }
+        }
+
+        function setupGameSimulation() {
+            const gameArea = document.getElementById('gameCanvas');
+            
+            // Add ports
+            addPort(150, 100);
+            addPort(650, 150);
+            addPort(200, 450);
+            addPort(600, 500);
+            
+            // Add ship
+            addShip(shipX, shipY);
+            
+            // Add some initial wave effects
+            for (let i = 0; i < 5; i++) {
+                setTimeout(() => addWave(Math.random() * 700 + 50, Math.random() * 500 + 50), i * 200);
+            }
+        }
+
+        function addPort(x, y) {
+            const gameArea = document.getElementById('gameCanvas');
+            const port = document.createElement('div');
+            port.className = 'port';
+            port.style.left = x + 'px';
+            port.style.top = y + 'px';
+            port.style.width = '48px';
+            port.style.height = '48px';
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = 48;
+            canvas.height = 48;
+            const ctx = canvas.getContext('2d');
+            ctx.imageSmoothingEnabled = false;
+            
+            if (spriteData) {
+                const img = new Image();
+                img.onload = () => ctx.drawImage(img, 0, 0, 48, 48);
+                img.src = spriteData.port;
+            } else {
+                generatePortOnCanvas(ctx, 48, 48);
+            }
+            
+            port.appendChild(canvas);
+            gameArea.appendChild(port);
+            
+            port.onclick = () => {
+                port.style.transform = 'scale(1.2)';
+                setTimeout(() => {
+                    port.style.transform = 'scale(1)';
+                }, 200);
+            };
+        }
+
+        function addShip(x, y) {
+            const gameArea = document.getElementById('gameCanvas');
+            const ship = document.createElement('div');
+            ship.className = 'ship';
+            ship.id = 'mainShip';
+            ship.style.left = x + 'px';
+            ship.style.top = y + 'px';
+            ship.style.width = '64px';
+            ship.style.height = '32px';
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = 64;
+            canvas.height = 32;
+            const ctx = canvas.getContext('2d');
+            ctx.imageSmoothingEnabled = false;
+            
+            if (spriteData) {
+                const img = new Image();
+                img.onload = () => ctx.drawImage(img, 0, 0, 64, 32);
+                img.src = spriteData.ship;
+            } else {
+                generateShipOnCanvas(ctx, 64, 32);
+            }
+            
+            ship.appendChild(canvas);
+            gameArea.appendChild(ship);
+        }
+
+        function addWave(x, y) {
+            const gameArea = document.getElementById('gameCanvas');
+            const wave = document.createElement('div');
+            wave.className = 'wave-particle';
+            wave.style.left = x + 'px';
+            wave.style.top = y + 'px';
+            wave.style.width = '24px';
+            wave.style.height = '24px';
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = 24;
+            canvas.height = 24;
+            const ctx = canvas.getContext('2d');
+            ctx.imageSmoothingEnabled = false;
+            
+            if (spriteData) {
+                const img = new Image();
+                img.onload = () => ctx.drawImage(img, 0, 0, 24, 24);
+                img.src = spriteData.wave;
+            } else {
+                generateWaveOnCanvas(ctx, 24, 24);
+            }
+            
+            wave.appendChild(canvas);
+            gameArea.appendChild(wave);
+            
+            // Remove wave after animation
+            setTimeout(() => {
+                if (wave.parentNode) {
+                    wave.parentNode.removeChild(wave);
+                }
+            }, 3000);
+        }
+
+        // Control functions
+        function moveShip() {
+            const ship = document.getElementById('mainShip');
+            if (ship) {
+                shipX = Math.random() * 700 + 50;
+                shipY = Math.random() * 500 + 50;
+                ship.style.left = shipX + 'px';
+                ship.style.top = shipY + 'px';
+                
+                // Add wake effect
+                for (let i = 0; i < 3; i++) {
+                    setTimeout(() => {
+                        addWave(shipX - 20 + Math.random() * 40, shipY + 15 + Math.random() * 10);
+                    }, i * 100);
+                }
+            }
+        }
+
+        function rotateShip() {
+            const ship = document.getElementById('mainShip');
+            if (ship) {
+                shipRotation += 45;
+                ship.style.transform = `rotate(${shipRotation}deg)`;
+            }
+        }
+
+        function addWaves() {
+            for (let i = 0; i < 8; i++) {
+                setTimeout(() => {
+                    addWave(Math.random() * 700 + 50, Math.random() * 500 + 50);
+                }, i * 100);
+            }
+        }
+
+        function resetDemo() {
+            const gameArea = document.getElementById('gameCanvas');
+            // Remove all dynamic elements
+            const waves = gameArea.querySelectorAll('.wave-particle');
+            waves.forEach(wave => wave.remove());
+            
+            const ship = document.getElementById('mainShip');
+            if (ship) {
+                shipX = 100;
+                shipY = 300;
+                shipRotation = 0;
+                ship.style.left = shipX + 'px';
+                ship.style.top = shipY + 'px';
+                ship.style.transform = 'rotate(0deg)';
+            }
+        }
+
+        // Fallback sprite generation functions (simplified versions)
+        function generateShipOnCanvas(ctx, width, height) {
+            ctx.scale(width/64, height/32);
+            ctx.fillStyle = '#2d3748';
+            ctx.fillRect(4, 18, 56, 10);
+            ctx.fillStyle = '#e53e3e';
+            ctx.fillRect(8, 8, 8, 8);
+            ctx.fillStyle = '#3182ce';
+            ctx.fillRect(20, 10, 8, 8);
+            ctx.fillStyle = '#38a169';
+            ctx.fillRect(32, 8, 8, 8);
+            ctx.fillStyle = '#e2e8f0';
+            ctx.fillRect(48, 8, 8, 8);
+        }
+
+        function generatePortOnCanvas(ctx, width, height) {
+            ctx.scale(width/32, height/32);
+            ctx.fillStyle = '#3182ce';
+            ctx.beginPath();
+            ctx.arc(16, 16, 14, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.fillStyle = '#8b5a3c';
+            ctx.fillRect(6, 14, 20, 4);
+            ctx.fillRect(14, 6, 4, 20);
+            ctx.fillStyle = '#ffd700';
+            ctx.beginPath();
+            ctx.arc(16, 16, 2, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+
+        function generateWaveOnCanvas(ctx, width, height) {
+            ctx.scale(width/16, height/16);
+            const gradient = ctx.createRadialGradient(8, 8, 0, 8, 8, 8);
+            gradient.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
+            gradient.addColorStop(1, 'rgba(255, 255, 255, 0.1)');
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(8, 8, 6, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+    </script>
+</body>
+</html>

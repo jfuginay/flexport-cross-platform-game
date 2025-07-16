@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ocean Texture Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        canvas {
+            border: 1px solid #333;
+            margin: 20px 0;
+            image-rendering: pixelated;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #preview {
+            display: grid;
+            grid-template-columns: repeat(2, 256px);
+            grid-template-rows: repeat(2, 256px);
+            border: 2px solid #333;
+            margin-top: 20px;
+        }
+        #preview canvas {
+            border: none;
+            margin: 0;
+        }
+        .info {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #e0e0e0;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Ocean Texture Generator for FlexPort</h1>
+    
+    <div class="info">
+        <p>This generator creates a seamlessly tileable 512x512 ocean texture suitable for WebGL.</p>
+        <p>Features: Deep blue ocean water with subtle wave patterns and realistic depth variations.</p>
+    </div>
+    
+    <div class="controls">
+        <button onclick="generateTexture()">Generate New Texture</button>
+        <button onclick="downloadTexture()">Download as PNG</button>
+    </div>
+    
+    <canvas id="oceanCanvas" width="512" height="512"></canvas>
+    
+    <h3>Tiling Preview (2x2)</h3>
+    <div id="preview">
+        <canvas width="256" height="256"></canvas>
+        <canvas width="256" height="256"></canvas>
+        <canvas width="256" height="256"></canvas>
+        <canvas width="256" height="256"></canvas>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('oceanCanvas');
+        const ctx = canvas.getContext('2d');
+        const size = 512;
+
+        // Perlin noise implementation
+        class PerlinNoise {
+            constructor() {
+                this.permutation = [];
+                for (let i = 0; i < 256; i++) {
+                    this.permutation[i] = Math.floor(Math.random() * 256);
+                }
+                // Duplicate for overflow
+                for (let i = 0; i < 256; i++) {
+                    this.permutation[256 + i] = this.permutation[i];
+                }
+            }
+
+            fade(t) {
+                return t * t * t * (t * (t * 6 - 15) + 10);
+            }
+
+            lerp(t, a, b) {
+                return a + t * (b - a);
+            }
+
+            grad(hash, x, y) {
+                const h = hash & 15;
+                const u = h < 8 ? x : y;
+                const v = h < 4 ? y : h === 12 || h === 14 ? x : 0;
+                return ((h & 1) === 0 ? u : -u) + ((h & 2) === 0 ? v : -v);
+            }
+
+            noise(x, y) {
+                const X = Math.floor(x) & 255;
+                const Y = Math.floor(y) & 255;
+                
+                x -= Math.floor(x);
+                y -= Math.floor(y);
+                
+                const u = this.fade(x);
+                const v = this.fade(y);
+                
+                const a = this.permutation[X] + Y;
+                const aa = this.permutation[a];
+                const ab = this.permutation[a + 1];
+                const b = this.permutation[X + 1] + Y;
+                const ba = this.permutation[b];
+                const bb = this.permutation[b + 1];
+                
+                return this.lerp(v, 
+                    this.lerp(u, this.grad(this.permutation[aa], x, y),
+                             this.grad(this.permutation[ba], x - 1, y)),
+                    this.lerp(u, this.grad(this.permutation[ab], x, y - 1),
+                             this.grad(this.permutation[bb], x - 1, y - 1))
+                );
+            }
+
+            // Tileable noise function
+            tileableNoise(x, y, w, h) {
+                return (
+                    this.noise(x, y) * (w - x) * (h - y) +
+                    this.noise(x - w, y) * x * (h - y) +
+                    this.noise(x - w, y - h) * x * y +
+                    this.noise(x, y - h) * (w - x) * y
+                ) / (w * h);
+            }
+        }
+
+        function generateTexture() {
+            const imageData = ctx.createImageData(size, size);
+            const data = imageData.data;
+            const perlin = new PerlinNoise();
+            
+            // Ocean color palette
+            const deepColor = { r: 15, g: 35, b: 65 };    // Deep ocean blue
+            const midColor = { r: 25, g: 55, b: 95 };     // Mid ocean blue
+            const lightColor = { r: 45, g: 85, b: 125 };  // Light ocean blue
+            const foamColor = { r: 180, g: 200, b: 220 }; // Foam/highlight color
+            
+            for (let y = 0; y < size; y++) {
+                for (let x = 0; x < size; x++) {
+                    const index = (y * size + x) * 4;
+                    
+                    // Multiple octaves of noise for realistic water
+                    let value = 0;
+                    let amplitude = 1;
+                    let frequency = 0.005;
+                    let maxValue = 0;
+                    
+                    // Add multiple octaves for detail
+                    for (let i = 0; i < 6; i++) {
+                        value += perlin.tileableNoise(
+                            x * frequency, 
+                            y * frequency, 
+                            size * frequency, 
+                            size * frequency
+                        ) * amplitude;
+                        maxValue += amplitude;
+                        amplitude *= 0.5;
+                        frequency *= 2;
+                    }
+                    
+                    value = value / maxValue;
+                    value = (value + 1) / 2; // Normalize to 0-1
+                    
+                    // Add wave patterns
+                    const wavePattern1 = Math.sin(x * 0.02 + y * 0.01) * 0.1;
+                    const wavePattern2 = Math.sin(x * 0.01 - y * 0.02) * 0.05;
+                    value += wavePattern1 + wavePattern2;
+                    
+                    // Add subtle sparkle/foam
+                    const sparkle = perlin.tileableNoise(
+                        x * 0.1, 
+                        y * 0.1, 
+                        size * 0.1, 
+                        size * 0.1
+                    );
+                    
+                    // Clamp value
+                    value = Math.max(0, Math.min(1, value));
+                    
+                    // Color interpolation based on depth
+                    let r, g, b;
+                    
+                    if (value < 0.3) {
+                        // Deep water
+                        const t = value / 0.3;
+                        r = deepColor.r + (midColor.r - deepColor.r) * t;
+                        g = deepColor.g + (midColor.g - deepColor.g) * t;
+                        b = deepColor.b + (midColor.b - deepColor.b) * t;
+                    } else if (value < 0.7) {
+                        // Mid water
+                        const t = (value - 0.3) / 0.4;
+                        r = midColor.r + (lightColor.r - midColor.r) * t;
+                        g = midColor.g + (lightColor.g - midColor.g) * t;
+                        b = midColor.b + (lightColor.b - midColor.b) * t;
+                    } else {
+                        // Light water with possible foam
+                        const t = (value - 0.7) / 0.3;
+                        r = lightColor.r + (foamColor.r - lightColor.r) * t * 0.3;
+                        g = lightColor.g + (foamColor.g - lightColor.g) * t * 0.3;
+                        b = lightColor.b + (foamColor.b - lightColor.b) * t * 0.3;
+                    }
+                    
+                    // Add sparkle highlights
+                    if (sparkle > 0.8 && value > 0.6) {
+                        const sparkleIntensity = (sparkle - 0.8) * 5 * 0.3;
+                        r += (foamColor.r - r) * sparkleIntensity;
+                        g += (foamColor.g - g) * sparkleIntensity;
+                        b += (foamColor.b - b) * sparkleIntensity;
+                    }
+                    
+                    // Add subtle color variation
+                    const colorVariation = perlin.tileableNoise(
+                        x * 0.003, 
+                        y * 0.003, 
+                        size * 0.003, 
+                        size * 0.003
+                    ) * 0.1;
+                    
+                    r += colorVariation * 10;
+                    g += colorVariation * 15;
+                    b += colorVariation * 20;
+                    
+                    // Set pixel data
+                    data[index] = Math.round(Math.max(0, Math.min(255, r)));
+                    data[index + 1] = Math.round(Math.max(0, Math.min(255, g)));
+                    data[index + 2] = Math.round(Math.max(0, Math.min(255, b)));
+                    data[index + 3] = 255; // Alpha
+                }
+            }
+            
+            ctx.putImageData(imageData, 0, 0);
+            updatePreview();
+        }
+
+        function updatePreview() {
+            const previewCanvases = document.querySelectorAll('#preview canvas');
+            previewCanvases.forEach(previewCanvas => {
+                const pctx = previewCanvas.getContext('2d');
+                pctx.drawImage(canvas, 0, 0, 256, 256);
+            });
+        }
+
+        function downloadTexture() {
+            canvas.toBlob(function(blob) {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'ocean-texture-512x512.png';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            });
+        }
+
+        // Generate initial texture
+        generateTexture();
+    </script>
+</body>
+</html>

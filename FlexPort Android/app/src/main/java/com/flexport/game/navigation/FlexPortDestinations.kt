@@ -10,6 +10,7 @@ object FlexPortDestinations {
     const val AI_SINGULARITY_ROUTE = "ai_singularity"
     const val MULTIPLAYER_LOBBY_ROUTE = "multiplayer_lobby"
     const val ASSET_MANAGEMENT_ROUTE = "asset_management"
+    const val FLEET_MANAGEMENT_ROUTE = "fleet_management"
     const val ECONOMIC_DASHBOARD_ROUTE = "economic_dashboard"
     const val SETTINGS_ROUTE = "settings"
 }
@@ -24,6 +25,7 @@ sealed class Screen(val route: String, val title: String) {
     object AISingularity : Screen(FlexPortDestinations.AI_SINGULARITY_ROUTE, "AI Monitor")
     object MultiplayerLobby : Screen(FlexPortDestinations.MULTIPLAYER_LOBBY_ROUTE, "Multiplayer")
     object AssetManagement : Screen(FlexPortDestinations.ASSET_MANAGEMENT_ROUTE, "Assets")
+    object FleetManagement : Screen(FlexPortDestinations.FLEET_MANAGEMENT_ROUTE, "Fleet")
     object EconomicDashboard : Screen(FlexPortDestinations.ECONOMIC_DASHBOARD_ROUTE, "Economy")
     object Settings : Screen(FlexPortDestinations.SETTINGS_ROUTE, "Settings")
 }

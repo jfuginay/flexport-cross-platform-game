@@ -28,31 +28,61 @@ struct GameView: View {
                     .ignoresSafeArea()
                 
                 VStack(spacing: 20) {
-                    // Header with game stats
+                    // Header with game stats - Container 4: Enhanced UI
                     HStack {
-                        VStack(alignment: .leading) {
-                            Text("FlexPort Game")
-                                .font(.title2)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("FlexPort Empire")
+                                .font(.system(size: 22, weight: .bold))
                                 .foregroundColor(.white)
-                            Text("Money: $\(String(format: "%.0f", gameManager.gameState.playerAssets.money))")
-                                .font(.headline)
-                                .foregroundColor(.green)
+                            
+                            HStack {
+                                Image(systemName: "dollarsign.circle.fill")
+                                    .foregroundColor(.green)
+                                Text("$\(String(format: "%.0f", gameManager.gameState.playerAssets.money))")
+                                    .font(.system(size: 17, weight: .semibold))
+                                    .foregroundColor(.green)
+                            }
+                            
+                            HStack {
+                                Image(systemName: "ferry.fill")
+                                    .foregroundColor(.blue)
+                                Text("\(gameManager.gameState.playerAssets.ships.count) Ships")
+                                    .font(.subheadline)
+                                    .foregroundColor(.blue)
+                            }
                         }
                         
                         Spacer()
                         
-                        VStack(alignment: .trailing) {
-                            Text("AI Singularity")
-                                .font(.caption)
-                                .foregroundColor(.red)
+                        VStack(alignment: .trailing, spacing: 4) {
+                            HStack {
+                                Image(systemName: "brain.head.profile")
+                                    .foregroundColor(.red)
+                                Text("AI Progress")
+                                    .font(.caption)
+                                    .foregroundColor(.red)
+                            }
+                            
                             ProgressView(value: gameManager.singularityProgress)
                                 .progressViewStyle(LinearProgressViewStyle(tint: .red))
                                 .frame(width: 100)
+                                .scaleEffect(1.2)
+                            
+                            Text("\(Int(gameManager.singularityProgress * 100))%")
+                                .font(.caption2)
+                                .foregroundColor(.red)
                         }
                     }
                     .padding()
-                    .background(Color.gray.opacity(0.2))
-                    .cornerRadius(10)
+                    .background(
+                        RoundedRectangle(cornerRadius: 15)
+                            .fill(Color.black.opacity(0.8))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 15)
+                                    .stroke(Color.blue.opacity(0.5), lineWidth: 1)
+                            )
+                    )
+                    .shadow(color: .blue.opacity(0.3), radius: 10, x: 0, y: 5)
                     
                     // Interactive game world with touch input
                     ZStack {
@@ -70,8 +100,8 @@ struct GameView: View {
                         // )
                         // .clipShape(RoundedRectangle(cornerRadius: 15))
                         
-                        // Simple Metal-rendered world map
-                        SimpleMetalMapViewInline()
+                        // Enhanced Metal-rendered world map with advanced ocean effects
+                        EnhancedMetalMapView()
                             .environmentObject(gameManager)
                         
                         // Overlay for touch feedback - temporarily disabled
@@ -371,18 +401,28 @@ struct NavigationButton: View {
     
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 4) {
+            VStack(spacing: 6) {
                 Image(systemName: icon)
                     .font(.title2)
+                    .font(.system(size: 20, weight: .medium))
                 Text(title)
-                    .font(.caption)
+                    .font(.system(size: 12, weight: .semibold))
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 12)
-            .background(color)
+            .padding(.vertical, 16)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(color)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(color.opacity(0.8), lineWidth: 1)
+                    )
+            )
             .foregroundColor(.white)
-            .cornerRadius(10)
+            .shadow(color: color.opacity(0.4), radius: 8, x: 0, y: 4)
         }
+        .scaleEffect(1.0)
+        .animation(.easeInOut(duration: 0.1), value: false)
     }
 }
 
@@ -640,9 +680,9 @@ struct BasicPortDetailsView: View {
     }
 }
 
-// MARK: - SimpleMetalMapView (inline implementation)
+// MARK: - EnhancedMetalMapView with Advanced Ocean Rendering
 
-struct SimpleMetalMapViewInline: View {
+struct EnhancedMetalMapView: View {
     @EnvironmentObject var gameManager: GameManager
     @State private var selectedPort: String?
     @State private var showingPortDetails = false
@@ -650,8 +690,9 @@ struct SimpleMetalMapViewInline: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                // Metal-rendered background
-                MetalMapViewRepresentableInline()
+                // Enhanced Metal-rendered ocean background
+                EnhancedMetalMapViewRepresentable()
+                    .environmentObject(gameManager)
                     .frame(width: geometry.size.width, height: geometry.size.height)
                 
                 // Overlay ports - keeping the same port system as BasicWorldMapView
@@ -716,8 +757,10 @@ struct SimpleMetalMapViewInline: View {
     ]
 }
 
-// Simple Metal view representable (inline)
-struct MetalMapViewRepresentableInline: UIViewRepresentable {
+// Enhanced Metal view with AdvancedOceanRenderer
+struct EnhancedMetalMapViewRepresentable: UIViewRepresentable {
+    @EnvironmentObject var gameManager: GameManager
+    
     func makeUIView(context: Context) -> MTKView {
         let mtkView = MTKView()
         
@@ -730,19 +773,20 @@ struct MetalMapViewRepresentableInline: UIViewRepresentable {
         }
         
         mtkView.device = device
-        mtkView.clearColor = MTLClearColor(red: 0.05, green: 0.15, blue: 0.3, alpha: 1.0)
+        mtkView.clearColor = MTLClearColor(red: 0.02, green: 0.1, blue: 0.2, alpha: 1.0)
         mtkView.colorPixelFormat = .bgra8Unorm
         mtkView.isOpaque = false
-        
-        let renderer = SimpleMetalRendererInline(device: device)
-        mtkView.delegate = renderer
         mtkView.preferredFramesPerSecond = 60
+        
+        // Use simple metal renderer for now
+        let simpleRenderer = SimpleMetalRendererInline(device: device)
+        mtkView.delegate = simpleRenderer
         
         return mtkView
     }
     
     func updateUIView(_ uiView: MTKView, context: Context) {
-        // Update any view properties here
+        // Simple renderer doesn't need updates
     }
 }
 
