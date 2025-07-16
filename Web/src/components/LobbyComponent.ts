@@ -546,7 +546,6 @@ export class LobbyComponent {
   private async createRoom(): Promise<void> {
     const modal = this.element.querySelector('.create-room-modal') as HTMLElement;
     const nameInput = modal.querySelector('.room-name-input') as HTMLInputElement;
-    const maxPlayersSelect = modal.querySelector('.max-players-select') as HTMLSelectElement;
     const privateCheckbox = modal.querySelector('.private-room-checkbox') as HTMLInputElement;
 
     if (!nameInput.value.trim()) {

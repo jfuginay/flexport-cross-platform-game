@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { GameState, GameConfig, Vector2 } from '@/types';
+import { GameState, GameConfig } from '@/types';
 import { EconomicSystem } from '@/systems/EconomicSystem';
 import { ShipSystem } from '@/systems/ShipSystem';
 import { AISystem } from '@/systems/AISystem';
@@ -10,6 +10,7 @@ import { UISystem } from '@/systems/UISystem';
 import { MultiplayerSystem } from '@/systems/MultiplayerSystem';
 import { GameStateStore } from '@/core/GameStateStore';
 import { LobbyComponent } from '@/components/LobbyComponent';
+import { StateSynchronization } from '@/networking/StateSynchronization';
 
 export class GameEngine {
   private app!: PIXI.Application;
@@ -22,6 +23,7 @@ export class GameEngine {
   private initializationPromise: Promise<void>;
   private lobbyComponent: LobbyComponent | null = null;
   private isMultiplayerMode = false;
+  private stateSynchronization: StateSynchronization | null = null;
 
   constructor(canvas: HTMLElement, config: GameConfig) {
     this.config = config;
@@ -98,7 +100,7 @@ export class GameEngine {
     if (!multiplayerSystem) return;
 
     // Handle game start from multiplayer
-    multiplayerSystem.on('game_started', ({ gameState, playerAssignments }) => {
+    multiplayerSystem.on('game_started', ({ gameState, playerAssignments }: any) => {
       console.log('Multiplayer game started!');
       this.isMultiplayerMode = true;
       
@@ -116,16 +118,19 @@ export class GameEngine {
         this.gameState.player.id = playerAssignments[playerId];
       }
       
+      // Initialize state synchronization for multiplayer
+      this.initializeStateSynchronization(multiplayerSystem);
+      
       this.resume();
     });
 
     // Handle multiplayer game actions
-    multiplayerSystem.on('game_action_received', ({ action, data, playerId }) => {
+    multiplayerSystem.on('game_action_received', ({ action, data, playerId }: any) => {
       this.handleMultiplayerAction(action, data, playerId);
     });
 
     // Handle connection changes
-    multiplayerSystem.on('connection_changed', ({ connected }) => {
+    multiplayerSystem.on('connection_changed', ({ connected }: any) => {
       if (!connected && this.isMultiplayerMode) {
         console.warn('Lost connection during multiplayer game');
         // Could show reconnection UI here
@@ -133,11 +138,32 @@ export class GameEngine {
     });
   }
 
-  private handleMultiplayerAction(action: string, data: any, playerId: string): void {
+  private initializeStateSynchronization(multiplayerSystem: any): void {
+    if (!multiplayerSystem.wsManager) return;
+    
+    // Create state synchronization instance
+    this.stateSynchronization = new StateSynchronization(multiplayerSystem.wsManager);
+    
+    // Register local ships
+    this.stateSynchronization.registerLocalShips(this.gameState.player.ships);
+    
+    // Handle ship updates from network
+    this.stateSynchronization.onShipUpdate((playerShips) => {
+      const renderSystem = this.systems.get('render') as RenderSystem;
+      if (renderSystem) {
+        renderSystem.updatePlayerShips(playerShips);
+      }
+    });
+    
+    // Start synchronization
+    this.stateSynchronization.start();
+  }
+
+  private handleMultiplayerAction(action: string, data: any, _playerId: string): void {
     // Handle different types of multiplayer actions
     switch (action) {
       case 'ship_move':
-        // Handle ship movement from other players
+        // Ship movement is now handled by StateSynchronization
         break;
       case 'trade_order':
         // Handle trade orders from other players
@@ -238,6 +264,17 @@ export class GameEngine {
     this.systems.get('ui')?.update(deltaTime);
     this.systems.get('multiplayer')?.update(deltaTime);
 
+    // Update state synchronization if in multiplayer mode
+    if (this.isMultiplayerMode && this.stateSynchronization) {
+      // Update local ship positions in state sync
+      this.stateSynchronization.registerLocalShips(this.gameState.player.ships);
+      
+      // Notify state sync of any ship updates
+      this.gameState.player.ships.forEach(ship => {
+        this.stateSynchronization.updateLocalShip(ship);
+      });
+    }
+
     GameStateStore.updateState(this.gameState);
   }
 
@@ -312,7 +349,7 @@ export class GameEngine {
       // Initialize multiplayer system if not connected
       const multiplayerSystem = this.systems.get('multiplayer');
       if (multiplayerSystem && !multiplayerSystem.getMultiplayerState().isConnected) {
-        multiplayerSystem.initialize().then((connected) => {
+        multiplayerSystem.initialize().then((connected: any) => {
           if (connected) {
             this.lobbyComponent!.show();
           } else {

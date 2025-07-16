@@ -16,8 +16,8 @@ export class WebSocketManager {
   private eventCallbacks: Map<MessageType, WebSocketEventCallback[]> = new Map();
   private connectionCallbacks: Set<(connected: boolean) => void> = new Set();
   private isConnecting = false;
-  private reconnectTimer: number | null = null;
-  private heartbeatTimer: number | null = null;
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private reconnectDelay = 1000; // Start with 1 second
@@ -80,7 +80,7 @@ export class WebSocketManager {
           return;
         }
 
-        const timeout = setTimeout(() => {
+        const timeout: ReturnType<typeof setTimeout> = setTimeout(() => {
           this.ws?.close();
           resolve(false);
         }, 10000); // 10 second timeout
@@ -285,7 +285,7 @@ export class WebSocketManager {
     
     console.log(`Scheduling reconnect attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts} in ${delay}ms`);
     
-    this.reconnectTimer = window.setTimeout(() => {
+    this.reconnectTimer = setTimeout(() => {
       this.connect().catch(error => {
         console.error('Reconnect failed:', error);
       });

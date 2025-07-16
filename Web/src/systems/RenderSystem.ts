@@ -9,6 +9,8 @@ export class RenderSystem {
   private shipSprites: Map<string, PIXI.Sprite> = new Map();
   private tradeRouteGraphics: PIXI.Graphics = new PIXI.Graphics();
   private wakeParticles: Map<string, PIXI.ParticleContainer> = new Map();
+  private playerShips: Map<string, Ship[]> = new Map(); // playerId -> ships
+  private playerColors: Map<string, number> = new Map(); // playerId -> color
 
   constructor(app: PIXI.Application, gameState: GameState) {
     this.app = app;
@@ -39,28 +41,66 @@ export class RenderSystem {
     this.renderEffects();
   }
 
+  public updatePlayerShips(playerShips: Map<string, Ship[]>): void {
+    this.playerShips = playerShips;
+    this.assignPlayerColors();
+  }
+
+  private assignPlayerColors(): void {
+    const colors = [0x3b82f6, 0xef4444, 0x10b981, 0xf59e0b, 0x8b5cf6, 0x06b6d4, 0xf97316, 0x84cc16];
+    let colorIndex = 0;
+    
+    this.playerShips.forEach((ships, playerId) => {
+      if (!this.playerColors.has(playerId)) {
+        this.playerColors.set(playerId, colors[colorIndex % colors.length]);
+        colorIndex++;
+      }
+    });
+  }
+
   private renderShips(): void {
-    // Remove ships that no longer exist
-    const currentShipIds = new Set(this.gameState.player.ships.map(ship => ship.id));
+    // Collect all current ship IDs
+    const currentShipIds = new Set<string>();
+    
+    // Render all players' ships
+    this.playerShips.forEach((ships, playerId) => {
+      ships.forEach(ship => {
+        currentShipIds.add(ship.id);
+        this.updateShipSprite(ship, playerId);
+      });
+    });
+
+    // Also render local player ships if not in playerShips
+    this.gameState.player.ships.forEach(ship => {
+      if (!currentShipIds.has(ship.id)) {
+        currentShipIds.add(ship.id);
+        this.updateShipSprite(ship, this.gameState.player.id);
+      }
+    });
+
+    // Remove sprites for ships that no longer exist
     this.shipSprites.forEach((sprite, shipId) => {
       if (!currentShipIds.has(shipId)) {
         this.shipContainer.removeChild(sprite);
         sprite.destroy();
         this.shipSprites.delete(shipId);
+        
+        // Clean up wake particles
+        const wakeContainer = this.wakeParticles.get(shipId);
+        if (wakeContainer) {
+          this.effectsContainer.removeChild(wakeContainer);
+          wakeContainer.destroy({ children: true });
+          this.wakeParticles.delete(shipId);
+        }
       }
-    });
-
-    // Update or create ship sprites
-    this.gameState.player.ships.forEach(ship => {
-      this.updateShipSprite(ship);
     });
   }
 
-  private updateShipSprite(ship: Ship): void {
+  private updateShipSprite(ship: Ship, playerId?: string): void {
     let shipSprite = this.shipSprites.get(ship.id);
 
     if (!shipSprite) {
-      shipSprite = this.createShipSprite(ship);
+      shipSprite = this.createShipSprite(ship, playerId);
       this.shipSprites.set(ship.id, shipSprite);
       this.shipContainer.addChild(shipSprite);
       this.createWakeEffect(ship);
@@ -74,7 +114,7 @@ export class RenderSystem {
     this.updateShipRotation(shipSprite, ship);
 
     // Update appearance based on status
-    this.updateShipAppearance(shipSprite, ship);
+    this.updateShipAppearance(shipSprite, ship, playerId);
     
     // Update wake effects
     this.updateWakeEffect(ship);
@@ -229,7 +269,7 @@ export class RenderSystem {
     }
   }
 
-  private createShipSprite(ship: Ship): PIXI.Sprite {
+  private createShipSprite(ship: Ship, playerId?: string): PIXI.Sprite {
     // Create ship sprite with fallback graphics
     let shipSprite: PIXI.Sprite;
 
@@ -248,7 +288,10 @@ export class RenderSystem {
     // Set ship properties
     shipSprite.anchor.set(0.5);
     shipSprite.scale.set(this.getShipScale(ship.type));
-    shipSprite.tint = this.getShipColor(ship.type);
+    
+    // Use player color if available, otherwise default ship color
+    const color = playerId ? this.playerColors.get(playerId) : null;
+    shipSprite.tint = color || this.getShipColor(ship.type);
 
     // Add interactivity
     shipSprite.eventMode = 'static';
@@ -256,7 +299,7 @@ export class RenderSystem {
 
     shipSprite.on('pointerover', () => {
       shipSprite.scale.set(shipSprite.scale.x * 1.2);
-      this.showShipTooltip(ship);
+      this.showShipTooltip(ship, playerId);
     });
 
     shipSprite.on('pointerout', () => {
@@ -268,8 +311,9 @@ export class RenderSystem {
       this.selectShip(ship);
     });
 
-    // Store ship reference
+    // Store ship reference and player ID
     (shipSprite as any).shipData = ship;
+    (shipSprite as any).playerId = playerId;
 
     return shipSprite;
   }
@@ -336,12 +380,17 @@ export class RenderSystem {
     return colors[shipType as keyof typeof colors] || 0x6b7280;
   }
 
-  private updateShipAppearance(sprite: PIXI.Sprite, ship: Ship): void {
+  private updateShipAppearance(sprite: PIXI.Sprite, ship: Ship, playerId?: string): void {
+    // Get base color from player or ship type
+    const baseColor = playerId ? 
+      (this.playerColors.get(playerId) || this.getShipColor(ship.type)) : 
+      this.getShipColor(ship.type);
+    
     // Update tint based on status
     switch (ship.status) {
       case 'traveling':
         sprite.alpha = 1.0;
-        sprite.tint = this.getShipColor(ship.type);
+        sprite.tint = baseColor;
         break;
       case 'docked':
         sprite.alpha = 0.8;
@@ -354,7 +403,7 @@ export class RenderSystem {
         break;
       default:
         sprite.alpha = 1.0;
-        sprite.tint = this.getShipColor(ship.type);
+        sprite.tint = baseColor;
     }
 
     // Add pulsing effect for active ships
@@ -503,9 +552,10 @@ export class RenderSystem {
     }, 5000);
   }
 
-  private showShipTooltip(ship: Ship): void {
+  private showShipTooltip(ship: Ship, playerId?: string): void {
     // Create tooltip (would be more sophisticated in real implementation)
-    console.log(`Ship: ${ship.name} | Type: ${ship.type} | Status: ${ship.status}`);
+    const playerInfo = playerId ? `Player: ${playerId.substring(0, 8)} | ` : '';
+    console.log(`${playerInfo}Ship: ${ship.name} | Type: ${ship.type} | Status: ${ship.status}`);
   }
 
   private hideShipTooltip(): void {

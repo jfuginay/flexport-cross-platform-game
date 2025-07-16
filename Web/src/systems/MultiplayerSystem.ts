@@ -238,7 +238,7 @@ export class MultiplayerSystem {
     }
   }
 
-  public update(deltaTime: number): void {
+  public update(_deltaTime: number): void {
     // Sync game state periodically if we're the host
     if (this.isHost && this.multiplayerState.currentRoom?.status === 'in_progress') {
       const now = Date.now();
