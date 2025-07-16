@@ -5,59 +5,28 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Map
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Stop
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.*
+import androidx.compose.foundation.clickable
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.flexport.game.ecs.GameEngine
-import com.flexport.game.ecs.GameStats
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
 
 @Composable
 fun GameScreen(
     onNavigateBack: () -> Unit,
+    onNavigateToWorldMap: () -> Unit = {},
+    onNavigateToAISingularity: () -> Unit = {},
+    onNavigateToEconomicDashboard: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    // ECS Game Engine State
-    val gameEngine = remember { GameEngine() }
-    var gameStats by remember { mutableStateOf(GameStats()) }
-    var isEngineRunning by remember { mutableStateOf(false) }
-    var isInitialized by remember { mutableStateOf(false) }
-    
-    // Initialize the game engine
-    LaunchedEffect(Unit) {
-        gameEngine.initialize()
-        isInitialized = true
-    }
-    
-    // Update game stats periodically
-    LaunchedEffect(isEngineRunning) {
-        while (isEngineRunning) {
-            gameStats = gameEngine.getGameStats()
-            delay(1000) // Update every second
-        }
-    }
-    
-    // Handle disposal
-    DisposableEffect(Unit) {
-        onDispose {
-            runBlocking {
-                gameEngine.dispose()
-            }
-        }
-    }
-    
     Surface(
         modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colors.background
@@ -69,7 +38,7 @@ fun GameScreen(
             TopAppBar(
                 title = { 
                     Text(
-                        text = "FlexPort ECS Engine",
+                        text = "FlexPort World",
                         style = MaterialTheme.typography.h6.copy(
                             fontWeight = FontWeight.Medium
                         )
@@ -80,26 +49,6 @@ fun GameScreen(
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Back to Main Menu"
-                        )
-                    }
-                },
-                actions = {
-                    // Engine control button
-                    IconButton(
-                        onClick = {
-                            if (isEngineRunning) {
-                                gameEngine.stop()
-                                isEngineRunning = false
-                            } else {
-                                gameEngine.start()
-                                isEngineRunning = true
-                            }
-                        },
-                        enabled = isInitialized
-                    ) {
-                        Icon(
-                            imageVector = if (isEngineRunning) Icons.Default.Stop else Icons.Default.PlayArrow,
-                            contentDescription = if (isEngineRunning) "Stop Engine" else "Start Engine"
                         )
                     }
                 },
@@ -126,184 +75,161 @@ fun GameScreen(
                         .fillMaxSize()
                         .padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    verticalArrangement = Arrangement.Center
                 ) {
-                    // Engine Status Card
+                    // Game World Icon
                     Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        elevation = 4.dp,
-                        shape = RoundedCornerShape(12.dp),
-                        backgroundColor = if (isEngineRunning) 
-                            MaterialTheme.colors.primary.copy(alpha = 0.1f) 
-                        else 
-                            MaterialTheme.colors.surface
+                        modifier = Modifier.size(120.dp),
+                        shape = RoundedCornerShape(60.dp),
+                        elevation = 8.dp,
+                        backgroundColor = MaterialTheme.colors.primary.copy(alpha = 0.1f)
                     ) {
-                        Column(
-                            modifier = Modifier.padding(20.dp)
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = "ECS Engine Status",
-                                    style = MaterialTheme.typography.h6.copy(
-                                        fontWeight = FontWeight.Medium
-                                    ),
-                                    color = MaterialTheme.colors.primary
-                                )
-                                
-                                Box(
-                                    modifier = Modifier
-                                        .size(12.dp)
-                                        .background(
-                                            color = if (isEngineRunning) Color.Green else Color.Gray,
-                                            shape = RoundedCornerShape(6.dp)
-                                        )
-                                )
-                            }
-                            
-                            Spacer(modifier = Modifier.height(8.dp))
-                            
-                            Text(
-                                text = if (isEngineRunning) "Engine is running and processing entities" else "Engine is stopped",
-                                style = MaterialTheme.typography.body2,
-                                color = MaterialTheme.colors.onSurface.copy(alpha = 0.7f)
+                            Icon(
+                                imageVector = Icons.Default.Map,
+                                contentDescription = null,
+                                modifier = Modifier.size(64.dp),
+                                tint = MaterialTheme.colors.primary
                             )
                         }
                     }
                     
-                    // Game Statistics
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        elevation = 4.dp,
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(20.dp)
-                        ) {
-                            Text(
-                                text = "Live Game Statistics",
-                                style = MaterialTheme.typography.h6.copy(
-                                    fontWeight = FontWeight.Medium
-                                ),
-                                color = MaterialTheme.colors.primary
-                            )
-                            
-                            Spacer(modifier = Modifier.height(12.dp))
-                            
-                            val stats = listOf(
-                                "Total Entities" to "${gameStats.totalEntities}",
-                                "Moving Entities" to "${gameStats.movingEntities}",
-                                "Economic Entities" to "${gameStats.economicEntities}",
-                                "Systems Active" to if (gameStats.systemsActive) "Yes" else "No"
-                            )
-                            
-                            stats.forEach { (label, value) ->
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Text(
-                                        text = label,
-                                        style = MaterialTheme.typography.body2,
-                                        color = MaterialTheme.colors.onSurface.copy(alpha = 0.8f)
-                                    )
-                                    Text(
-                                        text = value,
-                                        style = MaterialTheme.typography.body2.copy(
-                                            fontWeight = FontWeight.Medium
-                                        ),
-                                        color = MaterialTheme.colors.onSurface
-                                    )
-                                }
-                                Spacer(modifier = Modifier.height(4.dp))
-                            }
-                        }
-                    }
+                    Spacer(modifier = Modifier.height(32.dp))
                     
-                    // Test Entities Information
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        elevation = 4.dp,
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(20.dp)
-                        ) {
-                            Text(
-                                text = "Test Entities Created",
-                                style = MaterialTheme.typography.h6.copy(
-                                    fontWeight = FontWeight.Medium
-                                ),
-                                color = MaterialTheme.colors.primary
-                            )
-                            
-                            Spacer(modifier = Modifier.height(12.dp))
-                            
-                            val entities = listOf(
-                                "Test Cargo Ship - Moving with velocity and economic components",
-                                "Test Port - Static with economic income generation",
-                                "Moving Entity - Demonstrates movement system with rotation"
-                            )
-                            
-                            entities.forEach { entity ->
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    verticalAlignment = Alignment.Top
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(6.dp)
-                                            .background(
-                                                color = MaterialTheme.colors.primary.copy(alpha = 0.6f),
-                                                shape = RoundedCornerShape(3.dp)
-                                            )
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        text = entity,
-                                        style = MaterialTheme.typography.body2,
-                                        color = MaterialTheme.colors.onSurface.copy(alpha = 0.8f)
-                                    )
-                                }
-                                if (entity != entities.last()) {
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                }
-                            }
-                        }
-                    }
+                    // Welcome Message
+                    Text(
+                        text = "Welcome to Your Empire!",
+                        style = MaterialTheme.typography.h4.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 28.sp
+                        ),
+                        color = MaterialTheme.colors.onBackground,
+                        textAlign = TextAlign.Center
+                    )
                     
-                    // Instructions
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        elevation = 2.dp,
-                        shape = RoundedCornerShape(8.dp),
-                        backgroundColor = MaterialTheme.colors.secondary.copy(alpha = 0.1f)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    Text(
+                        text = "Your logistics empire starts here. The game is ready for cross-platform multiplayer with iOS!",
+                        style = MaterialTheme.typography.body1.copy(
+                            fontSize = 16.sp
+                        ),
+                        color = MaterialTheme.colors.onBackground.copy(alpha = 0.7f),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+                    
+                    Spacer(modifier = Modifier.height(40.dp))
+                    
+                    // Game Sections Navigation
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp)
-                        ) {
-                            Text(
-                                text = "Instructions",
-                                style = MaterialTheme.typography.subtitle1.copy(
-                                    fontWeight = FontWeight.Medium
-                                ),
-                                color = MaterialTheme.colors.secondary
-                            )
-                            
-                            Spacer(modifier = Modifier.height(8.dp))
-                            
-                            Text(
-                                text = "Click the play/stop button in the top bar to start/stop the ECS engine. Watch the statistics update in real-time as the systems process entities.",
-                                style = MaterialTheme.typography.body2,
-                                color = MaterialTheme.colors.onSurface.copy(alpha = 0.7f)
-                            )
-                        }
+                        // World Map
+                        GameSectionCard(
+                            title = "World Map",
+                            description = "Explore ports, create trade routes, and manage your shipping empire",
+                            icon = Icons.Default.Map,
+                            onClick = { onNavigateToWorldMap() }
+                        )
+                        
+                        // Economic Dashboard
+                        GameSectionCard(
+                            title = "Economic Dashboard", 
+                            description = "Monitor markets, track finances, and analyze economic trends",
+                            icon = Icons.Default.TrendingUp,
+                            onClick = { onNavigateToEconomicDashboard() }
+                        )
+                        
+                        // AI Singularity Monitor
+                        GameSectionCard(
+                            title = "AI Singularity Monitor",
+                            description = "Track AI progression, competitive threats, and the approaching singularity",
+                            icon = Icons.Default.Psychology,
+                            onClick = { onNavigateToAISingularity() }
+                        )
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun GameSectionCard(
+    title: String,
+    description: String,
+    icon: ImageVector,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        elevation = 4.dp,
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(20.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Icon
+            Card(
+                modifier = Modifier.size(56.dp),
+                shape = RoundedCornerShape(28.dp),
+                elevation = 2.dp,
+                backgroundColor = MaterialTheme.colors.primary.copy(alpha = 0.1f)
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        modifier = Modifier.size(28.dp),
+                        tint = MaterialTheme.colors.primary
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.width(16.dp))
+            
+            // Content
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.h6.copy(
+                        fontWeight = FontWeight.SemiBold
+                    ),
+                    color = MaterialTheme.colors.onSurface
+                )
+                
+                Spacer(modifier = Modifier.height(4.dp))
+                
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.body2,
+                    color = MaterialTheme.colors.onSurface.copy(alpha = 0.7f)
+                )
+            }
+            
+            // Arrow
+            Icon(
+                imageVector = Icons.Default.ArrowForward,
+                contentDescription = null,
+                tint = MaterialTheme.colors.primary,
+                modifier = Modifier.size(20.dp)
+            )
         }
     }
 }

@@ -226,7 +226,9 @@ class WebSocketHandler private constructor() {
     }
     
     fun cleanup() {
+        runBlocking {
+            disconnect()
+        }
         scope.cancel()
-        disconnect()
     }
 }

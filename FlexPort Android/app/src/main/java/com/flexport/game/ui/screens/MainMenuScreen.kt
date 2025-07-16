@@ -7,6 +7,10 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Assessment
+import androidx.compose.material.icons.filled.DirectionsBoat
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -22,6 +26,9 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun MainMenuScreen(
     onStartGame: () -> Unit,
+    onStartMultiplayer: () -> Unit = {},
+    onEconomicDashboard: () -> Unit = {},
+    onAssetManagement: () -> Unit = {},
     onSettings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -93,7 +100,7 @@ fun MainMenuScreen(
             
             Spacer(modifier = Modifier.height(48.dp))
             
-            // Start Game Button
+            // Single Player Button
             Button(
                 onClick = onStartGame,
                 modifier = Modifier
@@ -106,13 +113,94 @@ fun MainMenuScreen(
                 shape = RoundedCornerShape(28.dp)
             ) {
                 Icon(
-                    imageVector = Icons.Default.PlayArrow,
+                    imageVector = Icons.Default.Person,
                     contentDescription = null,
                     modifier = Modifier.size(24.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Start Game",
+                    text = "Single Player",
+                    style = MaterialTheme.typography.h6,
+                    color = Color.White
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Multiplayer Button
+            Button(
+                onClick = onStartMultiplayer,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .padding(horizontal = 32.dp),
+                colors = ButtonDefaults.buttonColors(
+                    backgroundColor = MaterialTheme.colors.secondary
+                ),
+                shape = RoundedCornerShape(28.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Group,
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Multiplayer",
+                    style = MaterialTheme.typography.h6,
+                    color = Color.White
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Economic Dashboard Button
+            Button(
+                onClick = onEconomicDashboard,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .padding(horizontal = 32.dp),
+                colors = ButtonDefaults.buttonColors(
+                    backgroundColor = MaterialTheme.colors.secondary
+                ),
+                shape = RoundedCornerShape(28.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Assessment,
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Economic Dashboard",
+                    style = MaterialTheme.typography.h6,
+                    color = Color.White
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // Asset Management Button
+            Button(
+                onClick = onAssetManagement,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .padding(horizontal = 32.dp),
+                colors = ButtonDefaults.buttonColors(
+                    backgroundColor = MaterialTheme.colors.secondary
+                ),
+                shape = RoundedCornerShape(28.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.DirectionsBoat,
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Asset Management",
                     style = MaterialTheme.typography.h6,
                     color = Color.White
                 )
@@ -153,6 +241,9 @@ fun MainMenuScreenPreview() {
     MaterialTheme {
         MainMenuScreen(
             onStartGame = {},
+            onStartMultiplayer = {},
+            onEconomicDashboard = {},
+            onAssetManagement = {},
             onSettings = {}
         )
     }

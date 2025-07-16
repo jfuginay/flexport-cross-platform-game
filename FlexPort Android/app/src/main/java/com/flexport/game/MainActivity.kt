@@ -14,6 +14,9 @@ import androidx.navigation.compose.rememberNavController
 import com.flexport.game.navigation.FlexPortDestinations
 import com.flexport.game.ui.screens.GameScreen
 import com.flexport.game.ui.screens.MainMenuScreen
+import com.flexport.game.ui.screens.MultiplayerLobbyScreen
+import com.flexport.game.ui.screens.EconomicDashboardScreen
+import com.flexport.assets.ui.AssetManagementScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -40,8 +43,28 @@ fun FlexPortApp() {
                 onStartGame = {
                     navController.navigate(FlexPortDestinations.GAME_WORLD_ROUTE)
                 },
+                onStartMultiplayer = {
+                    navController.navigate(FlexPortDestinations.MULTIPLAYER_LOBBY_ROUTE)
+                },
+                onEconomicDashboard = {
+                    navController.navigate(FlexPortDestinations.ECONOMIC_DASHBOARD_ROUTE)
+                },
+                onAssetManagement = {
+                    navController.navigate(FlexPortDestinations.ASSET_MANAGEMENT_ROUTE)
+                },
                 onSettings = {
                     // Settings navigation will be implemented later
+                }
+            )
+        }
+        
+        composable(FlexPortDestinations.MULTIPLAYER_LOBBY_ROUTE) {
+            MultiplayerLobbyScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
+                onJoinGame = { _ ->
+                    navController.navigate(FlexPortDestinations.GAME_WORLD_ROUTE)
                 }
             )
         }
@@ -53,6 +76,14 @@ fun FlexPortApp() {
                 }
             )
         }
+        
+        composable(FlexPortDestinations.ECONOMIC_DASHBOARD_ROUTE) {
+            EconomicDashboardScreen()
+        }
+        
+        composable(FlexPortDestinations.ASSET_MANAGEMENT_ROUTE) {
+            AssetManagementScreen()
+        }
     }
 }
 
@@ -62,6 +93,9 @@ fun DefaultPreview() {
     MaterialTheme {
         MainMenuScreen(
             onStartGame = {},
+            onStartMultiplayer = {},
+            onEconomicDashboard = {},
+            onAssetManagement = {},
             onSettings = {}
         )
     }

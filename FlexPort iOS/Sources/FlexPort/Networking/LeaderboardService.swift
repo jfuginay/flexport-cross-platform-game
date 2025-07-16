@@ -1,7 +1,7 @@
 import Foundation
 import Combine
 
-/// Manages leaderboards and player statistics
+/// Enhanced leaderboard service with advanced filtering and social features
 class LeaderboardService: ObservableObject {
     static let shared = LeaderboardService()
     
@@ -9,14 +9,25 @@ class LeaderboardService: ObservableObject {
     @Published private(set) var playerRank: Int?
     @Published private(set) var playerStats: PlayerStats?
     @Published private(set) var isLoading: Bool = false
+    @Published private(set) var socialLeaderboards: [SocialLeaderboard] = []
+    @Published private(set) var customFilters: [LeaderboardFilter] = []
+    @Published private(set) var followedPlayers: [String] = []
+    @Published private(set) var leaderboardNotifications: [LeaderboardNotification] = []
     
     private let apiClient = APIClient.shared
+    private let securityManager = SecurityManager.shared
     private var refreshTimer: Timer?
     private var cancellables = Set<AnyCancellable>()
     
-    // Cache management
+    // Enhanced cache management with filtering
     private var leaderboardCache: [String: (data: LeaderboardResponse, timestamp: Date)] = [:]
+    private var filteredLeaderboards: [String: FilteredLeaderboard] = [:]
     private let cacheTimeout: TimeInterval = 300 // 5 minutes
+    
+    // Social features
+    private var friendsManager = FriendsManager()
+    private var rivalryTracker = RivalryTracker()
+    private var achievementTracker = AchievementTracker()
     
     private init() {
         startPeriodicRefresh()
@@ -331,5 +342,682 @@ enum Achievement: String, CaseIterable {
         case .speedRunner:
             return "timer"
         }
+    }
+}
+
+// MARK: - Enhanced Leaderboard Features
+
+extension LeaderboardService {
+    
+    /// Load leaderboard with advanced filtering
+    func loadFilteredLeaderboard(filter: LeaderboardFilter) async {
+        let filterId = filter.id
+        
+        await MainActor.run {
+            self.isLoading = true
+        }
+        
+        do {
+            let response = try await apiClient.getFilteredLeaderboard(filter: filter)
+            
+            let filteredLeaderboard = FilteredLeaderboard(
+                filter: filter,
+                entries: response.entries,
+                metadata: response.metadata,
+                lastUpdated: Date()
+            )
+            
+            await MainActor.run {
+                self.filteredLeaderboards[filterId] = filteredLeaderboard
+                self.isLoading = false
+            }
+            
+        } catch {
+            await MainActor.run {
+                self.isLoading = false
+            }
+            print("Failed to load filtered leaderboard: \(error)")
+        }
+    }
+    
+    /// Create custom leaderboard filter
+    func createCustomFilter(name: String, criteria: FilterCriteria) async throws -> LeaderboardFilter {
+        let filter = LeaderboardFilter(
+            id: UUID().uuidString,
+            name: name,
+            criteria: criteria,
+            isCustom: true,
+            createdBy: getCurrentPlayerId(),
+            createdAt: Date()
+        )
+        
+        try await apiClient.saveCustomFilter(filter: filter)
+        
+        await MainActor.run {
+            self.customFilters.append(filter)
+        }
+        
+        return filter
+    }
+    
+    /// Load social leaderboards (friends, rivals, alliance members)
+    func loadSocialLeaderboards() async {
+        do {
+            let socialBoards = try await apiClient.getSocialLeaderboards(playerId: getCurrentPlayerId())
+            
+            await MainActor.run {
+                self.socialLeaderboards = socialBoards
+            }
+            
+        } catch {
+            print("Failed to load social leaderboards: \(error)")
+        }
+    }
+    
+    /// Follow a player for leaderboard notifications
+    func followPlayer(_ playerId: String) async throws {
+        guard !followedPlayers.contains(playerId) else { return }
+        
+        try await apiClient.followPlayer(followerId: getCurrentPlayerId(), followeeId: playerId)
+        
+        await MainActor.run {
+            self.followedPlayers.append(playerId)
+        }
+        
+        // Start tracking this player's progress
+        await trackPlayerProgress(playerId)
+    }
+    
+    /// Unfollow a player
+    func unfollowPlayer(_ playerId: String) async throws {
+        try await apiClient.unfollowPlayer(followerId: getCurrentPlayerId(), followeeId: playerId)
+        
+        await MainActor.run {
+            self.followedPlayers.removeAll { $0 == playerId }
+        }
+    }
+    
+    /// Get comprehensive player comparison
+    func getPlayerComparison(targetPlayerId: String, metrics: [ComparisonMetric]) async -> PlayerComparison? {
+        do {
+            let currentPlayerId = getCurrentPlayerId()
+            let comparison = try await apiClient.getPlayerComparison(
+                player1: currentPlayerId,
+                player2: targetPlayerId,
+                metrics: metrics
+            )
+            
+            return comparison
+            
+        } catch {
+            print("Failed to get player comparison: \(error)")
+            return nil
+        }
+    }
+    
+    /// Search leaderboards with advanced criteria
+    func searchLeaderboards(query: LeaderboardSearchQuery) async -> [LeaderboardEntry] {
+        do {
+            let results = try await apiClient.searchLeaderboards(query: query)
+            return results.entries
+            
+        } catch {
+            print("Failed to search leaderboards: \(error)")
+            return []
+        }
+    }
+    
+    /// Get historical leaderboard data
+    func getLeaderboardHistory(type: LeaderboardType, playerId: String? = nil, timeRange: TimeRange) async -> LeaderboardHistory? {
+        do {
+            let targetPlayerId = playerId ?? getCurrentPlayerId()
+            let history = try await apiClient.getLeaderboardHistory(
+                type: type,
+                playerId: targetPlayerId,
+                timeRange: timeRange
+            )
+            
+            return history
+            
+        } catch {
+            print("Failed to get leaderboard history: \(error)")
+            return nil
+        }
+    }
+    
+    /// Set up leaderboard alerts
+    func setupLeaderboardAlert(alert: LeaderboardAlert) async throws {
+        try await apiClient.createLeaderboardAlert(alert: alert)
+        
+        // Monitor alert conditions locally
+        await monitorAlertCondition(alert)
+    }
+    
+    /// Get leaderboard insights and analytics
+    func getLeaderboardInsights(timeframe: Timeframe) async -> LeaderboardInsights? {
+        do {
+            let insights = try await apiClient.getLeaderboardInsights(
+                playerId: getCurrentPlayerId(),
+                timeframe: timeframe
+            )
+            
+            return insights
+            
+        } catch {
+            print("Failed to get leaderboard insights: \(error)")
+            return nil
+        }
+    }
+    
+    /// Get predicted rank based on current performance
+    func getPredictedRank(type: LeaderboardType, timeframe: Timeframe) async -> RankPrediction? {
+        do {
+            let prediction = try await apiClient.getPredictedRank(
+                playerId: getCurrentPlayerId(),
+                type: type,
+                timeframe: timeframe
+            )
+            
+            return prediction
+            
+        } catch {
+            print("Failed to get rank prediction: \(error)")
+            return nil
+        }
+    }
+    
+    // MARK: - Social Features
+    
+    private func trackPlayerProgress(_ playerId: String) async {
+        // Set up monitoring for followed player's rank changes
+        try? await apiClient.subscribeToPlayerUpdates(
+            followerId: getCurrentPlayerId(),
+            followeeId: playerId
+        )
+    }
+    
+    private func monitorAlertCondition(_ alert: LeaderboardAlert) async {
+        // Implement alert monitoring logic
+        Timer.scheduledTimer(withTimeInterval: alert.checkFrequency, repeats: true) { _ in
+            Task {
+                await self.checkAlertCondition(alert)
+            }
+        }
+    }
+    
+    private func checkAlertCondition(_ alert: LeaderboardAlert) async {
+        do {
+            let currentRank = await getPlayerRank(for: alert.leaderboardType, timeframe: alert.timeframe)
+            
+            if let currentRank = currentRank, alert.shouldTrigger(currentRank: currentRank) {
+                let notification = LeaderboardNotification(
+                    id: UUID().uuidString,
+                    alertId: alert.id,
+                    playerId: getCurrentPlayerId(),
+                    message: alert.generateMessage(currentRank: currentRank),
+                    timestamp: Date(),
+                    type: alert.notificationType
+                )
+                
+                await MainActor.run {
+                    self.leaderboardNotifications.append(notification)
+                }
+                
+                // Send push notification if enabled
+                if alert.sendPushNotification {
+                    await sendPushNotification(notification)
+                }
+            }
+            
+        } catch {
+            print("Failed to check alert condition: \(error)")
+        }
+    }
+    
+    private func sendPushNotification(_ notification: LeaderboardNotification) async {
+        // Implement push notification sending
+        try? await apiClient.sendPushNotification(notification: notification)
+    }
+    
+    private func getCurrentPlayerId() -> String {
+        return UserDefaults.standard.string(forKey: "playerId") ?? "unknown"
+    }
+}
+
+// MARK: - Enhanced Leaderboard Models
+
+struct SocialLeaderboard: Codable, Identifiable {
+    let id: String
+    let name: String
+    let type: SocialLeaderboardType
+    let entries: [LeaderboardEntry]
+    let metadata: LeaderboardMetadata
+    let lastUpdated: Date
+}
+
+enum SocialLeaderboardType: String, Codable, CaseIterable {
+    case friends = "Friends"
+    case alliance = "Alliance"
+    case rivals = "Rivals"
+    case nearby = "Nearby Players"
+    case similar = "Similar Skill Level"
+}
+
+struct LeaderboardFilter: Codable, Identifiable {
+    let id: String
+    let name: String
+    let criteria: FilterCriteria
+    let isCustom: Bool
+    let createdBy: String
+    let createdAt: Date
+    var isActive: Bool = true
+}
+
+struct FilterCriteria: Codable {
+    let leaderboardType: LeaderboardType
+    let timeframe: Timeframe
+    let regionFilter: String?
+    let skillLevelRange: SkillLevelRange?
+    let gamesModeFilter: [GameMode]?
+    let achievementFilter: [Achievement]?
+    let minimumGamesPlayed: Int?
+    let excludeBannedPlayers: Bool
+    let includeOnlyVerified: Bool
+    
+    init(leaderboardType: LeaderboardType, timeframe: Timeframe) {
+        self.leaderboardType = leaderboardType
+        self.timeframe = timeframe
+        self.regionFilter = nil
+        self.skillLevelRange = nil
+        self.gamesModeFilter = nil
+        self.achievementFilter = nil
+        self.minimumGamesPlayed = nil
+        self.excludeBannedPlayers = true
+        self.includeOnlyVerified = false
+    }
+}
+
+struct SkillLevelRange: Codable {
+    let minimum: Int
+    let maximum: Int
+}
+
+struct FilteredLeaderboard: Codable {
+    let filter: LeaderboardFilter
+    let entries: [LeaderboardEntry]
+    let metadata: LeaderboardMetadata
+    let lastUpdated: Date
+}
+
+struct LeaderboardMetadata: Codable {
+    let totalPlayers: Int
+    let averageScore: Double
+    let medianScore: Double
+    let percentileBreakdowns: [Int: Double] // Percentile to score
+    let regionDistribution: [String: Int]
+    let lastUpdated: Date
+}
+
+struct PlayerComparison: Codable {
+    let player1: ComparisonPlayerData
+    let player2: ComparisonPlayerData
+    let metrics: [ComparisonResult]
+    let overallWinner: String?
+    let recommendations: [String]
+}
+
+struct ComparisonPlayerData: Codable {
+    let playerId: String
+    let playerName: String
+    let stats: PlayerStats
+    let achievements: [Achievement]
+    let currentRanks: [LeaderboardType: Int]
+}
+
+struct ComparisonResult: Codable {
+    let metric: ComparisonMetric
+    let player1Value: Double
+    let player2Value: Double
+    let winner: String?
+    let difference: Double
+    let percentageDifference: Double
+}
+
+enum ComparisonMetric: String, Codable, CaseIterable {
+    case totalWealth = "Total Wealth"
+    case averageEfficiency = "Average Efficiency"
+    case gamesWon = "Games Won"
+    case winRate = "Win Rate"
+    case averageGameDuration = "Average Game Duration"
+    case singularityProgress = "Singularity Progress"
+    case achievementCount = "Achievement Count"
+    case playtime = "Total Playtime"
+}
+
+struct LeaderboardSearchQuery: Codable {
+    let playerName: String?
+    let achievementFilter: [Achievement]?
+    let rankRange: RankRange?
+    let regionFilter: String?
+    let limit: Int
+    let offset: Int
+    
+    init(limit: Int = 50, offset: Int = 0) {
+        self.playerName = nil
+        self.achievementFilter = nil
+        self.rankRange = nil
+        self.regionFilter = nil
+        self.limit = limit
+        self.offset = offset
+    }
+}
+
+struct RankRange: Codable {
+    let minimum: Int
+    let maximum: Int
+}
+
+struct LeaderboardHistory: Codable {
+    let playerId: String
+    let leaderboardType: LeaderboardType
+    let dataPoints: [HistoricalDataPoint]
+    let timeRange: TimeRange
+    let trends: LeaderboardTrends
+}
+
+struct HistoricalDataPoint: Codable {
+    let timestamp: Date
+    let rank: Int
+    let score: Double
+    let percentile: Double
+}
+
+struct TimeRange: Codable {
+    let startDate: Date
+    let endDate: Date
+    
+    static var lastWeek: TimeRange {
+        let now = Date()
+        return TimeRange(
+            startDate: now.addingTimeInterval(-7 * 24 * 3600),
+            endDate: now
+        )
+    }
+    
+    static var lastMonth: TimeRange {
+        let now = Date()
+        return TimeRange(
+            startDate: now.addingTimeInterval(-30 * 24 * 3600),
+            endDate: now
+        )
+    }
+    
+    static var lastYear: TimeRange {
+        let now = Date()
+        return TimeRange(
+            startDate: now.addingTimeInterval(-365 * 24 * 3600),
+            endDate: now
+        )
+    }
+}
+
+struct LeaderboardTrends: Codable {
+    let rankTrend: TrendDirection
+    let scoreTrend: TrendDirection
+    let velocityTrend: TrendDirection // Rate of improvement
+    let consistency: Double // 0.0 to 1.0
+    let momentum: Double // Current improvement rate
+}
+
+enum TrendDirection: String, Codable {
+    case improving = "Improving"
+    case declining = "Declining"
+    case stable = "Stable"
+    case volatile = "Volatile"
+}
+
+struct LeaderboardAlert: Codable, Identifiable {
+    let id: String
+    let playerId: String
+    let leaderboardType: LeaderboardType
+    let timeframe: Timeframe
+    let condition: AlertCondition
+    let notificationType: NotificationType
+    let isActive: Bool
+    let sendPushNotification: Bool
+    let checkFrequency: TimeInterval
+    let createdAt: Date
+    
+    func shouldTrigger(currentRank: Int) -> Bool {
+        switch condition {
+        case .rankImproved(let threshold):
+            return currentRank <= threshold
+        case .rankDeclined(let threshold):
+            return currentRank >= threshold
+        case .enteredTopN(let n):
+            return currentRank <= n
+        case .leftTopN(let n):
+            return currentRank > n
+        case .passedPlayer(let playerId):
+            // Would need additional logic to check if we passed specific player
+            return false
+        }
+    }
+    
+    func generateMessage(currentRank: Int) -> String {
+        switch condition {
+        case .rankImproved(let threshold):
+            return "🎉 You've improved to rank #\(currentRank)! Target was \(threshold)."
+        case .rankDeclined(let threshold):
+            return "📉 Your rank has dropped to #\(currentRank). Target threshold was \(threshold)."
+        case .enteredTopN(let n):
+            return "🏆 Congratulations! You've entered the top \(n) at rank #\(currentRank)!"
+        case .leftTopN(let n):
+            return "⚠️ You've dropped out of the top \(n) to rank #\(currentRank)."
+        case .passedPlayer(let playerId):
+            return "🏃‍♂️ You've passed player \(playerId) and are now rank #\(currentRank)!"
+        }
+    }
+}
+
+enum AlertCondition: Codable {
+    case rankImproved(Int)
+    case rankDeclined(Int)
+    case enteredTopN(Int)
+    case leftTopN(Int)
+    case passedPlayer(String)
+}
+
+enum NotificationType: String, Codable, CaseIterable {
+    case immediate = "Immediate"
+    case digest = "Daily Digest"
+    case weekly = "Weekly Summary"
+    case milestone = "Milestone Only"
+}
+
+struct LeaderboardNotification: Codable, Identifiable {
+    let id: String
+    let alertId: String
+    let playerId: String
+    let message: String
+    let timestamp: Date
+    let type: NotificationType
+    var isRead: Bool = false
+}
+
+struct LeaderboardInsights: Codable {
+    let playerId: String
+    let timeframe: Timeframe
+    let rankingBreakdown: [LeaderboardType: RankInsight]
+    let improvementSuggestions: [String]
+    let strengthsAndWeaknesses: StrengthsWeaknesses
+    let competitivePosition: CompetitivePosition
+    let projectedRankings: [LeaderboardType: RankPrediction]
+}
+
+struct RankInsight: Codable {
+    let currentRank: Int
+    let bestRank: Int
+    let worstRank: Int
+    let averageRank: Double
+    let rankVolatility: Double
+    let improvementRate: Double
+    let timeInTopPercentile: Double
+}
+
+struct StrengthsWeaknesses: Codable {
+    let strengths: [String]
+    let weaknesses: [String]
+    let opportunities: [String]
+    let threats: [String]
+}
+
+struct CompetitivePosition: Codable {
+    let overallPercentile: Double
+    let nearbyCompetitors: [CompetitorInfo]
+    let gapToNext: CompetitionGap
+    let gapToPrevious: CompetitionGap
+}
+
+struct CompetitorInfo: Codable {
+    let playerId: String
+    let playerName: String
+    let rank: Int
+    let score: Double
+    let trend: TrendDirection
+}
+
+struct CompetitionGap: Codable {
+    let rankDifference: Int
+    let scoreDifference: Double
+    let estimatedTimeToClose: TimeInterval?
+}
+
+struct RankPrediction: Codable {
+    let leaderboardType: LeaderboardType
+    let currentRank: Int
+    let predictedRank: Int
+    let confidence: Double
+    let timeframe: Timeframe
+    let factors: [PredictionFactor]
+}
+
+struct PredictionFactor: Codable {
+    let factor: String
+    let impact: Double // -1.0 to 1.0
+    let description: String
+}
+
+// MARK: - Friends and Rivalry System
+
+class FriendsManager {
+    func getFriends(for playerId: String) async -> [String] {
+        // Implementation would fetch friends list
+        return []
+    }
+    
+    func addFriend(_ friendId: String, for playerId: String) async throws {
+        // Implementation would add friend
+    }
+    
+    func removeFriend(_ friendId: String, for playerId: String) async throws {
+        // Implementation would remove friend
+    }
+}
+
+class RivalryTracker {
+    func getRivals(for playerId: String) async -> [String] {
+        // Implementation would identify rivals based on frequent competition
+        return []
+    }
+    
+    func getRivalryStats(player1: String, player2: String) async -> RivalryStats? {
+        // Implementation would get head-to-head stats
+        return nil
+    }
+}
+
+struct RivalryStats: Codable {
+    let player1Id: String
+    let player2Id: String
+    let gamesPlayed: Int
+    let player1Wins: Int
+    let player2Wins: Int
+    let draws: Int
+    let lastMatchDate: Date
+    let competitionIntensity: Double // 0.0 to 1.0
+}
+
+class AchievementTracker {
+    func getRecentAchievements(for playerId: String) async -> [Achievement] {
+        // Implementation would get recent achievements
+        return []
+    }
+    
+    func trackProgress(for playerId: String, achievement: Achievement) async {
+        // Implementation would track achievement progress
+    }
+}
+
+// MARK: - API Extensions for Enhanced Leaderboards
+
+extension APIClient {
+    func getFilteredLeaderboard(filter: LeaderboardFilter) async throws -> LeaderboardResponse {
+        // Implementation would fetch filtered leaderboard
+        return LeaderboardResponse(entries: [], playerRank: nil, totalPlayers: 0)
+    }
+    
+    func saveCustomFilter(filter: LeaderboardFilter) async throws {
+        // Implementation would save custom filter
+    }
+    
+    func getSocialLeaderboards(playerId: String) async throws -> [SocialLeaderboard] {
+        // Implementation would fetch social leaderboards
+        return []
+    }
+    
+    func followPlayer(followerId: String, followeeId: String) async throws {
+        // Implementation would follow player
+    }
+    
+    func unfollowPlayer(followerId: String, followeeId: String) async throws {
+        // Implementation would unfollow player
+    }
+    
+    func getPlayerComparison(player1: String, player2: String, metrics: [ComparisonMetric]) async throws -> PlayerComparison {
+        // Implementation would get player comparison
+        throw NetworkError.custom("Not implemented")
+    }
+    
+    func searchLeaderboards(query: LeaderboardSearchQuery) async throws -> LeaderboardResponse {
+        // Implementation would search leaderboards
+        return LeaderboardResponse(entries: [], playerRank: nil, totalPlayers: 0)
+    }
+    
+    func getLeaderboardHistory(type: LeaderboardType, playerId: String, timeRange: TimeRange) async throws -> LeaderboardHistory {
+        // Implementation would get leaderboard history
+        throw NetworkError.custom("Not implemented")
+    }
+    
+    func createLeaderboardAlert(alert: LeaderboardAlert) async throws {
+        // Implementation would create leaderboard alert
+    }
+    
+    func getLeaderboardInsights(playerId: String, timeframe: Timeframe) async throws -> LeaderboardInsights {
+        // Implementation would get leaderboard insights
+        throw NetworkError.custom("Not implemented")
+    }
+    
+    func getPredictedRank(playerId: String, type: LeaderboardType, timeframe: Timeframe) async throws -> RankPrediction {
+        // Implementation would get predicted rank
+        throw NetworkError.custom("Not implemented")
+    }
+    
+    func subscribeToPlayerUpdates(followerId: String, followeeId: String) async throws {
+        // Implementation would subscribe to player updates
+    }
+    
+    func sendPushNotification(notification: LeaderboardNotification) async throws {
+        // Implementation would send push notification
     }
 }

@@ -1,166 +1,222 @@
 import Foundation
 import Combine
 
-class GameManager: ObservableObject {
-    @Published var currentScreen: GameScreen = .mainMenu
-    @Published var gameState: GameState = GameState()
-    @Published var singularityProgress: Double = 0.0
+public class GameManager: ObservableObject {
+    @Published public var currentScreen: GameScreen = .mainMenu
+    @Published public var gameState: GameState = GameState()
+    @Published public var singularityProgress: Double = 0.0
     
-    init() {
-        initializeGameData()
+    private var cancellables = Set<AnyCancellable>()
+    
+    public init() {
+        setupBindings()
     }
     
-    func startNewGame() {
+    private func setupBindings() {
+        // Monitor game state changes
+    }
+    
+    public func startNewGame() {
         gameState = GameState()
         currentScreen = .game
     }
     
-    func navigateTo(_ screen: GameScreen) {
+    public func navigateTo(_ screen: GameScreen) {
         currentScreen = screen
     }
+}
+
+public struct GameState: Codable {
+    public var playerAssets: PlayerAssets = PlayerAssets()
+    public var markets: Markets = Markets()
+    public var aiCompetitors: [AICompetitor] = []
+    public var tradeRoutes: [TradeRoute] = []
+    public var turn: Int = 0
+    public var isGameActive: Bool = true
     
-    private func initializeGameData() {
-        // Initialize with sample ships
-        gameState.playerAssets.ships = [
-            Ship(name: "Pacific Voyager", capacity: 2000, speed: 18.5, efficiency: 0.85, maintenanceCost: 12000),
-            Ship(name: "Atlantic Express", capacity: 1500, speed: 22.0, efficiency: 0.78, maintenanceCost: 9500),
-            Ship(name: "Container King", capacity: 3000, speed: 16.0, efficiency: 0.92, maintenanceCost: 18000)
-        ]
-        
-        // Initialize available ships in market
-        gameState.markets.assetMarket.availableShips = [
-            Ship(name: "Ocean Master", capacity: 2500, speed: 20.0, efficiency: 0.88, maintenanceCost: 15000),
-            Ship(name: "Swift Trader", capacity: 1200, speed: 25.0, efficiency: 0.75, maintenanceCost: 8000),
-            Ship(name: "Mega Hauler", capacity: 4000, speed: 14.0, efficiency: 0.95, maintenanceCost: 25000)
-        ]
-        
-        // Initialize commodities
-        gameState.markets.goodsMarket.commodities = [
-            Commodity(name: "Electronics", basePrice: 2450, volatility: 0.15, supply: 1000, demand: 1200),
-            Commodity(name: "Textiles", basePrice: 890, volatility: 0.08, supply: 800, demand: 750),
-            Commodity(name: "Machinery", basePrice: 3200, volatility: 0.12, supply: 600, demand: 700),
-            Commodity(name: "Food Products", basePrice: 1100, volatility: 0.20, supply: 1500, demand: 1400),
-            Commodity(name: "Automotive Parts", basePrice: 4000, volatility: 0.10, supply: 400, demand: 450)
-        ]
-        
-        // Initialize AI competitors
-        gameState.aiCompetitors = [
-            AICompetitor(name: "AlphaTrade", assets: PlayerAssets(money: 800000, ships: [], warehouses: [], reputation: 60.0), learningRate: 0.15, singularityContribution: 0.12),
-            AICompetitor(name: "QuantumLogistics", assets: PlayerAssets(money: 1200000, ships: [], warehouses: [], reputation: 75.0), learningRate: 0.20, singularityContribution: 0.18),
-            AICompetitor(name: "NeuralShip", assets: PlayerAssets(money: 950000, ships: [], warehouses: [], reputation: 65.0), learningRate: 0.18, singularityContribution: 0.15)
-        ]
-        
-        // Set initial singularity progress
-        singularityProgress = 0.23
+    public init() {}
+}
+
+public struct PlayerAssets: Codable {
+    public var money: Double = 1_000_000
+    public var ships: [Ship] = []
+    public var warehouses: [Warehouse] = []
+    public var reputation: Double = 50.0
+    
+    public init() {}
+}
+
+public struct Markets: Codable {
+    public var goodsMarket: GoodsMarket = GoodsMarket()
+    public var capitalMarket: CapitalMarket = CapitalMarket()
+    public var assetMarket: AssetMarket = AssetMarket()
+    public var laborMarket: LaborMarket = LaborMarket()
+    
+    public init() {}
+}
+
+public struct GoodsMarket: Codable {
+    public var commodities: [Commodity] = []
+    
+    public init() {}
+}
+
+public struct CapitalMarket: Codable {
+    public var interestRate: Double = 0.05
+    public var availableCapital: Double = 10_000_000
+    
+    public init() {}
+}
+
+public struct AssetMarket: Codable {
+    public var availableShips: [Ship] = []
+    public var availableWarehouses: [Warehouse] = []
+    
+    public init() {}
+}
+
+public struct LaborMarket: Codable {
+    public var availableWorkers: [Worker] = []
+    public var averageWage: Double = 50_000
+    
+    public init() {}
+}
+
+public struct Ship: Codable {
+    public let id: UUID = UUID()
+    public var name: String
+    public var capacity: Int
+    public var speed: Double
+    public var efficiency: Double
+    public var maintenanceCost: Double
+    
+    public init(name: String, capacity: Int, speed: Double, efficiency: Double, maintenanceCost: Double) {
+        self.name = name
+        self.capacity = capacity
+        self.speed = speed
+        self.efficiency = efficiency
+        self.maintenanceCost = maintenanceCost
     }
 }
 
-enum GameScreen {
-    case mainMenu
-    case game
-    case settings
+public struct Warehouse: Codable {
+    public let id: UUID = UUID()
+    public var location: Location
+    public var capacity: Int
+    public var storageCost: Double
+    
+    public init(location: Location, capacity: Int, storageCost: Double) {
+        self.location = location
+        self.capacity = capacity
+        self.storageCost = storageCost
+    }
 }
 
-struct GameState {
-    var playerAssets: PlayerAssets = PlayerAssets()
-    var markets: Markets = Markets()
-    var aiCompetitors: [AICompetitor] = []
-    var turn: Int = 0
-    var isGameActive: Bool = true
+public struct Location: Codable {
+    public var name: String
+    public var coordinates: Coordinates
+    public var portType: PortType
+    
+    public init(name: String, coordinates: Coordinates, portType: PortType) {
+        self.name = name
+        self.coordinates = coordinates
+        self.portType = portType
+    }
 }
 
-struct PlayerAssets {
-    var money: Double = 1_000_000
-    var ships: [Ship] = []
-    var warehouses: [Warehouse] = []
-    var reputation: Double = 50.0
+public struct Coordinates: Codable {
+    public var latitude: Double
+    public var longitude: Double
+    
+    public init(latitude: Double, longitude: Double) {
+        self.latitude = latitude
+        self.longitude = longitude
+    }
 }
 
-struct Markets {
-    var goodsMarket: GoodsMarket = GoodsMarket()
-    var capitalMarket: CapitalMarket = CapitalMarket()
-    var assetMarket: AssetMarket = AssetMarket()
-    var laborMarket: LaborMarket = LaborMarket()
-}
-
-struct GoodsMarket {
-    var commodities: [Commodity] = []
-}
-
-struct CapitalMarket {
-    var interestRate: Double = 0.05
-    var availableCapital: Double = 10_000_000
-}
-
-struct AssetMarket {
-    var availableShips: [Ship] = []
-    var availableWarehouses: [Warehouse] = []
-}
-
-struct LaborMarket {
-    var availableWorkers: [Worker] = []
-    var averageWage: Double = 50_000
-}
-
-struct Ship {
-    let id: UUID = UUID()
-    var name: String
-    var capacity: Int
-    var speed: Double
-    var efficiency: Double
-    var maintenanceCost: Double
-}
-
-struct Warehouse {
-    let id: UUID = UUID()
-    var location: Location
-    var capacity: Int
-    var storageCost: Double
-}
-
-struct Location {
-    var name: String
-    var coordinates: Coordinates
-    var portType: PortType
-}
-
-struct Coordinates {
-    var latitude: Double
-    var longitude: Double
-}
-
-enum PortType {
+public enum PortType: Codable {
     case sea
     case air
     case rail
     case multimodal
 }
 
-struct Commodity {
-    var name: String
-    var basePrice: Double
-    var volatility: Double
-    var supply: Double
-    var demand: Double
+public struct Commodity: Codable {
+    public var name: String
+    public var basePrice: Double
+    public var volatility: Double
+    public var supply: Double
+    public var demand: Double
+    
+    public init(name: String, basePrice: Double, volatility: Double, supply: Double, demand: Double) {
+        self.name = name
+        self.basePrice = basePrice
+        self.volatility = volatility
+        self.supply = supply
+        self.demand = demand
+    }
 }
 
-struct Worker {
-    var specialization: WorkerSpecialization
-    var skill: Double
-    var wage: Double
+public struct Worker: Codable {
+    public var specialization: WorkerSpecialization
+    public var skill: Double
+    public var wage: Double
+    
+    public init(specialization: WorkerSpecialization, skill: Double, wage: Double) {
+        self.specialization = specialization
+        self.skill = skill
+        self.wage = wage
+    }
 }
 
-enum WorkerSpecialization {
+public enum WorkerSpecialization: Codable {
     case operations
     case sales
     case engineering
     case management
 }
 
-struct AICompetitor {
-    let id: UUID = UUID()
-    var name: String
-    var assets: PlayerAssets
-    var learningRate: Double
-    var singularityContribution: Double
+public struct AICompetitor: Codable {
+    public let id: UUID = UUID()
+    public var name: String
+    public var assets: PlayerAssets
+    public var learningRate: Double
+    public var singularityContribution: Double
+    
+    public init(name: String, assets: PlayerAssets, learningRate: Double, singularityContribution: Double) {
+        self.name = name
+        self.assets = assets
+        self.learningRate = learningRate
+        self.singularityContribution = singularityContribution
+    }
+}
+
+public struct TradeRoute: Codable {
+    public let id: UUID
+    public var name: String
+    public var startPort: String
+    public var endPort: String
+    public var assignedShips: [UUID]
+    public var goodsType: String
+    public var profitMargin: Double
+    public var status: TradeRouteStatus
+    public var createdAt: Date
+    
+    public init(id: UUID, name: String, startPort: String, endPort: String, assignedShips: [UUID], goodsType: String, profitMargin: Double) {
+        self.id = id
+        self.name = name
+        self.startPort = startPort
+        self.endPort = endPort
+        self.assignedShips = assignedShips
+        self.goodsType = goodsType
+        self.profitMargin = profitMargin
+        self.status = .active
+        self.createdAt = Date()
+    }
+}
+
+public enum TradeRouteStatus: Codable {
+    case active
+    case suspended
+    case completed
 }

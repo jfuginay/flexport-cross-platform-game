@@ -1,55 +1,75 @@
 package com.flexport.game.ecs.systems
 
-import com.flexport.game.ecs.components.PositionComponent
-import com.flexport.game.ecs.components.VelocityComponent
-import com.flexport.game.ecs.core.ComponentType
-import com.flexport.game.ecs.core.EntityManager
-import com.flexport.game.ecs.core.System
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
+import com.flexport.game.ecs.System
+import com.flexport.game.ecs.ComponentManager
+import com.flexport.game.ecs.Entity
+import com.flexport.game.ecs.*
 
 /**
- * System responsible for updating entity positions based on their velocity
+ * System responsible for handling entity movement and position updates
  */
-class MovementSystem(
-    entityManager: EntityManager
-) : System(entityManager) {
+class MovementSystem(private val componentManager: ComponentManager) : System {
     
-    override fun getRequiredComponents(): Array<ComponentType> {
-        return arrayOf(PositionComponent::class, VelocityComponent::class)
-    }
+    override fun getPriority(): Int = 10
     
-    override suspend fun update(deltaTime: Float) {
-        val entities = entityManager.getEntitiesWithComponents(
+    override fun update(deltaTime: Float) {
+        // Get all entities with both position and movement components
+        val entities = componentManager.getEntitiesWithComponents(
             PositionComponent::class,
-            VelocityComponent::class
+            MovementComponent::class
         )
         
-        // Process entities in parallel for better performance
-        coroutineScope {
-            entities.chunked(100).forEach { chunk ->
-                launch {
-                    chunk.forEach { entity ->
-                        val position = entityManager.getComponent(entity, PositionComponent::class)
-                        val velocity = entityManager.getComponent(entity, VelocityComponent::class)
-                        
-                        if (position != null && velocity != null) {
-                            // Update position based on velocity
-                            position.x += velocity.dx * deltaTime
-                            position.y += velocity.dy * deltaTime
-                            position.rotation += velocity.angularVelocity * deltaTime
-                            
-                            // Keep rotation in range [0, 2π]
-                            while (position.rotation < 0) {
-                                position.rotation += 2 * Math.PI.toFloat()
-                            }
-                            while (position.rotation > 2 * Math.PI) {
-                                position.rotation -= 2 * Math.PI.toFloat()
-                            }
-                        }
-                    }
+        entities.forEach { entityId ->
+            val entity = Entity.create(entityId)
+            val position = componentManager.getComponent(entity, PositionComponent::class) ?: return@forEach
+            val movement = componentManager.getComponent(entity, MovementComponent::class) ?: return@forEach
+            
+            if (movement.isMoving && movement.destination != null) {
+                // Calculate direction to target
+                val targetPos = movement.destination!!
+                val deltaLat = targetPos.latitude - position.position.latitude
+                val deltaLon = targetPos.longitude - position.position.longitude
+                
+                // Simple distance check (for demo purposes)
+                val distance = kotlin.math.sqrt(deltaLat * deltaLat + deltaLon * deltaLon)
+                
+                if (distance < 0.1) { // Arrived at destination
+                    // Update position to exact target
+                    val updatedPosition = position.copy(
+                        position = targetPos,
+                        heading = position.heading
+                    )
+                    componentManager.removeComponent(entity, PositionComponent::class)
+                    componentManager.addComponent(entity, updatedPosition)
+                    
+                    // Stop movement
+                    val updatedMovement = movement.copy(
+                        isMoving = false,
+                        destination = null
+                    )
+                    componentManager.removeComponent(entity, MovementComponent::class)
+                    componentManager.addComponent(entity, updatedMovement)
+                } else {
+                    // Move towards target
+                    val moveDistance = movement.speed * deltaTime / 3600.0 // Convert to degrees
+                    val ratio = moveDistance / distance
+                    
+                    val newLat = position.position.latitude + (deltaLat * ratio)
+                    val newLon = position.position.longitude + (deltaLon * ratio)
+                    
+                    // Calculate heading
+                    val heading = kotlin.math.atan2(deltaLon, deltaLat) * 180 / kotlin.math.PI
+                    
+                    // Update position
+                    val updatedPosition = position.copy(
+                        position = com.flexport.game.models.GeographicalPosition(newLat, newLon),
+                        heading = heading
+                    )
+                    componentManager.removeComponent(entity, PositionComponent::class)
+                    componentManager.addComponent(entity, updatedPosition)
                 }
             }
         }
     }
 }
+

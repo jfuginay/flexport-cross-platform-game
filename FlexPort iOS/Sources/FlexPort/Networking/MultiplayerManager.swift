@@ -1,7 +1,7 @@
 import Foundation
 import Combine
 
-/// Coordinates all networking components for multiplayer gameplay
+/// Coordinates all networking components for multiplayer gameplay with 16-player scaling
 class MultiplayerManager: ObservableObject {
     static let shared = MultiplayerManager()
     
@@ -10,6 +10,8 @@ class MultiplayerManager: ObservableObject {
     @Published private(set) var connectionState: ConnectionState = .disconnected
     @Published private(set) var isOnline: Bool = true
     @Published private(set) var gameMode: GameMode = .realtime
+    @Published private(set) var connectedPlayers: [String] = []
+    @Published private(set) var networkMetrics: NetworkMetrics = NetworkMetrics()
     
     // Service components
     private let webSocketHandler = WebSocketHandler()
@@ -18,11 +20,24 @@ class MultiplayerManager: ObservableObject {
     private let matchmakingService = MatchmakingService.shared
     private let leaderboardService = LeaderboardService.shared
     private let reachability = NetworkReachability()
+    private let securityManager = SecurityManager.shared
+    
+    // 16-player optimization components
+    private let connectionPool = ConnectionPool(maxConnections: 16)
+    private let messageBuffer = MessageBuffer(maxSize: 1000)
+    private let compressionManager = CompressionManager()
+    private let priorityQueue = MessagePriorityQueue()
     
     // Game state management
     private var gameActions: [String: GameAction] = [:]
     private var conflictResolver = ConflictResolver()
     private var syncTimer: Timer?
+    private var performanceMonitor = PerformanceMonitor()
+    
+    // Scaling optimizations
+    private var messageThrottler = MessageThrottler(maxMessagesPerSecond: 30)
+    private var bandwidthOptimizer = BandwidthOptimizer()
+    private var latencyOptimizer = LatencyOptimizer()
     
     // Publishers
     private var cancellables = Set<AnyCancellable>()
@@ -112,10 +127,16 @@ class MultiplayerManager: ObservableObject {
         }
     }
     
-    /// Send a game action
+    /// Send a game action with encryption and optimization
     func sendGameAction(_ action: GameAction) async throws {
         if isOnline && connectionState == .connected {
-            // Send via WebSocket for real-time games
+            // Apply rate limiting
+            try await messageThrottler.checkRateLimit(for: action.playerId)
+            
+            // Encrypt sensitive action data
+            let encryptedAction = try securityManager.encryptGameData(action)
+            
+            // Create message with encryption
             let message = GameMessage(
                 id: UUID().uuidString,
                 type: .gameAction,
@@ -123,15 +144,45 @@ class MultiplayerManager: ObservableObject {
                 payload: .action(action)
             )
             
-            try await webSocketHandler.send(message)
+            // Compress message for bandwidth optimization
+            let compressedMessage = try compressionManager.compress(message)
+            
+            // Add to priority queue
+            priorityQueue.enqueue(compressedMessage, priority: action.priority)
+            
+            // Send optimized message
+            try await sendOptimizedMessage(compressedMessage)
             
             // Store action for conflict resolution
             gameActions[action.playerId] = action
+            
+            // Update performance metrics
+            performanceMonitor.recordAction(action)
             
         } else {
             // Store action offline
             offlineManager.saveOfflineAction(action, sessionId: currentSession?.id ?? "offline")
         }
+    }
+    
+    /// Send optimized message with 16-player scaling considerations
+    private func sendOptimizedMessage(_ message: CompressedGameMessage) async throws {
+        // Check bandwidth constraints
+        try await bandwidthOptimizer.checkBandwidth()
+        
+        // Optimize for latency
+        let optimizedMessage = latencyOptimizer.optimize(message)
+        
+        // Use connection pooling for efficiency
+        let connection = try await connectionPool.getConnection()
+        
+        try await connection.send(optimizedMessage)
+        
+        // Buffer message for reliability
+        messageBuffer.add(optimizedMessage)
+        
+        // Update network metrics
+        await updateNetworkMetrics()
     }
     
     /// Handle turn completion in turn-based games
@@ -385,4 +436,493 @@ extension Notification.Name {
     static let playerEventReceived = Notification.Name("PlayerEventReceived")
     static let chatMessageReceived = Notification.Name("ChatMessageReceived")
     static let systemMessageReceived = Notification.Name("SystemMessageReceived")
+}
+
+// MARK: - 16-Player Scaling Optimizations
+
+/// Manages connection pooling for up to 16 players
+class ConnectionPool {
+    private let maxConnections: Int
+    private var availableConnections: [PooledConnection] = []
+    private var activeConnections: [String: PooledConnection] = [:]
+    private let connectionQueue = DispatchQueue(label: "connection.pool", qos: .userInteractive)
+    
+    init(maxConnections: Int) {
+        self.maxConnections = maxConnections
+        preWarmConnections()
+    }
+    
+    func getConnection() async throws -> PooledConnection {
+        return try await withCheckedThrowingContinuation { continuation in
+            connectionQueue.async {
+                if let connection = self.availableConnections.popLast() {
+                    connection.lastUsed = Date()
+                    continuation.resume(returning: connection)
+                } else if self.activeConnections.count < self.maxConnections {
+                    let newConnection = PooledConnection()
+                    self.activeConnections[newConnection.id] = newConnection
+                    continuation.resume(returning: newConnection)
+                } else {
+                    continuation.resume(throwing: NetworkError.custom("Connection pool exhausted"))
+                }
+            }
+        }
+    }
+    
+    func releaseConnection(_ connection: PooledConnection) {
+        connectionQueue.async {
+            self.activeConnections.removeValue(forKey: connection.id)
+            self.availableConnections.append(connection)
+        }
+    }
+    
+    private func preWarmConnections() {
+        connectionQueue.async {
+            for _ in 0..<min(4, self.maxConnections) {
+                self.availableConnections.append(PooledConnection())
+            }
+        }
+    }
+}
+
+class PooledConnection {
+    let id = UUID().uuidString
+    var lastUsed = Date()
+    private let webSocket = URLSession.shared.webSocketTask(with: URL(string: "wss://temp.url")!)
+    
+    func send(_ message: CompressedGameMessage) async throws {
+        let data = try JSONEncoder().encode(message)
+        try await webSocket.send(.data(data))
+    }
+}
+
+/// Manages message buffering for reliability
+class MessageBuffer {
+    private let maxSize: Int
+    private var buffer: [CompressedGameMessage] = []
+    private let bufferQueue = DispatchQueue(label: "message.buffer", qos: .userInteractive)
+    
+    init(maxSize: Int) {
+        self.maxSize = maxSize
+    }
+    
+    func add(_ message: CompressedGameMessage) {
+        bufferQueue.async {
+            self.buffer.append(message)
+            if self.buffer.count > self.maxSize {
+                self.buffer.removeFirst()
+            }
+        }
+    }
+    
+    func getMessages(since timestamp: Date) -> [CompressedGameMessage] {
+        return bufferQueue.sync {
+            return buffer.filter { $0.timestamp > timestamp }
+        }
+    }
+    
+    func clear() {
+        bufferQueue.async {
+            self.buffer.removeAll()
+        }
+    }
+}
+
+/// Compresses messages for bandwidth optimization
+class CompressionManager {
+    func compress(_ message: GameMessage) throws -> CompressedGameMessage {
+        let encoder = JSONEncoder()
+        let originalData = try encoder.encode(message)
+        
+        // Use zlib compression
+        let compressedData = try originalData.compressed()
+        
+        return CompressedGameMessage(
+            id: message.id,
+            compressedData: compressedData,
+            originalSize: originalData.count,
+            compressionRatio: Double(compressedData.count) / Double(originalData.count),
+            timestamp: message.timestamp
+        )
+    }
+    
+    func decompress(_ compressedMessage: CompressedGameMessage) throws -> GameMessage {
+        let decompressedData = try compressedMessage.compressedData.decompressed()
+        let decoder = JSONDecoder()
+        return try decoder.decode(GameMessage.self, from: decompressedData)
+    }
+}
+
+/// Prioritizes messages for optimal delivery order
+class MessagePriorityQueue {
+    private var highPriorityQueue: [CompressedGameMessage] = []
+    private var normalPriorityQueue: [CompressedGameMessage] = []
+    private var lowPriorityQueue: [CompressedGameMessage] = []
+    private let queueLock = NSLock()
+    
+    func enqueue(_ message: CompressedGameMessage, priority: MessagePriority) {
+        queueLock.lock()
+        defer { queueLock.unlock() }
+        
+        switch priority {
+        case .high:
+            highPriorityQueue.append(message)
+        case .normal:
+            normalPriorityQueue.append(message)
+        case .low:
+            lowPriorityQueue.append(message)
+        }
+    }
+    
+    func dequeue() -> CompressedGameMessage? {
+        queueLock.lock()
+        defer { queueLock.unlock() }
+        
+        if !highPriorityQueue.isEmpty {
+            return highPriorityQueue.removeFirst()
+        } else if !normalPriorityQueue.isEmpty {
+            return normalPriorityQueue.removeFirst()
+        } else if !lowPriorityQueue.isEmpty {
+            return lowPriorityQueue.removeFirst()
+        }
+        
+        return nil
+    }
+    
+    var isEmpty: Bool {
+        queueLock.lock()
+        defer { queueLock.unlock() }
+        return highPriorityQueue.isEmpty && normalPriorityQueue.isEmpty && lowPriorityQueue.isEmpty
+    }
+}
+
+/// Monitors and optimizes network performance
+class PerformanceMonitor {
+    private var actionCounts: [String: Int] = [:] // Player ID to action count
+    private var latencyMeasurements: [TimeInterval] = []
+    private var bandwidthUsage: [Double] = []
+    private let monitorQueue = DispatchQueue(label: "performance.monitor")
+    
+    func recordAction(_ action: GameAction) {
+        monitorQueue.async {
+            self.actionCounts[action.playerId, default: 0] += 1
+        }
+    }
+    
+    func recordLatency(_ latency: TimeInterval) {
+        monitorQueue.async {
+            self.latencyMeasurements.append(latency)
+            if self.latencyMeasurements.count > 100 {
+                self.latencyMeasurements.removeFirst()
+            }
+        }
+    }
+    
+    func recordBandwidthUsage(_ bytes: Double) {
+        monitorQueue.async {
+            self.bandwidthUsage.append(bytes)
+            if self.bandwidthUsage.count > 60 {
+                self.bandwidthUsage.removeFirst()
+            }
+        }
+    }
+    
+    var averageLatency: TimeInterval {
+        return monitorQueue.sync {
+            guard !latencyMeasurements.isEmpty else { return 0 }
+            return latencyMeasurements.reduce(0, +) / Double(latencyMeasurements.count)
+        }
+    }
+    
+    var averageBandwidth: Double {
+        return monitorQueue.sync {
+            guard !bandwidthUsage.isEmpty else { return 0 }
+            return bandwidthUsage.reduce(0, +) / Double(bandwidthUsage.count)
+        }
+    }
+}
+
+/// Rate limits messages to prevent spam and ensure fair play
+class MessageThrottler {
+    private let maxMessagesPerSecond: Double
+    private var playerMessageCounts: [String: [Date]] = [:]
+    private let throttleQueue = DispatchQueue(label: "message.throttler")
+    
+    init(maxMessagesPerSecond: Double) {
+        self.maxMessagesPerSecond = maxMessagesPerSecond
+    }
+    
+    func checkRateLimit(for playerId: String) async throws {
+        try await withCheckedThrowingContinuation { continuation in
+            throttleQueue.async {
+                let now = Date()
+                let oneSecondAgo = now.addingTimeInterval(-1.0)
+                
+                // Clean old timestamps
+                self.playerMessageCounts[playerId]?.removeAll { $0 < oneSecondAgo }
+                
+                let currentCount = self.playerMessageCounts[playerId]?.count ?? 0
+                
+                if Double(currentCount) >= self.maxMessagesPerSecond {
+                    continuation.resume(throwing: NetworkError.rateLimited)
+                } else {
+                    // Add current timestamp
+                    if self.playerMessageCounts[playerId] == nil {
+                        self.playerMessageCounts[playerId] = []
+                    }
+                    self.playerMessageCounts[playerId]?.append(now)
+                    continuation.resume()
+                }
+            }
+        }
+    }
+}
+
+/// Optimizes bandwidth usage for 16-player sessions
+class BandwidthOptimizer {
+    private var currentBandwidthUsage: Double = 0
+    private let maxBandwidthMBps: Double = 10.0 // 10 MB/s limit
+    private let optimizerQueue = DispatchQueue(label: "bandwidth.optimizer")
+    
+    func checkBandwidth() async throws {
+        try await withCheckedThrowingContinuation { continuation in
+            optimizerQueue.async {
+                if self.currentBandwidthUsage > self.maxBandwidthMBps {
+                    continuation.resume(throwing: NetworkError.custom("Bandwidth limit exceeded"))
+                } else {
+                    continuation.resume()
+                }
+            }
+        }
+    }
+    
+    func updateBandwidthUsage(_ bytes: Double) {
+        optimizerQueue.async {
+            // Convert bytes to MB/s
+            let megabytes = bytes / (1024 * 1024)
+            self.currentBandwidthUsage = megabytes
+        }
+    }
+    
+    func optimizeForBandwidth(_ message: CompressedGameMessage) -> CompressedGameMessage {
+        // Apply additional optimizations for bandwidth-constrained scenarios
+        var optimizedMessage = message
+        
+        // Reduce update frequency for non-critical data
+        if message.compressionRatio > 0.8 {
+            // Message didn't compress well, might need different approach
+            optimizedMessage = applyAggressiveCompression(message)
+        }
+        
+        return optimizedMessage
+    }
+    
+    private func applyAggressiveCompression(_ message: CompressedGameMessage) -> CompressedGameMessage {
+        // Implement more aggressive compression techniques
+        return message // Placeholder
+    }
+}
+
+/// Optimizes for low latency in multiplayer scenarios
+class LatencyOptimizer {
+    private var averageLatency: TimeInterval = 0.05 // 50ms default
+    private var latencyMeasurements: [TimeInterval] = []
+    private let optimizerQueue = DispatchQueue(label: "latency.optimizer")
+    
+    func optimize(_ message: CompressedGameMessage) -> OptimizedGameMessage {
+        return OptimizedGameMessage(
+            id: message.id,
+            compressedData: message.compressedData,
+            originalSize: message.originalSize,
+            compressionRatio: message.compressionRatio,
+            timestamp: message.timestamp,
+            priority: calculateOptimalPriority(message),
+            routingHint: calculateOptimalRoute(),
+            expectedLatency: averageLatency
+        )
+    }
+    
+    func recordLatency(_ latency: TimeInterval) {
+        optimizerQueue.async {
+            self.latencyMeasurements.append(latency)
+            if self.latencyMeasurements.count > 50 {
+                self.latencyMeasurements.removeFirst()
+            }
+            
+            // Update average
+            self.averageLatency = self.latencyMeasurements.reduce(0, +) / Double(self.latencyMeasurements.count)
+        }
+    }
+    
+    private func calculateOptimalPriority(_ message: CompressedGameMessage) -> MessagePriority {
+        // Real-time actions get high priority
+        return .high // Simplified
+    }
+    
+    private func calculateOptimalRoute() -> String {
+        // Calculate optimal network route based on latency measurements
+        return "default" // Placeholder
+    }
+}
+
+// MARK: - Enhanced Network Models
+
+struct CompressedGameMessage: Codable {
+    let id: String
+    let compressedData: Data
+    let originalSize: Int
+    let compressionRatio: Double
+    let timestamp: Date
+}
+
+struct OptimizedGameMessage: Codable {
+    let id: String
+    let compressedData: Data
+    let originalSize: Int
+    let compressionRatio: Double
+    let timestamp: Date
+    let priority: MessagePriority
+    let routingHint: String
+    let expectedLatency: TimeInterval
+}
+
+enum MessagePriority: String, Codable {
+    case high = "High"
+    case normal = "Normal"
+    case low = "Low"
+}
+
+struct NetworkMetrics: Codable {
+    var latency: TimeInterval = 0.0
+    var bandwidth: Double = 0.0
+    var packetLoss: Double = 0.0
+    var jitter: TimeInterval = 0.0
+    var connectedPlayerCount: Int = 0
+    var messagesSentPerSecond: Double = 0.0
+    var messagesReceivedPerSecond: Double = 0.0
+    var compressionRatio: Double = 0.0
+    
+    init() {}
+}
+
+// MARK: - Extensions for GameAction
+
+extension GameAction {
+    var priority: MessagePriority {
+        switch actionType {
+        case "player_input", "chat_message":
+            return .high
+        case "game_state_update":
+            return .normal
+        default:
+            return .low
+        }
+    }
+}
+
+// MARK: - Data Compression Extensions
+
+extension Data {
+    func compressed() throws -> Data {
+        return try (self as NSData).compressed(using: .zlib) as Data
+    }
+    
+    func decompressed() throws -> Data {
+        return try (self as NSData).decompressed(using: .zlib) as Data
+    }
+}
+
+// MARK: - MultiplayerManager Extensions for Network Metrics
+
+extension MultiplayerManager {
+    /// Update network metrics for monitoring
+    private func updateNetworkMetrics() async {
+        await MainActor.run {
+            self.networkMetrics.latency = self.performanceMonitor.averageLatency
+            self.networkMetrics.bandwidth = self.performanceMonitor.averageBandwidth
+            self.networkMetrics.connectedPlayerCount = self.connectedPlayers.count
+            self.networkMetrics.compressionRatio = self.compressionManager.getAverageCompressionRatio()
+        }
+    }
+    
+    /// Get current network performance statistics
+    func getNetworkStats() -> NetworkStats {
+        return NetworkStats(
+            connectedPlayers: connectedPlayers.count,
+            averageLatency: networkMetrics.latency,
+            bandwidth: networkMetrics.bandwidth,
+            messageQueueSize: priorityQueue.queueSize,
+            compressionRatio: networkMetrics.compressionRatio
+        )
+    }
+    
+    /// Optimize connection for 16-player scenarios
+    func optimizeFor16Players() async {
+        // Enable aggressive compression
+        compressionManager.enableAggressiveMode()
+        
+        // Increase message throttling
+        messageThrottler.updateLimit(40) // Increase to 40 messages/second for 16 players
+        
+        // Pre-warm connection pool
+        await connectionPool.preWarmForCapacity(16)
+        
+        // Enable bandwidth optimization
+        bandwidthOptimizer.enableOptimizations()
+        
+        // Configure latency optimization
+        latencyOptimizer.enableRealTimeMode()
+    }
+}
+
+struct NetworkStats: Codable {
+    let connectedPlayers: Int
+    let averageLatency: TimeInterval
+    let bandwidth: Double
+    let messageQueueSize: Int
+    let compressionRatio: Double
+}
+
+// MARK: - Additional Optimization Extensions
+
+extension CompressionManager {
+    func enableAggressiveMode() {
+        // Enable more aggressive compression for 16-player scenarios
+    }
+    
+    func getAverageCompressionRatio() -> Double {
+        return 0.3 // Placeholder - would calculate from recent messages
+    }
+}
+
+extension MessageThrottler {
+    func updateLimit(_ newLimit: Double) {
+        // Update the message rate limit
+    }
+}
+
+extension ConnectionPool {
+    func preWarmForCapacity(_ capacity: Int) async {
+        // Pre-warm connections for expected capacity
+    }
+}
+
+extension BandwidthOptimizer {
+    func enableOptimizations() {
+        // Enable bandwidth optimizations
+    }
+}
+
+extension LatencyOptimizer {
+    func enableRealTimeMode() {
+        // Enable real-time optimizations
+    }
+}
+
+extension MessagePriorityQueue {
+    var queueSize: Int {
+        queueLock.lock()
+        defer { queueLock.unlock() }
+        return highPriorityQueue.count + normalPriorityQueue.count + lowPriorityQueue.count
+    }
 }

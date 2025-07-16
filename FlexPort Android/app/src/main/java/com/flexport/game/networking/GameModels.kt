@@ -294,7 +294,7 @@ sealed class MessagePayload {
     data class StateUpdate(val update: GameStateUpdate) : MessagePayload()
     
     @Serializable
-    data class PlayerEvent(val event: PlayerEvent) : MessagePayload()
+    data class PlayerEvent(val event: com.flexport.game.networking.PlayerEvent) : MessagePayload()
     
     @Serializable
     data class Chat(val message: ChatMessage) : MessagePayload()
@@ -369,6 +369,6 @@ sealed class NetworkError : Exception() {
     object AuthenticationFailed : NetworkError()
     object RateLimited : NetworkError()
     data class ServerError(val code: Int) : NetworkError()
-    data class Custom(val message: String) : NetworkError()
+    data class Custom(override val message: String) : NetworkError()
     object InvalidResponse : NetworkError()
 }

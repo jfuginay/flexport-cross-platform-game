@@ -1,0 +1,9 @@
+Found 5 Claude processes: 10396 11830 2270 9133 11787
+Starting Claude terminal capture...
+Starting capture for PID 10396
+Starting capture for PID 11830
+Starting capture for PID 2270
+Starting capture for PID 9133
+Starting capture for PID 11787
+Terminal capture started. Logs in: /Users/jfuginay/Documents/dev/Flexport/terminal_logs
+To stop, run: pkill -f terminal_capture.sh

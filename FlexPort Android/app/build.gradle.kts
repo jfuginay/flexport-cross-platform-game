@@ -2,7 +2,7 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.serialization")
-    id("kotlin-kapt")
+    // id("kotlin-kapt") // Temporarily disabled for demo
 }
 
 android {
@@ -104,10 +104,10 @@ dependencies {
     // Data storage for game state
     implementation("androidx.datastore:datastore-preferences:1.1.1")
     
-    // Room Database for asset management
-    implementation("androidx.room:room-runtime:$roomVersion")
-    implementation("androidx.room:room-ktx:$roomVersion")
-    kapt("androidx.room:room-compiler:$roomVersion")
+    // Room Database for asset management (disabled for demo)
+    // implementation("androidx.room:room-runtime:$roomVersion")
+    // implementation("androidx.room:room-ktx:$roomVersion")
+    // kapt("androidx.room:room-compiler:$roomVersion")
     
     // Dependency Injection with Koin for asset system
     implementation("io.insert-koin:koin-android:$koinVersion")
