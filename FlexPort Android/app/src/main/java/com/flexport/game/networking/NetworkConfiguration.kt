@@ -2,8 +2,9 @@ package com.flexport.game.networking
 
 object NetworkConfiguration {
     // Base URLs - configurable for development vs production
-    const val BASE_URL = "https://api.flexport-game.com/v1"
-    const val WEBSOCKET_URL = "wss://ws.flexport-game.com/v1/game"
+    // Using the same server as web for cross-platform multiplayer
+    const val BASE_URL = "https://flexport-multiplayer.herokuapp.com/api/v1"
+    const val WEBSOCKET_URL = "wss://flexport-multiplayer.herokuapp.com/ws"
     
     // Timeout configurations (in milliseconds)
     const val REQUEST_TIMEOUT = 30_000L

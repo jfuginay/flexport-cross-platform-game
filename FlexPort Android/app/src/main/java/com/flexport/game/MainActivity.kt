@@ -1,5 +1,6 @@
 package com.flexport.game
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -12,6 +13,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.flexport.game.navigation.FlexPortDestinations
+import com.flexport.game.ui.GameActivity
 import com.flexport.game.ui.screens.GameScreen
 import com.flexport.game.ui.screens.MainMenuScreen
 import com.flexport.game.ui.screens.MultiplayerLobbyScreen
@@ -74,11 +76,8 @@ fun FlexPortApp() {
         }
         
         composable(FlexPortDestinations.GAME_WORLD_ROUTE) {
-            GameScreen(
-                onNavigateBack = {
-                    navController.popBackStack()
-                }
-            )
+            // Launch the new dual-view GameActivity
+            startActivity(Intent(this@MainActivity, GameActivity::class.java))
         }
         
         composable(FlexPortDestinations.ECONOMIC_DASHBOARD_ROUTE) {

@@ -21,13 +21,22 @@
             android:name=".MainActivity"
             android:exported="true"
             android:theme="@style/Theme.FlexPort"
-            android:screenOrientation="landscape"
+            android:screenOrientation="sensor"
             android:configChanges="orientation|screenSize|keyboardHidden">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        
+        <!-- Dual-view game activity for enhanced orientation handling -->
+        <activity
+            android:name=".ui.GameActivity"
+            android:exported="false"
+            android:theme="@style/Theme.FlexPort"
+            android:screenOrientation="sensor"
+            android:configChanges="orientation|screenSize|keyboardHidden|smallestScreenSize|screenLayout"
+            android:hardwareAccelerated="true" />
         
     </application>
 
