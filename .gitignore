@@ -171,4 +171,4 @@ generate_icons.py
 # Enhanced instructions (internal development)
 container_*_instructions.md
 launch_enhancement_containers.sh
-launch_claude_swarm.sh
+launch_claude_swarm.shdashboard.log
