@@ -5,6 +5,7 @@ export class UISystem {
   private uiContainer: HTMLElement;
   private panels: Map<string, HTMLElement> = new Map();
   private isInitialized = false;
+  private shipSystem: any = null; // Will be injected
 
   constructor(gameState: GameState) {
     this.gameState = gameState;
@@ -327,6 +328,66 @@ export class UISystem {
     this.uiContainer.appendChild(controls);
   }
 
+  private createBuyShipDialog(): void {
+    if (this.panels.has('buy-ship')) return; // Already created
+
+    const buyShipDialog = document.createElement('div');
+    buyShipDialog.className = 'buy-ship-dialog ui-panel';
+    buyShipDialog.style.cssText = `
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 24px;
+      max-width: 700px;
+      max-height: 80vh;
+      background: rgba(15, 23, 42, 0.98);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      border-radius: 16px;
+      color: white;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+      display: none;
+      z-index: 1000;
+      overflow-y: auto;
+    `;
+
+    buyShipDialog.innerHTML = `
+      <div class="dialog-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="margin: 0; color: #3b82f6; font-size: 20px;">🚢 Buy New Ship</h2>
+        <button class="close-btn" style="background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 24px;">&times;</button>
+      </div>
+      
+      <div class="player-cash" style="text-align: center; margin-bottom: 20px; padding: 12px; background: rgba(59, 130, 246, 0.1); border-radius: 8px;">
+        <span style="color: #94a3b8; font-size: 14px;">Available Cash: </span>
+        <span class="cash-amount" style="color: #10b981; font-size: 18px; font-weight: bold;">$0</span>
+      </div>
+      
+      <div class="ship-types-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px;">
+        <!-- Ship types will be populated here -->
+      </div>
+      
+      <div class="dialog-footer" style="margin-top: 20px; text-align: center;">
+        <button class="cancel-btn btn btn-secondary" style="background: #374151; color: white; border: none; padding: 10px 20px; border-radius: 6px; margin-right: 10px; cursor: pointer;">Cancel</button>
+      </div>
+    `;
+
+    this.panels.set('buy-ship', buyShipDialog);
+    this.uiContainer.appendChild(buyShipDialog);
+
+    // Add event listeners for the dialog
+    buyShipDialog.querySelector('.close-btn')?.addEventListener('click', () => {
+      this.hidePanel('buy-ship');
+    });
+    
+    buyShipDialog.querySelector('.cancel-btn')?.addEventListener('click', () => {
+      this.hidePanel('buy-ship');
+    });
+
+    this.populateShipTypes();
+  }
+
   private setupEventListeners(): void {
     // Main HUD button listeners
     const hudPanel = this.panels.get('hud');
@@ -407,8 +468,8 @@ export class UISystem {
   }
 
   private showBuyShipDialog(): void {
-    // Implementation for ship purchase dialog
-    console.log('Buy ship dialog would open here');
+    this.createBuyShipDialog();
+    this.showPanel('buy-ship');
   }
 
   private showCreateRouteDialog(): void {
@@ -494,6 +555,8 @@ export class UISystem {
         this.updateMarketDisplay('goods');
       } else if (panelName === 'fleet') {
         this.updateFleetDisplay();
+      } else if (panelName === 'buy-ship') {
+        this.populateShipTypes();
       }
     }
   }
@@ -506,7 +569,7 @@ export class UISystem {
   }
 
   private hideAllModals(): void {
-    ['dashboard', 'fleet', 'controls', 'warning'].forEach(panel => {
+    ['dashboard', 'fleet', 'controls', 'warning', 'buy-ship'].forEach(panel => {
       this.hidePanel(panel);
     });
   }
@@ -658,6 +721,160 @@ export class UISystem {
         dashboard.style.right = '5%';
         dashboard.style.left = 'auto';
       }
+    }
+  }
+
+  public setShipSystem(shipSystem: any): void {
+    this.shipSystem = shipSystem;
+  }
+
+  private populateShipTypes(): void {
+    const dialog = this.panels.get('buy-ship');
+    if (!dialog) return;
+
+    const cashAmount = dialog.querySelector('.cash-amount') as HTMLElement;
+    if (cashAmount) {
+      cashAmount.textContent = `$${this.formatNumber(this.gameState.player.cash)}`;
+    }
+
+    const grid = dialog.querySelector('.ship-types-grid') as HTMLElement;
+    if (!grid) return;
+
+    const shipTypes = [
+      {
+        type: 'general_cargo',
+        name: 'General Cargo Ship',
+        description: 'Versatile ship for mixed cargo',
+        capacity: 15000,
+        speed: 18,
+        cost: 15000000,
+        emoji: '🚢'
+      },
+      {
+        type: 'container_ship',
+        name: 'Container Ship',
+        description: 'Specialized for container transport',
+        capacity: 18000,
+        speed: 24,
+        cost: 50000000,
+        emoji: '📦'
+      },
+      {
+        type: 'bulk_carrier',
+        name: 'Bulk Carrier',
+        description: 'For dry bulk commodities',
+        capacity: 50000,
+        speed: 14,
+        cost: 25000000,
+        emoji: '⛵'
+      },
+      {
+        type: 'tanker',
+        name: 'Oil Tanker',
+        description: 'For liquid bulk transport',
+        capacity: 80000,
+        speed: 16,
+        cost: 40000000,
+        emoji: '🛢️'
+      }
+    ];
+
+    grid.innerHTML = shipTypes.map(ship => {
+      const canAfford = this.gameState.player.cash >= ship.cost;
+      return `
+        <div class="ship-card" style="
+          padding: 16px;
+          background: ${canAfford ? 'rgba(59, 130, 246, 0.1)' : 'rgba(107, 114, 128, 0.1)'};
+          border: 1px solid ${canAfford ? 'rgba(59, 130, 246, 0.3)' : 'rgba(107, 114, 128, 0.3)'};
+          border-radius: 12px;
+          transition: all 0.2s ease;
+          cursor: ${canAfford ? 'pointer' : 'not-allowed'};
+          opacity: ${canAfford ? '1' : '0.6'};
+        " data-ship-type="${ship.type}" ${canAfford ? 'onclick="this.style.transform=\'scale(0.98)\'"' : ''}>
+          <div style="display: flex; align-items: center; margin-bottom: 12px;">
+            <span style="font-size: 24px; margin-right: 12px;">${ship.emoji}</span>
+            <h3 style="margin: 0; color: ${canAfford ? '#3b82f6' : '#9ca3af'}; font-size: 16px;">${ship.name}</h3>
+          </div>
+          <p style="margin: 0 0 12px 0; font-size: 14px; color: #94a3b8; line-height: 1.4;">${ship.description}</p>
+          <div style="font-size: 12px; color: #94a3b8; margin-bottom: 12px;">
+            <div>Capacity: <span style="color: #f59e0b;">${this.formatNumber(ship.capacity)} tons</span></div>
+            <div>Speed: <span style="color: #10b981;">${ship.speed} knots</span></div>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 16px; font-weight: bold; color: ${canAfford ? '#10b981' : '#ef4444'};">$${this.formatNumber(ship.cost)}</span>
+            <button class="buy-ship-btn" data-ship-type="${ship.type}" style="
+              background: ${canAfford ? '#3b82f6' : '#6b7280'};
+              color: white;
+              border: none;
+              padding: 6px 12px;
+              border-radius: 4px;
+              font-size: 12px;
+              cursor: ${canAfford ? 'pointer' : 'not-allowed'};
+              transition: all 0.2s ease;
+            " ${!canAfford ? 'disabled' : ''}>
+              ${canAfford ? 'Buy Ship' : 'Insufficient Funds'}
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Add click listeners to buy buttons
+    grid.querySelectorAll('.buy-ship-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const shipType = (e.target as HTMLElement).dataset.shipType;
+        if (shipType) {
+          this.purchaseShip(shipType);
+        }
+      });
+    });
+  }
+
+  private purchaseShip(shipType: string): void {
+    if (!this.shipSystem) {
+      alert('Ship system not available!');
+      return;
+    }
+
+    try {
+      const shipName = `FlexPort ${shipType.replace('_', ' ')} ${this.gameState.player.ships.length + 1}`;
+      const homePort = 'PORT_LA'; // Default to Los Angeles port
+      
+      // Get the cost before purchase
+      const shipCosts: Record<string, number> = {
+        general_cargo: 15000000,
+        container_ship: 50000000,
+        bulk_carrier: 25000000,
+        tanker: 40000000
+      };
+      
+      const cost = shipCosts[shipType];
+      if (this.gameState.player.cash < cost) {
+        alert('Insufficient funds to purchase this ship!');
+        return;
+      }
+
+      // Deduct money first
+      this.gameState.player.cash -= cost;
+      
+      // Create the ship
+      const ship = this.shipSystem.createShip(shipType, shipName, homePort);
+      
+      this.hidePanel('buy-ship');
+      alert(`Successfully purchased ${ship.name}! 🎉`);
+      
+    } catch (error) {
+      // Refund if there was an error
+      const shipCosts: Record<string, number> = {
+        general_cargo: 15000000,
+        container_ship: 50000000,
+        bulk_carrier: 25000000,
+        tanker: 40000000
+      };
+      this.gameState.player.cash += shipCosts[shipType] || 0;
+      
+      alert(`Error purchasing ship: ${error}`);
     }
   }
 

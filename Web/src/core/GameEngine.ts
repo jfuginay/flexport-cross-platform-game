@@ -96,7 +96,10 @@ export class GameEngine {
     this.systems.set('map', new MapSystem(this.app, this.gameState));
     this.systems.set('render', new OptimizedRenderSystem(this.app, this.gameState));
     this.systems.set('input', new InputSystem(this.app, this.gameState));
-    this.systems.set('ui', new UISystem(this.gameState));
+    
+    const uiSystem = new UISystem(this.gameState);
+    uiSystem.setShipSystem(shipSystem);
+    this.systems.set('ui', uiSystem);
     
     // Initialize multiplayer system
     const multiplayerSystem = new MultiplayerSystem(this.gameState);

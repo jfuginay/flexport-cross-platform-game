@@ -23,7 +23,7 @@ const getInitialState = (): GameState => ({
   player: {
     id: 'player-1',
     name: 'Captain Logistics',
-    cash: 1000000,
+    cash: 100000000, // $100 million starting cash
     reputation: 50,
     level: 1,
     experience: 0,

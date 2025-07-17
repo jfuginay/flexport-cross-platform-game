@@ -17,8 +17,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.flexport.game.models.Port
+import com.flexport.game.models.PortType
 import com.flexport.game.viewmodels.GameViewModel
-import com.flexport.game.viewmodels.Port
 
 /**
  * Ports dashboard showing all available ports and their status
@@ -71,6 +72,14 @@ private fun PortCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // Status indicator values available throughout the function
+    val utilizationRate = 0.75f // Mock utilization for now
+    val statusColor = when {
+        utilizationRate > 0.9f -> Color.Red
+        utilizationRate > 0.7f -> Color(0xFFFFA500)
+        else -> Color.Green
+    }
+    
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -104,27 +113,27 @@ private fun PortCard(
                         .clip(CircleShape)
                         .background(
                             when (port.type) {
-                                com.flexport.game.models.PortType.SEA -> Color(0xFF1976D2).copy(alpha = 0.1f)
-                                com.flexport.game.models.PortType.AIR -> Color(0xFF388E3C).copy(alpha = 0.1f)
-                                com.flexport.game.models.PortType.RAIL -> Color(0xFFF57C00).copy(alpha = 0.1f)
-                                com.flexport.game.models.PortType.MULTIMODAL -> Color(0xFF7B1FA2).copy(alpha = 0.1f)
+                                PortType.SEA -> Color(0xFF1976D2).copy(alpha = 0.1f)
+                                PortType.AIR -> Color(0xFF388E3C).copy(alpha = 0.1f)
+                                PortType.RAIL -> Color(0xFFF57C00).copy(alpha = 0.1f)
+                                PortType.MULTIMODAL -> Color(0xFF7B1FA2).copy(alpha = 0.1f)
                             }
                         ),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = when (port.type) {
-                            com.flexport.game.models.PortType.SEA -> Icons.Default.DirectionsBoat
-                            com.flexport.game.models.PortType.AIR -> Icons.Default.Flight
-                            com.flexport.game.models.PortType.RAIL -> Icons.Default.Train
-                            com.flexport.game.models.PortType.MULTIMODAL -> Icons.Default.Hub
+                            PortType.SEA -> Icons.Default.DirectionsBoat
+                            PortType.AIR -> Icons.Default.Flight
+                            PortType.RAIL -> Icons.Default.Train
+                            PortType.MULTIMODAL -> Icons.Default.Hub
                         },
                         contentDescription = null,
                         tint = when (port.type) {
-                            com.flexport.game.models.PortType.SEA -> Color(0xFF1976D2)
-                            com.flexport.game.models.PortType.AIR -> Color(0xFF388E3C)
-                            com.flexport.game.models.PortType.RAIL -> Color(0xFFF57C00)
-                            com.flexport.game.models.PortType.MULTIMODAL -> Color(0xFF7B1FA2)
+                            PortType.SEA -> Color(0xFF1976D2)
+                            PortType.AIR -> Color(0xFF388E3C)
+                            PortType.RAIL -> Color(0xFFF57C00)
+                            PortType.MULTIMODAL -> Color(0xFF7B1FA2)
                         },
                         modifier = Modifier.size(24.dp)
                     )
@@ -160,14 +169,7 @@ private fun PortCard(
                     )
                 }
                 
-                // Status indicator  
-                val utilizationRate = 0.75f // Mock utilization for now
-                val statusColor = when {
-                    utilizationRate > 0.9f -> Color.Red
-                    utilizationRate > 0.7f -> Color.Orange
-                    else -> Color.Green
-                }
-                
+                // Status indicator
                 Column(horizontalAlignment = Alignment.End) {
                     Box(
                         modifier = Modifier
@@ -213,7 +215,7 @@ private fun PortCard(
                         .clip(RoundedCornerShape(4.dp)),
                     color = when {
                         utilizationRate > 0.9f -> MaterialTheme.colorScheme.error
-                        utilizationRate > 0.7f -> Color.Orange
+                        utilizationRate > 0.7f -> Color(0xFFFFA500)
                         else -> MaterialTheme.colorScheme.primary
                     },
                     trackColor = MaterialTheme.colorScheme.surfaceVariant
