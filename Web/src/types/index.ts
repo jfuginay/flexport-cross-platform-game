@@ -261,7 +261,11 @@ export type MessageType =
   | 'room_list'
   | 'create_room'
   | 'join_room'
-  | 'leave_room';
+  | 'leave_room'
+  | 'ship_update'
+  | 'ship_batch_update'
+  | 'ship_full_sync'
+  | 'ship_reconciliation';
 
 export interface WebSocketMessage {
   type: MessageType;

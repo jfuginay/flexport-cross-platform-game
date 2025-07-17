@@ -8,195 +8,62 @@ import MetalKit
 
 struct GameView: View {
     @EnvironmentObject var gameManager: GameManager
-    // Temporarily commented out touch input until files are properly included
-    // @StateObject private var touchInputManager = TouchInputManager()
-    // @StateObject private var touchInputIntegration = TouchInputIntegration(
-    //     touchInputManager: TouchInputManager(),
-    //     hapticManager: HapticManager.shared
-    // )
-    
-    // Touch input state
-    // @State private var selectedEntities: Set<Entity> = []
-    @State private var showingEntityDetails = false
-    @State private var worldMapView: UIView?
-    // @State private var cancellables = Set<AnyCancellable>()
+    @State private var gameStarted = false
     
     var body: some View {
-        GeometryReader { geometry in
-            ZStack {
-                Color.black
-                    .ignoresSafeArea()
-                
-                VStack(spacing: 20) {
-                    // Header with game stats - Container 4: Enhanced UI
-                    HStack {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("FlexPort Empire")
-                                .font(.system(size: 22, weight: .bold))
-                                .foregroundColor(.white)
-                            
-                            HStack {
-                                Image(systemName: "dollarsign.circle.fill")
-                                    .foregroundColor(.green)
-                                Text("$\(String(format: "%.0f", gameManager.gameState.playerAssets.money))")
-                                    .font(.system(size: 17, weight: .semibold))
-                                    .foregroundColor(.green)
-                            }
-                            
-                            HStack {
-                                Image(systemName: "ferry.fill")
-                                    .foregroundColor(.blue)
-                                Text("\(gameManager.gameState.playerAssets.ships.count) Ships")
-                                    .font(.subheadline)
-                                    .foregroundColor(.blue)
-                            }
-                        }
-                        
-                        Spacer()
-                        
-                        VStack(alignment: .trailing, spacing: 4) {
-                            HStack {
-                                Image(systemName: "brain.head.profile")
-                                    .foregroundColor(.red)
-                                Text("AI Progress")
-                                    .font(.caption)
-                                    .foregroundColor(.red)
-                            }
-                            
-                            ProgressView(value: gameManager.singularityProgress)
-                                .progressViewStyle(LinearProgressViewStyle(tint: .red))
-                                .frame(width: 100)
-                                .scaleEffect(1.2)
-                            
-                            Text("\(Int(gameManager.singularityProgress * 100))%")
-                                .font(.caption2)
-                                .foregroundColor(.red)
-                        }
-                    }
-                    .padding()
-                    .background(
-                        RoundedRectangle(cornerRadius: 15)
-                            .fill(Color.black.opacity(0.8))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 15)
-                                    .stroke(Color.blue.opacity(0.5), lineWidth: 1)
-                            )
-                    )
-                    .shadow(color: .blue.opacity(0.3), radius: 10, x: 0, y: 5)
-                    
-                    // Interactive game world with touch input
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 15)
-                            .fill(Color.blue.opacity(0.3))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 15)
-                                    .stroke(Color.blue, lineWidth: 2)
-                            )
-                        
-                        // Touch-enabled world map view - temporarily replaced
-                        // TouchEnabledWorldView(
-                        //     touchInputManager: touchInputManager,
-                        //     selectedEntities: $selectedEntities
-                        // )
-                        // .clipShape(RoundedRectangle(cornerRadius: 15))
-                        
-                        // Enhanced Metal-rendered world map with advanced ocean effects
-                        EnhancedMetalMapView()
-                            .environmentObject(gameManager)
-                        
-                        // Overlay for touch feedback - temporarily disabled
-                        // if !selectedEntities.isEmpty {
-                        //     VStack {
-                        //         HStack {
-                        //             Text("Selected: \(selectedEntities.count) items")
-                        //                 .font(.caption)
-                        //                 .foregroundColor(.white)
-                        //                 .padding(8)
-                        //                 .background(Color.black.opacity(0.7))
-                        //                 .cornerRadius(8)
-                        //             Spacer()
-                        //         }
-                        //         Spacer()
-                        //     }
-                        //     .padding()
-                        // }
-                    }
-                    .frame(maxHeight: .infinity)
-                    
-                    // Bottom controls
-                    VStack(spacing: 12) {
-                        // Primary navigation buttons
-                        HStack(spacing: 12) {
-                            NavigationButton(title: "Financial", icon: "chart.line.uptrend.xyaxis", color: .green) {
-                                gameManager.navigateTo(.financialDashboard)
-                            }
-                            
-                            NavigationButton(title: "Fleet", icon: "ferry.fill", color: .blue) {
-                                gameManager.navigateTo(.fleetManagement)
-                            }
-                            
-                            NavigationButton(title: "Routes", icon: "map.fill", color: .orange) {
-                                gameManager.navigateTo(.tradeRoutes)
-                            }
-                            
-                            NavigationButton(title: "Research", icon: "cpu.fill", color: .purple) {
-                                gameManager.navigateTo(.researchTree)
-                            }
-                        }
-                        
-                        // Secondary navigation buttons
-                        HStack(spacing: 20) {
-                            Button("Buy Ship") {
-                                // Add ship buying logic
-                                let newShip = Ship(name: "Cargo Ship \(gameManager.gameState.playerAssets.ships.count + 1)", 
-                                                 capacity: 1000, 
-                                                 speed: 25.0, 
-                                                 efficiency: 0.8, 
-                                                 maintenanceCost: 5000)
-                                gameManager.gameState.playerAssets.ships.append(newShip)
-                                gameManager.gameState.playerAssets.money -= 50000
-                            }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 8)
-                            .background(Color.blue)
-                            .foregroundColor(.white)
-                            .cornerRadius(8)
-                            .font(.caption)
-                            
-                            Button("Settings") {
-                                gameManager.navigateTo(.settings)
-                            }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 8)
-                            .background(Color.gray)
-                            .foregroundColor(.white)
-                            .cornerRadius(8)
-                            .font(.caption)
-                            
-                            Button("Main Menu") {
-                                gameManager.navigateTo(.mainMenu)
-                            }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 8)
-                            .background(Color.red)
-                            .foregroundColor(.white)
-                            .cornerRadius(8)
-                            .font(.caption)
-                        }
-                    }
+        // Temporary simple game view
+        VStack {
+            Text("🚢 FlexPort: The Video Game")
+                .font(.largeTitle)
+                .fontWeight(.bold)
+            Text(gameStarted ? "🎮 Game Running!" : "iOS Version - Ready to Play")
+                .font(.title2)
+                .foregroundColor(gameStarted ? .green : .secondary)
+            
+            Spacer()
+            
+            HStack {
+                VStack {
+                    Text("💰 Cash")
+                    Text("$1,000,000")
+                        .font(.headline)
+                        .foregroundColor(.green)
                 }
-                .padding()
+                
+                Spacer()
+                
+                VStack {
+                    Text("🚢 Ships")
+                    Text("5")
+                        .font(.headline)
+                        .foregroundColor(.blue)
+                }
+                
+                Spacer()
+                
+                VStack {
+                    Text("🏗️ Ports")
+                    Text("12")
+                        .font(.headline)
+                        .foregroundColor(.orange)
+                }
             }
+            .padding()
+            
+            Spacer()
+            
+            Button(gameStarted ? "Game Running ✅" : "Start Game") {
+                // Initialize the game
+                gameManager.startNewGame()
+                gameStarted = true
+                print("🎮 Game Started!")
+            }
+            .buttonStyle(.borderedProminent)
+            .font(.title2)
+            .disabled(gameStarted)
         }
-        // .onAppear {
-        //     setupTouchInput()
-        // }
-        // .onDisappear {
-        //     cleanupTouchInput()
-        // }
-        // .sheet(isPresented: $showingEntityDetails) {
-        //     EntityDetailsView(selectedEntities: selectedEntities)
-        // }
+        .padding()
+        .background(Color.blue.opacity(0.1))
     }
     
     // MARK: - Touch Input Setup

@@ -1,5 +1,6 @@
 import { GameEngine } from '@/core/GameEngine';
 import { GameConfig } from '@/types';
+import '@/utils/ProgressionDemo';
 
 const gameConfig: GameConfig = {
   targetFPS: 60,
@@ -190,16 +191,18 @@ function showWelcomeMessage(): void {
     </h1>
     <p style="margin: 0 0 24px 0; font-size: 16px; line-height: 1.6; color: #cbd5e1;">
       Build your logistics empire in a world racing toward AI singularity. 
-      Trade goods across global ports, manage your fleet, and compete against 
-      increasingly intelligent AI systems.
+      Trade goods across global ports, manage your fleet, level up to unlock 
+      new ships and features, and compete against increasingly intelligent AI systems.
     </p>
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; font-size: 14px; text-align: left;">
       <div>
         <h3 style="margin: 0 0 8px 0; color: #3b82f6;">🎯 Your Mission</h3>
         <ul style="margin: 0; padding-left: 16px; color: #94a3b8; line-height: 1.5;">
-          <li>Buy and manage ships</li>
+          <li>Level up from 1 to 50</li>
+          <li>Unlock new ship types</li>
           <li>Create profitable trade routes</li>
           <li>Navigate 4 interconnected markets</li>
+          <li>Earn achievements</li>
           <li>Survive the AI singularity</li>
         </ul>
       </div>
@@ -209,6 +212,7 @@ function showWelcomeMessage(): void {
           <li>Drag to pan the map</li>
           <li>Scroll to zoom</li>
           <li>Click ports for details</li>
+          <li>Press A for achievements</li>
           <li>Press H for help</li>
         </ul>
       </div>
@@ -241,13 +245,28 @@ function showWelcomeMessage(): void {
   document.body.appendChild(welcome);
 
   // Add button functionality
-  welcome.querySelector('#start-game-btn')?.addEventListener('click', () => {
-    welcome.style.animation = 'welcomeSlideIn 0.4s ease-out reverse';
-    setTimeout(() => {
-      welcome.remove();
-      style.remove();
-    }, 400);
-  });
+  const startBtn = welcome.querySelector('#start-game-btn');
+  if (startBtn) {
+    startBtn.addEventListener('click', () => {
+      console.log('Start game button clicked');
+      welcome.style.animation = 'welcomeSlideIn 0.4s ease-out reverse';
+      setTimeout(() => {
+        welcome.remove();
+        style.remove();
+        // Ensure we start in single-player mode
+        const gameEngine = (window as any).gameEngine;
+        if (gameEngine) {
+          // Make sure multiplayer lobby is hidden
+          if (gameEngine.lobbyComponent && gameEngine.lobbyComponent.isShown()) {
+            gameEngine.lobbyComponent.hide();
+          }
+          gameEngine.resume();
+        }
+      }, 400);
+    });
+  } else {
+    console.error('Start game button not found');
+  }
 
   welcome.querySelector('#multiplayer-btn')?.addEventListener('click', () => {
     welcome.style.animation = 'welcomeSlideIn 0.4s ease-out reverse';
@@ -262,13 +281,21 @@ function showWelcomeMessage(): void {
     }, 400);
   });
 
-  // Auto-hide after 10 seconds
+  // Auto-hide after 10 seconds and start single player
   setTimeout(() => {
     if (welcome.parentNode) {
       welcome.style.animation = 'welcomeSlideIn 0.4s ease-out reverse';
       setTimeout(() => {
         welcome.remove();
         style.remove();
+        // Start single player mode automatically
+        const gameEngine = (window as any).gameEngine;
+        if (gameEngine) {
+          if (gameEngine.lobbyComponent && gameEngine.lobbyComponent.isShown()) {
+            gameEngine.lobbyComponent.hide();
+          }
+          gameEngine.resume();
+        }
       }, 400);
     }
   }, 10000);

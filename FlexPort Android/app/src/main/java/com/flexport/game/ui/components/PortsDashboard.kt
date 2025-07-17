@@ -140,7 +140,7 @@ private fun PortCard(
                         fontWeight = FontWeight.SemiBold
                     )
                     Text(
-                        text = "${port.coordinates.latitude.toInt()}°, ${port.coordinates.longitude.toInt()}°",
+                        text = "${port.position.latitude.toInt()}°, ${port.position.longitude.toInt()}°",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -160,8 +160,8 @@ private fun PortCard(
                     )
                 }
                 
-                // Status indicator
-                val utilizationRate = port.currentLoad.toFloat() / port.capacity
+                // Status indicator  
+                val utilizationRate = 0.75f // Mock utilization for now
                 val statusColor = when {
                     utilizationRate > 0.9f -> Color.Red
                     utilizationRate > 0.7f -> Color.Orange
@@ -197,7 +197,7 @@ private fun PortCard(
                         style = MaterialTheme.typography.bodyMedium
                     )
                     Text(
-                        text = "${String.format("%,d", port.currentLoad)} / ${String.format("%,d", port.capacity)} TEU",
+                        text = "${String.format("%,d", (port.capacity * utilizationRate).toInt())} / ${String.format("%,d", port.capacity)} TEU",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

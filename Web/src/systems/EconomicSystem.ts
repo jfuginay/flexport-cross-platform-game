@@ -1,8 +1,10 @@
-import { GameState, Market, MarketType, CommodityType, EconomicEvent } from '@/types';
+import { GameState, Market, MarketType, CommodityType, EconomicEvent, Ship, Cargo } from '@/types';
 import { PortData } from '@/utils/PortData';
+import { ProgressionSystem } from './ProgressionSystem';
 
 export class EconomicSystem {
   private gameState: GameState;
+  private progressionSystem: ProgressionSystem | null = null;
   private updateInterval = 0;
   private readonly UPDATE_FREQUENCY = 5; // Update every 5 seconds
   private readonly VOLATILITY_BASE = 0.05;
@@ -381,5 +383,64 @@ export class EconomicSystem {
 
   public getWorkerCost(specialization: string): number {
     return this.gameState.markets.labor.prices[specialization] || 50000;
+  }
+
+  public setProgressionSystem(progressionSystem: ProgressionSystem): void {
+    this.progressionSystem = progressionSystem;
+  }
+
+  public processTrade(ship: Ship, soldCargo: Cargo[], revenue: number, cost: number): void {
+    const profit = revenue - cost;
+    const profitMargin = cost > 0 ? (profit / cost) : 0;
+
+    // Grant XP for completing the trade
+    if (this.progressionSystem) {
+      this.progressionSystem.grantExperience('complete_trade', {
+        profit_margin: profitMargin,
+        distance: ship.destination ? this.calculateTradeDistance(ship) : 1
+      });
+
+      // Additional XP for profitable trades
+      if (profit > 0) {
+        this.progressionSystem.grantExperience('profitable_trade', {
+          profit_amount: profit
+        });
+      }
+
+      // Check for arbitrage opportunities
+      if (profitMargin > 0.5) { // 50% profit margin
+        this.progressionSystem.grantExperience('arbitrage_success');
+      }
+
+      // Milestone checks
+      const totalCash = this.gameState.player.cash;
+      if (totalCash >= 1000000 && totalCash - profit < 1000000) {
+        this.progressionSystem.grantExperience('first_million');
+      }
+    }
+  }
+
+  private calculateTradeDistance(ship: Ship): number {
+    // Simplified distance calculation based on current location
+    // In a real implementation, this would track the actual route taken
+    return Math.random() * 10 + 1; // Random distance between 1-11
+  }
+
+  public analyzeMarket(marketType: MarketType): void {
+    // Grant XP for market analysis
+    if (this.progressionSystem) {
+      this.progressionSystem.grantExperience('market_analysis');
+    }
+  }
+
+  public predictPrice(commodity: CommodityType, prediction: number): void {
+    const actualPrice = this.getCommodityPrice(commodity);
+    const accuracy = 1 - Math.abs(prediction - actualPrice) / actualPrice;
+
+    if (this.progressionSystem && accuracy > 0.8) {
+      this.progressionSystem.grantExperience('price_prediction', {
+        accuracy: accuracy
+      });
+    }
   }
 }

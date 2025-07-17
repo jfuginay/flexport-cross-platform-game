@@ -5,6 +5,9 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.flexport.game.models.Port
 import com.flexport.game.models.Ship
+import com.flexport.game.models.GeographicalPosition
+import com.flexport.game.models.PortType
+import com.flexport.game.models.ShipType
 import com.flexport.game.networking.GameAction
 import com.flexport.game.networking.GameMode
 import com.flexport.game.networking.MultiplayerManager
@@ -60,34 +63,30 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             Port(
                 id = UUID.randomUUID().toString(),
                 name = "Shanghai",
-                coordinates = com.flexport.game.models.Coordinates(31.2304, 121.4737),
-                type = com.flexport.game.models.PortType.SEA,
-                capacity = 50000,
-                currentLoad = 35000
+                position = GeographicalPosition(31.2304, 121.4737),
+                type = PortType.SEA,
+                capacity = 50000
             ),
             Port(
                 id = UUID.randomUUID().toString(),
                 name = "Singapore",
-                coordinates = com.flexport.game.models.Coordinates(1.3521, 103.8198),
-                type = com.flexport.game.models.PortType.SEA,
-                capacity = 45000,
-                currentLoad = 42000
+                position = GeographicalPosition(1.3521, 103.8198),
+                type = PortType.SEA,
+                capacity = 45000
             ),
             Port(
                 id = UUID.randomUUID().toString(),
                 name = "Rotterdam",
-                coordinates = com.flexport.game.models.Coordinates(51.9244, 4.4777),
-                type = com.flexport.game.models.PortType.SEA,
-                capacity = 40000,
-                currentLoad = 28000
+                position = GeographicalPosition(51.9244, 4.4777),
+                type = PortType.SEA,
+                capacity = 40000
             ),
             Port(
                 id = UUID.randomUUID().toString(),
                 name = "Los Angeles",
-                coordinates = com.flexport.game.models.Coordinates(33.7701, -118.1937),
-                type = com.flexport.game.models.PortType.SEA,
-                capacity = 35000,
-                currentLoad = 30000
+                position = GeographicalPosition(33.7701, -118.1937),
+                type = PortType.SEA,
+                capacity = 35000
             )
         )
         
@@ -95,26 +94,35 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
             Ship(
                 id = UUID.randomUUID().toString(),
                 name = "FlexPort Pioneer",
+                type = ShipType.CONTAINER_SHIP,
                 capacity = 5000,
                 speed = 22.5,
-                efficiency = 0.85,
-                maintenanceCost = 15000.0
+                fuelEfficiency = 85.0,
+                maintenanceCost = 15000.0,
+                purchasePrice = 1200000.0,
+                currentPosition = GeographicalPosition(37.7749, -122.4194)
             ),
             Ship(
                 id = UUID.randomUUID().toString(),
                 name = "FlexPort Express",
+                type = ShipType.CONTAINER_SHIP,
                 capacity = 8000,
                 speed = 25.0,
-                efficiency = 0.78,
-                maintenanceCost = 22000.0
+                fuelEfficiency = 78.0,
+                maintenanceCost = 22000.0,
+                purchasePrice = 1500000.0,
+                currentPosition = GeographicalPosition(40.7128, -74.0060)
             ),
             Ship(
                 id = UUID.randomUUID().toString(),
-                name = "FlexPort Voyager",
+                name = "FlexPort Voyager", 
+                type = ShipType.CONTAINER_SHIP,
                 capacity = 12000,
                 speed = 20.0,
-                efficiency = 0.92,
-                maintenanceCost = 28000.0
+                fuelEfficiency = 92.0,
+                maintenanceCost = 28000.0,
+                purchasePrice = 2200000.0,
+                currentPosition = GeographicalPosition(51.5074, -0.1278)
             )
         )
     }
@@ -222,7 +230,15 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
                 "large" -> 18.0
                 else -> 22.0
             },
-            efficiency = 0.8,
+            type = ShipType.CONTAINER_SHIP,
+            fuelEfficiency = 80.0,
+            purchasePrice = when (shipType) {
+                "small" -> 500_000.0
+                "medium" -> 1_200_000.0
+                "large" -> 2_500_000.0
+                else -> 800_000.0
+            },
+            currentPosition = GeographicalPosition(40.7128, -74.0060),
             maintenanceCost = when (shipType) {
                 "small" -> 10000.0
                 "medium" -> 20000.0
@@ -263,12 +279,3 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     }
 }
 
-// Extension to Port model to add game-specific properties
-data class Port(
-    val id: String,
-    val name: String,
-    val coordinates: com.flexport.game.models.Coordinates,
-    val type: com.flexport.game.models.PortType,
-    val capacity: Int,
-    val currentLoad: Int
-)

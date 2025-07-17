@@ -1,8 +1,10 @@
 import { GameState, Ship, ShipType, ShipStatus, Port, TradeRoute, Coordinates, CrewMember, Cargo } from '@/types';
 import { PortData } from '@/utils/PortData';
+import { ProgressionSystem } from './ProgressionSystem';
 
 export class ShipSystem {
   private gameState: GameState;
+  private progressionSystem: ProgressionSystem | null = null;
   private readonly SHIP_SPECS: Record<ShipType, any> = {
     bulk_carrier: {
       capacity: 50000,
@@ -81,6 +83,14 @@ export class ShipSystem {
       throw new Error(`Invalid home port: ${homePort}`);
     }
 
+    // Check if player has unlocked this ship type
+    if (this.progressionSystem) {
+      const unlockRequired = this.getShipUnlockRequirement(type);
+      if (unlockRequired && !this.progressionSystem.isFeatureUnlocked(unlockRequired)) {
+        throw new Error(`Ship type ${type} is not yet unlocked. Reach the required level to unlock it.`);
+      }
+    }
+
     const ship: Ship = {
       id: `ship_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       name,
@@ -98,6 +108,23 @@ export class ShipSystem {
     };
 
     this.gameState.player.ships.push(ship);
+
+    // Grant XP for purchasing ship
+    if (this.progressionSystem) {
+      const shipTier = this.getShipTier(type);
+      this.progressionSystem.grantExperience('purchase_ship', {
+        ship_tier: shipTier
+      });
+
+      // Check fleet size milestones
+      const fleetSize = this.gameState.player.ships.length;
+      if (fleetSize % 5 === 0) {
+        this.progressionSystem.grantExperience('fleet_size_milestone', {
+          fleet_size: fleetSize
+        });
+      }
+    }
+
     return ship;
   }
 
@@ -311,6 +338,11 @@ export class ShipSystem {
         break;
     }
     
+    // Grant XP for upgrading
+    if (this.progressionSystem) {
+      this.progressionSystem.grantExperience('upgrade_ship');
+    }
+    
     return true;
   }
 
@@ -337,6 +369,11 @@ export class ShipSystem {
     
     this.gameState.player.tradeRoutes.push(route);
     this.gameState.world.tradeRoutes.push(route);
+    
+    // Grant XP for establishing route
+    if (this.progressionSystem) {
+      this.progressionSystem.grantExperience('establish_route');
+    }
     
     return route;
   }
@@ -497,5 +534,35 @@ export class ShipSystem {
 
   public getAllShipsStats(): any[] {
     return this.gameState.player.ships.map(ship => this.getShipStats(ship.id));
+  }
+
+  public setProgressionSystem(progressionSystem: ProgressionSystem): void {
+    this.progressionSystem = progressionSystem;
+  }
+
+  private getShipUnlockRequirement(type: ShipType): string | null {
+    const unlockMap: Record<ShipType, string> = {
+      bulk_carrier: 'bulk_carrier_ships',
+      container_ship: 'container_ships',
+      tanker: 'tanker_ships',
+      general_cargo: 'general_cargo_ships',
+      roro: 'roro_ships',
+      refrigerated: 'refrigerated_ships',
+      heavy_lift: 'heavy_lift_ships'
+    };
+    return unlockMap[type] || null;
+  }
+
+  private getShipTier(type: ShipType): number {
+    const tierMap: Record<ShipType, number> = {
+      general_cargo: 1,
+      bulk_carrier: 2,
+      container_ship: 3,
+      tanker: 3,
+      roro: 4,
+      refrigerated: 4,
+      heavy_lift: 5
+    };
+    return tierMap[type] || 1;
   }
 }

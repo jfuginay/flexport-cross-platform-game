@@ -51,10 +51,16 @@ export class StateSynchronization {
   private clientPrediction: boolean = true;
   private serverReconciliation: boolean = true;
   private interpolationEnabled: boolean = true;
+  private roomId: string | undefined;
 
-  constructor(wsManager: WebSocketManager) {
+  constructor(wsManager: WebSocketManager, roomId?: string) {
     this.wsManager = wsManager;
+    this.roomId = roomId;
     this.setupMessageHandlers();
+  }
+
+  public setRoomId(roomId: string): void {
+    this.roomId = roomId;
   }
 
   private setupMessageHandlers(): void {
@@ -170,7 +176,7 @@ export class StateSynchronization {
         updates: deltas,
         sequence: this.sequenceNumber++,
         timestamp: now
-      }, this.wsManager.getConnectionStats().playerId);
+      }, this.roomId);
 
       this.lastSyncTime = now;
     }

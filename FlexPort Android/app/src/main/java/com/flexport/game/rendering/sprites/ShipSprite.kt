@@ -72,7 +72,7 @@ class ShipSprite(
         shader.setUniformMatrix4fv("u_ModelMatrix", modelMatrix)
         
         // Set ship color based on efficiency and status
-        val efficiency = ship.efficiency.toFloat()
+        val efficiency = (ship.fuelEfficiency / 100.0).toFloat()
         val shipColor = floatArrayOf(
             0.8f + efficiency * 0.2f,  // Red component
             0.6f + efficiency * 0.4f,  // Green component

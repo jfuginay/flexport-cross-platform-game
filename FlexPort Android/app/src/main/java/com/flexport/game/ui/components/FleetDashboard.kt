@@ -292,7 +292,7 @@ private fun ShipCard(
                         )
                         Spacer(modifier = Modifier.weight(1f))
                         Text(
-                            text = "${(ship.efficiency * 100).toInt()}%",
+                            text = "${ship.fuelEfficiency.toInt()}%",
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Bold
                         )
@@ -301,7 +301,7 @@ private fun ShipCard(
                     Spacer(modifier = Modifier.height(8.dp))
                     
                     LinearProgressIndicator(
-                        progress = ship.efficiency.toFloat(),
+                        progress = (ship.fuelEfficiency / 100.0).toFloat(),
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(4.dp)

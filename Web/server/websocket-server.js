@@ -83,6 +83,36 @@ class MultiplayerServer {
       case 'heartbeat':
         this.handleHeartbeat(clientId, playerId);
         break;
+      case 'ship_update':
+        this.handleShipUpdate(clientId, payload, playerId, roomId);
+        break;
+      case 'ship_batch_update':
+        this.handleShipBatchUpdate(clientId, payload, playerId, roomId);
+        break;
+      case 'ship_full_sync':
+        this.handleShipFullSync(clientId, payload, playerId, roomId);
+        break;
+      case 'ship_reconciliation':
+        this.handleShipReconciliation(clientId, payload, playerId, roomId);
+        break;
+      case 'ping':
+        this.handlePing(clientId, payload, playerId);
+        break;
+      case 'ship_position_update':
+        this.handleShipPositionUpdate(clientId, payload, playerId, roomId);
+        break;
+      case 'ship_position_batch':
+        this.handleShipPositionBatch(clientId, payload, playerId, roomId);
+        break;
+      case 'ship_input':
+        this.handleShipInput(clientId, payload, playerId, roomId);
+        break;
+      case 'batch_update':
+        this.handleBatchUpdate(clientId, payload, playerId, roomId);
+        break;
+      case 'delta_update':
+        this.handleDeltaUpdate(clientId, payload, playerId, roomId);
+        break;
       default:
         console.warn(`Unknown message type: ${type}`);
     }
@@ -269,6 +299,85 @@ class MultiplayerServer {
     });
   }
 
+  handleShipUpdate(clientId, payload, playerId, roomId) {
+    if (!roomId) return;
+    
+    // Broadcast ship update to all other players in the room
+    this.broadcastToRoom(roomId, {
+      type: 'ship_update',
+      payload: { ...payload, playerId }
+    }, clientId);
+  }
+
+  handleShipBatchUpdate(clientId, payload, playerId, roomId) {
+    if (!roomId) return;
+    
+    // Add playerId to each update
+    const updatesWithPlayerId = {
+      ...payload,
+      updates: payload.updates.map(update => ({
+        ...update,
+        playerId
+      }))
+    };
+    
+    // Broadcast batch update to all other players in the room
+    this.broadcastToRoom(roomId, {
+      type: 'ship_batch_update',
+      payload: updatesWithPlayerId
+    }, clientId);
+  }
+
+  handleShipFullSync(clientId, payload, playerId, roomId) {
+    if (!roomId) return;
+    
+    const room = this.rooms.get(roomId);
+    if (!room) return;
+    
+    // Store ship state for this player
+    if (!room.shipStates) {
+      room.shipStates = new Map();
+    }
+    room.shipStates.set(playerId, payload.ships);
+    
+    // When a new player joins, send them the full ship state
+    const ws = this.clients.get(clientId);
+    if (ws) {
+      // Collect all ships from all players
+      const allShips = [];
+      room.shipStates.forEach((ships, pid) => {
+        ships.forEach(ship => {
+          allShips.push({ ...ship, playerId: pid });
+        });
+      });
+      
+      this.sendMessage(ws, {
+        type: 'ship_full_sync',
+        payload: { ships: allShips },
+        timestamp: Date.now(),
+        messageId: uuidv4()
+      });
+    }
+  }
+
+  handleShipReconciliation(clientId, payload, playerId, roomId) {
+    if (!roomId) return;
+    
+    // Server-authoritative reconciliation
+    // In a real implementation, the server would validate the ship position
+    // For now, we'll just broadcast the reconciliation to the affected player
+    const targetPlayer = this.players.get(payload.targetPlayerId);
+    if (targetPlayer) {
+      const ws = this.clients.get(targetPlayer.clientId);
+      if (ws) {
+        this.sendMessage(ws, {
+          type: 'ship_reconciliation',
+          payload
+        });
+      }
+    }
+  }
+
   handleDisconnect(clientId) {
     // Find player associated with this client
     let disconnectedPlayerId = null;
@@ -413,6 +522,123 @@ class MultiplayerServer {
       totalRooms: this.rooms.size,
       activeGames: Array.from(this.rooms.values()).filter(r => r.status === 'in_progress').length
     };
+  }
+  
+  // New optimized message handlers
+  handlePing(clientId, payload, playerId) {
+    const ws = this.clients.get(clientId);
+    if (!ws) return;
+    
+    this.sendMessage(ws, {
+      type: 'ping_response',
+      payload: {
+        clientTime: payload.clientTime,
+        serverTime: Date.now()
+      },
+      timestamp: Date.now(),
+      messageId: uuidv4()
+    });
+  }
+  
+  handleShipPositionUpdate(clientId, payload, playerId, roomId) {
+    if (!roomId) return;
+    
+    // Add server timestamp and sequence number
+    const update = {
+      ...payload,
+      playerId,
+      timestamp: Date.now(),
+      sequenceNumber: this.getNextSequenceNumber(roomId)
+    };
+    
+    // Broadcast to room with lag compensation data
+    this.broadcastToRoom(roomId, {
+      type: 'ship_position_update',
+      payload: update
+    }, clientId);
+  }
+  
+  handleShipPositionBatch(clientId, payload, playerId, roomId) {
+    if (!roomId) return;
+    
+    const timestamp = Date.now();
+    const updates = payload.updates.map(update => ({
+      ...update,
+      playerId,
+      timestamp,
+      sequenceNumber: this.getNextSequenceNumber(roomId)
+    }));
+    
+    this.broadcastToRoom(roomId, {
+      type: 'ship_position_batch',
+      payload: { updates }
+    }, clientId);
+  }
+  
+  handleShipInput(clientId, payload, playerId, roomId) {
+    if (!roomId) return;
+    
+    // Process input and calculate resulting state
+    const processedInput = {
+      ...payload,
+      playerId,
+      timestamp: Date.now(),
+      sequenceNumber: payload.sequenceNumber || this.getNextSequenceNumber(roomId)
+    };
+    
+    // Send acknowledgment back to sender
+    const ws = this.clients.get(clientId);
+    if (ws) {
+      this.sendMessage(ws, {
+        type: 'ship_input_ack',
+        payload: processedInput
+      });
+    }
+    
+    // Broadcast to other players
+    this.broadcastToRoom(roomId, {
+      type: 'ship_input_received',
+      payload: processedInput
+    }, clientId);
+  }
+  
+  handleBatchUpdate(clientId, payload, playerId, roomId) {
+    if (!roomId) return;
+    
+    // Process batched updates efficiently
+    const timestamp = Date.now();
+    this.broadcastToRoom(roomId, {
+      type: 'batch_update',
+      payload: {
+        ...payload,
+        playerId,
+        timestamp
+      }
+    }, clientId);
+  }
+  
+  handleDeltaUpdate(clientId, payload, playerId, roomId) {
+    if (!roomId) return;
+    
+    // Handle compressed delta updates
+    this.broadcastToRoom(roomId, {
+      type: 'delta_update',
+      payload: {
+        ships: payload.ships,
+        playerId,
+        timestamp: Date.now()
+      }
+    }, clientId);
+  }
+  
+  // Sequence number management for lag compensation
+  roomSequenceNumbers = new Map();
+  
+  getNextSequenceNumber(roomId) {
+    let seq = this.roomSequenceNumbers.get(roomId) || 0;
+    seq++;
+    this.roomSequenceNumbers.set(roomId, seq);
+    return seq;
   }
 }
 

@@ -3,14 +3,19 @@ import { GameState, GameConfig } from '@/types';
 import { EconomicSystem } from '@/systems/EconomicSystem';
 import { ShipSystem } from '@/systems/ShipSystem';
 import { AISystem } from '@/systems/AISystem';
-import { RenderSystem } from '@/systems/RenderSystem';
+import { OptimizedRenderSystem } from '@/systems/OptimizedRenderSystem';
+import { NetworkSystem } from '@/systems/NetworkSystem';
 import { InputSystem } from '@/systems/InputSystem';
 import { MapSystem } from '@/systems/MapSystem';
 import { UISystem } from '@/systems/UISystem';
 import { MultiplayerSystem } from '@/systems/MultiplayerSystem';
+import { ProgressionSystem } from '@/systems/ProgressionSystem';
 import { GameStateStore } from '@/core/GameStateStore';
 import { LobbyComponent } from '@/components/LobbyComponent';
 import { StateSynchronization } from '@/networking/StateSynchronization';
+import { ProgressionUI } from '@/components/ProgressionUI';
+import { PerformanceUI } from '@/components/PerformanceUI';
+import { getPerformanceMonitor } from '@/utils/Performance';
 
 export class GameEngine {
   private app!: PIXI.Application;
@@ -24,6 +29,10 @@ export class GameEngine {
   private lobbyComponent: LobbyComponent | null = null;
   private isMultiplayerMode = false;
   private stateSynchronization: StateSynchronization | null = null;
+  private progressionUI: ProgressionUI | null = null;
+  private performanceUI: PerformanceUI | null = null;
+  private networkSystem: NetworkSystem | null = null;
+  private performanceMonitor = getPerformanceMonitor();
 
   constructor(canvas: HTMLElement, config: GameConfig) {
     this.config = config;
@@ -70,11 +79,22 @@ export class GameEngine {
   }
 
   private initializeSystems(): void {
-    this.systems.set('economic', new EconomicSystem(this.gameState));
-    this.systems.set('ship', new ShipSystem(this.gameState));
+    // Initialize core systems
+    const progressionSystem = new ProgressionSystem(this.gameState);
+    const economicSystem = new EconomicSystem(this.gameState);
+    const shipSystem = new ShipSystem(this.gameState);
+    
+    // Set up cross-system references
+    economicSystem.setProgressionSystem(progressionSystem);
+    shipSystem.setProgressionSystem(progressionSystem);
+    
+    // Register all systems
+    this.systems.set('progression', progressionSystem);
+    this.systems.set('economic', economicSystem);
+    this.systems.set('ship', shipSystem);
     this.systems.set('ai', new AISystem(this.gameState));
     this.systems.set('map', new MapSystem(this.app, this.gameState));
-    this.systems.set('render', new RenderSystem(this.app, this.gameState));
+    this.systems.set('render', new OptimizedRenderSystem(this.app, this.gameState));
     this.systems.set('input', new InputSystem(this.app, this.gameState));
     this.systems.set('ui', new UISystem(this.gameState));
     
@@ -84,9 +104,19 @@ export class GameEngine {
     
     // Create lobby component
     this.lobbyComponent = new LobbyComponent(multiplayerSystem);
+    this.lobbyComponent.setOnHideCallback(() => {
+      this.resume();
+    });
+    
+    // Create progression UI
+    this.progressionUI = new ProgressionUI(progressionSystem);
+    
+    // Create performance UI
+    this.performanceUI = new PerformanceUI();
 
     this.systems.forEach((system, name) => {
-      if (system.initialize) {
+      // Skip multiplayer system initialization - it should only initialize when player chooses multiplayer
+      if (name !== 'multiplayer' && system.initialize) {
         system.initialize();
       }
     });
@@ -121,6 +151,9 @@ export class GameEngine {
       // Initialize state synchronization for multiplayer
       this.initializeStateSynchronization(multiplayerSystem);
       
+      // Initialize network system for lag compensation
+      this.initializeNetworkSystem(multiplayerSystem);
+      
       this.resume();
     });
 
@@ -141,8 +174,12 @@ export class GameEngine {
   private initializeStateSynchronization(multiplayerSystem: any): void {
     if (!multiplayerSystem.wsManager) return;
     
+    // Get current room ID from multiplayer state
+    const multiplayerState = multiplayerSystem.getMultiplayerState();
+    const roomId = multiplayerState.currentRoom?.id;
+    
     // Create state synchronization instance
-    this.stateSynchronization = new StateSynchronization(multiplayerSystem.wsManager);
+    this.stateSynchronization = new StateSynchronization(multiplayerSystem.wsManager, roomId);
     
     // Register local ships
     this.stateSynchronization.registerLocalShips(this.gameState.player.ships);
@@ -157,6 +194,13 @@ export class GameEngine {
     
     // Start synchronization
     this.stateSynchronization.start();
+  }
+  
+  private initializeNetworkSystem(multiplayerSystem: any): void {
+    if (!multiplayerSystem.wsManager) return;
+    
+    this.networkSystem = new NetworkSystem(this.gameState, multiplayerSystem.wsManager);
+    this.systems.set('network', this.networkSystem);
   }
 
   private handleMultiplayerAction(action: string, data: any, _playerId: string): void {
@@ -202,6 +246,12 @@ export class GameEngine {
       if (event.key === 'h' || event.key === 'H') {
         this.showHelp();
       }
+      
+      // Toggle performance monitor with 'F3' key
+      if (event.key === 'F3') {
+        event.preventDefault();
+        // PerformanceUI handles F3 internally
+      }
     });
   }
 
@@ -243,6 +293,8 @@ export class GameEngine {
   private gameLoop(): void {
     if (!this.running) return;
 
+    this.performanceMonitor.beginFrame();
+
     const currentTime = performance.now();
     this.deltaTime = Math.min((currentTime - this.lastTime) / 1000, 1/30); // Cap at 30 FPS minimum
     this.lastTime = currentTime;
@@ -250,12 +302,16 @@ export class GameEngine {
     this.update(this.deltaTime);
     this.render();
 
+    this.performanceMonitor.endFrame();
+
     requestAnimationFrame(() => this.gameLoop());
   }
 
   private update(deltaTime: number): void {
-    this.gameState.gameTime += deltaTime;
+    this.performanceMonitor.measureUpdate(() => {
+      this.gameState.gameTime += deltaTime;
 
+    this.systems.get('progression')?.update(deltaTime);
     this.systems.get('economic')?.update(deltaTime);
     this.systems.get('ship')?.update(deltaTime);
     this.systems.get('ai')?.update(deltaTime);
@@ -263,6 +319,10 @@ export class GameEngine {
     this.systems.get('input')?.update(deltaTime);
     this.systems.get('ui')?.update(deltaTime);
     this.systems.get('multiplayer')?.update(deltaTime);
+    this.systems.get('network')?.update(deltaTime);
+    
+    // Update progression UI
+    this.progressionUI?.update();
 
     // Update state synchronization if in multiplayer mode
     if (this.isMultiplayerMode && this.stateSynchronization) {
@@ -275,11 +335,14 @@ export class GameEngine {
       });
     }
 
-    GameStateStore.updateState(this.gameState);
+      GameStateStore.updateState(this.gameState);
+    });
   }
 
   private render(): void {
-    this.systems.get('render')?.render();
+    this.performanceMonitor.measureRender(() => {
+      this.systems.get('render')?.render();
+    });
   }
 
   public saveGame(): void {
@@ -351,7 +414,10 @@ export class GameEngine {
       if (multiplayerSystem && !multiplayerSystem.getMultiplayerState().isConnected) {
         multiplayerSystem.initialize().then((connected: any) => {
           if (connected) {
-            this.lobbyComponent!.show();
+            // Wait a moment to ensure connection is stable
+            setTimeout(() => {
+              this.lobbyComponent!.show();
+            }, 500);
           } else {
             console.error('Failed to connect to multiplayer server');
             this.resume();
@@ -376,6 +442,7 @@ export class GameEngine {
       ⌨️ Keyboard Shortcuts:
       • M - Toggle Multiplayer Lobby
       • H - Show this help
+      • F3 - Toggle Performance Monitor
       • ESC - Close dialogs
 
       🎮 Multiplayer:
@@ -404,6 +471,12 @@ export class GameEngine {
   public destroy(): void {
     this.running = false;
     
+    // Stop state synchronization
+    if (this.stateSynchronization) {
+      this.stateSynchronization.stop();
+      this.stateSynchronization = null;
+    }
+    
     // Destroy lobby component
     if (this.lobbyComponent) {
       this.lobbyComponent.destroy();
@@ -415,6 +488,15 @@ export class GameEngine {
         system.destroy();
       }
     });
+    
+    if (this.performanceUI) {
+      this.performanceUI.destroy();
+      this.performanceUI = null;
+    }
+    
+    if (this.progressionUI) {
+      this.progressionUI = null;
+    }
     
     this.systems.clear();
     this.app.destroy(true, true);

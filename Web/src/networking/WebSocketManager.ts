@@ -6,6 +6,7 @@ import {
   GameRoom,
   MultiplayerState
 } from '@/types';
+import { getBandwidthMonitor } from '@/utils/BandwidthMonitor';
 
 export type WebSocketEventCallback = (message: WebSocketMessage) => void;
 
@@ -25,6 +26,7 @@ export class WebSocketManager {
   private heartbeatInterval = 30000; // 30 seconds
   private messageQueue: WebSocketMessage[] = [];
   private pendingMessages: Map<string, { resolve: Function; reject: Function; timeout: number }> = new Map();
+  private bandwidthMonitor = getBandwidthMonitor();
 
   constructor(url: string = 'ws://localhost:8080') {
     this.url = url;
@@ -157,11 +159,19 @@ export class WebSocketManager {
     if (!this.isConnected()) {
       // Queue message for when connection is restored
       this.messageQueue.push(message);
+      console.warn('WebSocket not connected, queueing message. Connection state:', this.ws?.readyState);
       throw new Error('WebSocket not connected. Message queued for retry.');
     }
 
     try {
-      this.ws!.send(JSON.stringify(message));
+      const messageStr = JSON.stringify(message);
+      this.ws!.send(messageStr);
+      
+      // Track bandwidth
+      this.bandwidthMonitor.recordOutgoingMessage(
+        new Blob([messageStr]).size,
+        message.messageId
+      );
     } catch (error) {
       console.error('Failed to send message:', error);
       this.messageQueue.push(message);
@@ -224,7 +234,14 @@ export class WebSocketManager {
 
   private handleMessage(event: MessageEvent): void {
     try {
-      const message: WebSocketMessage = JSON.parse(event.data);
+      const messageStr = event.data;
+      const message: WebSocketMessage = JSON.parse(messageStr);
+      
+      // Track bandwidth
+      this.bandwidthMonitor.recordIncomingMessage(
+        new Blob([messageStr]).size,
+        message.messageId
+      );
       
       // Handle response to pending message
       if (message.messageId && this.pendingMessages.has(message.messageId)) {

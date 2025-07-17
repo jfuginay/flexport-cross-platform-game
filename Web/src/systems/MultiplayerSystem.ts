@@ -152,7 +152,10 @@ export class MultiplayerSystem {
       this.emit('room_joined', { room, isHost: true });
       return room;
     } catch (error) {
-      console.error('Failed to create room:', error);
+      // Only log if not a timeout error to reduce console noise
+      if (!error.message?.includes('timeout')) {
+        console.error('Failed to create room:', error);
+      }
       this.multiplayerState.lastError = error instanceof Error ? error.message : 'Failed to create room';
       return null;
     }
@@ -179,7 +182,10 @@ export class MultiplayerSystem {
       this.emit('room_joined', { room, isHost: this.isHost });
       return room;
     } catch (error) {
-      console.error('Failed to join room:', error);
+      // Only log if not a timeout error to reduce console noise
+      if (!error.message?.includes('timeout')) {
+        console.error('Failed to join room:', error);
+      }
       this.multiplayerState.lastError = error instanceof Error ? error.message : 'Failed to join room';
       return null;
     }
@@ -217,8 +223,23 @@ export class MultiplayerSystem {
       this.multiplayerState.availableRooms = rooms;
       return rooms;
     } catch (error) {
-      console.error('Failed to refresh room list:', error);
+      // Only log if not a timeout error to reduce console noise
+      if (!error.message?.includes('timeout')) {
+        console.error('Failed to refresh room list:', error);
+      }
       return this.multiplayerState.availableRooms;
+    }
+  }
+
+  public async startGame(): Promise<void> {
+    try {
+      if (this.multiplayerState.currentRoom && this.isHost) {
+        await this.wsManager.sendMessage('start_game', {
+          roomId: this.multiplayerState.currentRoom.id
+        }, this.multiplayerState.currentRoom.id);
+      }
+    } catch (error) {
+      console.error('Failed to start game:', error);
     }
   }
 

@@ -7,6 +7,7 @@ export class LobbyComponent {
   private isVisible = false;
   private refreshInterval: number | null = null;
   private eventListeners: (() => void)[] = [];
+  private onHideCallback?: () => void;
 
   constructor(multiplayerSystem: MultiplayerSystem) {
     this.multiplayerSystem = multiplayerSystem;
@@ -426,9 +427,16 @@ export class LobbyComponent {
 
   private setupButtonHandlers(element: HTMLElement): void {
     // Close button
-    element.querySelector('.close-btn')?.addEventListener('click', () => {
-      this.hide();
-    });
+    const closeBtn = element.querySelector('.close-btn');
+    console.log('Setting up close button:', closeBtn);
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => {
+        console.log('Close button clicked');
+        this.hide();
+      });
+    } else {
+      console.error('Close button not found!');
+    }
 
     // Refresh rooms button
     element.querySelector('.refresh-rooms-btn')?.addEventListener('click', () => {
@@ -474,8 +482,10 @@ export class LobbyComponent {
 
     // Start game button
     this.element.querySelector('.start-game-btn')?.addEventListener('click', () => {
-      // This would trigger game start - for now just hide lobby
-      this.hide();
+      const currentRoom = this.multiplayerSystem.getCurrentRoom();
+      if (currentRoom) {
+        this.multiplayerSystem.startGame();
+      }
     });
 
     // Leave room button
@@ -561,14 +571,38 @@ export class LobbyComponent {
       privateRoom: privateCheckbox.checked
     };
 
+    // Check connection state first
+    const multiplayerState = this.multiplayerSystem.getMultiplayerState();
+    if (!multiplayerState.isConnected) {
+      alert('Not connected to multiplayer server. Please wait and try again.');
+      return;
+    }
+
+    // Show loading state
+    const createBtn = this.element.querySelector('.create-room-submit-btn') as HTMLButtonElement;
+    if (createBtn) {
+      createBtn.disabled = true;
+      createBtn.textContent = 'Creating room...';
+    }
+
     try {
       const room = await this.multiplayerSystem.createRoom(nameInput.value.trim(), settings);
       if (room) {
         this.hideCreateRoomModal();
         this.showCurrentRoom(room);
+        // Auto-close the lobby after successful room creation
+        setTimeout(() => {
+          this.hide();
+        }, 1000);
       }
     } catch (error) {
       alert('Failed to create room. Please try again.');
+    } finally {
+      // Reset button state
+      if (createBtn) {
+        createBtn.disabled = false;
+        createBtn.textContent = 'Create Room';
+      }
     }
   }
 
@@ -651,11 +685,20 @@ export class LobbyComponent {
         clearInterval(this.refreshInterval);
         this.refreshInterval = null;
       }
+      
+      // Call the hide callback if set
+      if (this.onHideCallback) {
+        this.onHideCallback();
+      }
     }
   }
 
   public isShown(): boolean {
     return this.isVisible;
+  }
+  
+  public setOnHideCallback(callback: () => void): void {
+    this.onHideCallback = callback;
   }
 
   public destroy(): void {

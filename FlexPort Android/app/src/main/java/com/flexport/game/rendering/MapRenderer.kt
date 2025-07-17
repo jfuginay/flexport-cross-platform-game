@@ -131,8 +131,8 @@ class MapRenderer(
             }
             
             // Convert lat/lon to world coordinates
-            val worldX = port.coordinates.longitude.toFloat()
-            val worldY = port.coordinates.latitude.toFloat()
+            val worldX = port.position.longitude.toFloat()
+            val worldY = port.position.latitude.toFloat()
             
             sprite.render(spriteShader, worldX, worldY, zoom)
         }
@@ -186,8 +186,8 @@ class MapRenderer(
         
         // Check if a port was tapped
         ports.forEach { port ->
-            val portX = port.coordinates.longitude.toFloat()
-            val portY = port.coordinates.latitude.toFloat()
+            val portX = port.position.longitude.toFloat()
+            val portY = port.position.latitude.toFloat()
             
             val distance = kotlin.math.sqrt(
                 (worldCoords.first - portX) * (worldCoords.first - portX) +

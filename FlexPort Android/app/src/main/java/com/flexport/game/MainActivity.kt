@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -76,8 +77,9 @@ fun FlexPortApp() {
         }
         
         composable(FlexPortDestinations.GAME_WORLD_ROUTE) {
+            val context = LocalContext.current
             // Launch the new dual-view GameActivity
-            startActivity(Intent(this@MainActivity, GameActivity::class.java))
+            context.startActivity(Intent(context, GameActivity::class.java))
         }
         
         composable(FlexPortDestinations.ECONOMIC_DASHBOARD_ROUTE) {

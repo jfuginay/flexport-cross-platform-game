@@ -22,6 +22,9 @@ class MultiplayerManager: ObservableObject {
     private let reachability = NetworkReachability()
     private let securityManager = SecurityManager.shared
     
+    // Game manager reference
+    weak var gameManager: GameManager?
+    
     // 16-player optimization components
     private let connectionPool = ConnectionPool(maxConnections: 16)
     private let messageBuffer = MessageBuffer(maxSize: 1000)
@@ -89,15 +92,26 @@ class MultiplayerManager: ObservableObject {
             throw NetworkError.noConnection
         }
         
-        // Request matchmaking
-        try await matchmakingService.findMatch(gameMode: gameMode, region: region)
-        
-        // Wait for match to be found
-        try await waitForMatch()
-        
-        // Connect to game session
-        if let session = matchmakingService.matchedSession {
-            try await joinGameSession(session)
+        // For cross-platform play with web, directly connect to WebSocket server
+        if gameMode == .realtime {
+            // Connect to the web server at ws://localhost:8080
+            let mockSession = GameSession(
+                id: "cross-platform-\(UUID().uuidString.prefix(8))",
+                hostPlayerId: getCurrentPlayerId(),
+                maxPlayers: 16
+            )
+            try await joinGameSession(mockSession)
+        } else {
+            // Request matchmaking for turn-based games
+            try await matchmakingService.findMatch(gameMode: gameMode, region: region)
+            
+            // Wait for match to be found
+            try await waitForMatch()
+            
+            // Connect to game session
+            if let session = matchmakingService.matchedSession {
+                try await joinGameSession(session)
+            }
         }
     }
     
@@ -163,6 +177,52 @@ class MultiplayerManager: ObservableObject {
             // Store action offline
             offlineManager.saveOfflineAction(action, sessionId: currentSession?.id ?? "offline")
         }
+    }
+    
+    /// Send ship position update for cross-platform synchronization
+    func sendShipUpdate(_ ship: Ship, position: CGPoint, heading: Double) async throws {
+        let action = GameAction(
+            playerId: getCurrentPlayerId(),
+            actionType: "ship_update",
+            parameters: [
+                "shipId": ship.id.uuidString,
+                "shipName": ship.name,
+                "position": ["x": position.x, "y": position.y],
+                "heading": heading,
+                "speed": ship.speed,
+                "capacity": ship.capacity
+            ],
+            timestamp: Date()
+        )
+        
+        try await sendGameAction(action)
+    }
+    
+    /// Send fleet status update for dashboard synchronization
+    func sendFleetStatusUpdate() async throws {
+        let fleetData = gameManager?.gameState.playerAssets.ships.map { ship in
+            return [
+                "id": ship.id.uuidString,
+                "name": ship.name,
+                "capacity": ship.capacity,
+                "speed": ship.speed,
+                "efficiency": ship.efficiency,
+                "status": "active" // Would be calculated from actual game state
+            ]
+        } ?? []
+        
+        let action = GameAction(
+            playerId: getCurrentPlayerId(),
+            actionType: "fleet_status",
+            parameters: [
+                "ships": fleetData,
+                "totalCapacity": gameManager?.gameState.playerAssets.ships.reduce(0) { $0 + $1.capacity } ?? 0,
+                "activeShips": gameManager?.gameState.playerAssets.ships.count ?? 0
+            ],
+            timestamp: Date()
+        )
+        
+        try await sendGameAction(action)
     }
     
     /// Send optimized message with 16-player scaling considerations

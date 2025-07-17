@@ -151,14 +151,13 @@ export class MapSystem {
     const oceanBackground = new PIXI.Graphics();
     
     // Create gradient ocean background
-    const gradient = new PIXI.FillGradient(0, 0, this.app.screen.width, this.app.screen.height);
+    const gradient = new PIXI.FillGradient({x0: 0, y0: 0, x1: this.app.screen.width, y1: this.app.screen.height});
     gradient.addColorStop(0, 0x0f4c75); // Deep ocean blue
     gradient.addColorStop(0.5, 0x3282b8); // Mid ocean blue  
     gradient.addColorStop(1, 0x1a365d); // Darker blue at edges
     
-    oceanBackground.beginFill(0x1a365d); // Use solid color instead of gradient
-    oceanBackground.drawRect(-1000, -1000, this.app.screen.width + 2000, this.app.screen.height + 2000);
-    oceanBackground.endFill();
+    oceanBackground.rect(-1000, -1000, this.app.screen.width + 2000, this.app.screen.height + 2000);
+    oceanBackground.fill(0x1a365d); // Use solid color instead of gradient
     
     // Add animated wave patterns
     if (this.oceanShader) {
@@ -185,9 +184,8 @@ export class MapSystem {
       const radius = Math.random() * 3 + 1;
       const alpha = Math.random() * 0.1 + 0.05;
       
-      waterTexture.beginFill(0x5dade2, alpha);
-      waterTexture.drawCircle(x, y, radius);
-      waterTexture.endFill();
+      waterTexture.circle(x, y, radius);
+      waterTexture.fill({color: 0x5dade2, alpha: alpha});
     }
     
     this.oceanContainer.addChild(waterTexture);
@@ -205,13 +203,12 @@ export class MapSystem {
     // Port background circle
     const background = new PIXI.Graphics();
     const portColor = this.getPortColor(port.size);
-    background.beginFill(portColor, 0.8);
-    background.drawCircle(0, 0, this.getPortRadius(port.size));
-    background.endFill();
+    background.circle(0, 0, this.getPortRadius(port.size));
+    background.fill({color: portColor, alpha: 0.8});
     
     // Port border
-    background.lineStyle(2, 0xffffff, 0.9);
-    background.drawCircle(0, 0, this.getPortRadius(port.size));
+    background.circle(0, 0, this.getPortRadius(port.size));
+    background.stroke({width: 2, color: 0xffffff, alpha: 0.9});
     
     portSprite.addChild(background);
     
@@ -275,7 +272,7 @@ export class MapSystem {
 
   private createPortIcon(port: Port): PIXI.Graphics {
     const icon = new PIXI.Graphics();
-    icon.lineStyle(1, 0xffffff, 1);
+    icon.setStrokeStyle({width: 1, color: 0xffffff, alpha: 1});
     
     // Simple port icon - crane/dock symbol
     icon.moveTo(-3, -2);
@@ -299,7 +296,7 @@ export class MapSystem {
       // dropShadowBlur: 2, // Deprecated in PIXI v8
     });
     
-    const label = new PIXI.Text(port.name, style);
+    const label = new PIXI.Text({ text: port.name, style });
     label.anchor.set(0.5, -0.5);
     label.y = -this.getPortRadius(port.size) - 5;
     label.alpha = 0.8;
@@ -429,7 +426,7 @@ export class MapSystem {
     const lineColor = active ? 0x00ff00 : 0x888888;
     const lineAlpha = active ? 0.8 : 0.5;
     
-    route.lineStyle(2, lineColor, lineAlpha);
+    route.setStrokeStyle({width: 2, color: lineColor, alpha: lineAlpha});
     route.moveTo(startPos.x, startPos.y);
     route.lineTo(endPos.x, endPos.y);
     

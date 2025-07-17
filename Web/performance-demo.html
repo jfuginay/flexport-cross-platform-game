@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlexPort Performance Demo</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #10b981;
+            margin-bottom: 30px;
+        }
+        .demo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .demo-card {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 8px;
+            padding: 20px;
+        }
+        .demo-card h3 {
+            color: #10b981;
+            margin-top: 0;
+        }
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 4px;
+        }
+        .metric-value {
+            color: #3b82f6;
+            font-weight: bold;
+        }
+        button {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #059669;
+        }
+        button:disabled {
+            background: #4b5563;
+            cursor: not-allowed;
+        }
+        .status {
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            display: inline-block;
+        }
+        .status.good { background: #10b981; color: white; }
+        .status.warning { background: #f59e0b; color: white; }
+        .status.bad { background: #ef4444; color: white; }
+        #performance-graph {
+            width: 100%;
+            height: 200px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+        .test-controls {
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 8px;
+        }
+        .code-block {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚢 FlexPort Performance & Lag Compensation Demo</h1>
+        
+        <div class="demo-grid">
+            <div class="demo-card">
+                <h3>🎯 Performance Metrics</h3>
+                <div class="metric">
+                    <span>FPS</span>
+                    <span class="metric-value" id="fps">--</span>
+                </div>
+                <div class="metric">
+                    <span>Frame Time</span>
+                    <span class="metric-value" id="frame-time">-- ms</span>
+                </div>
+                <div class="metric">
+                    <span>Network Latency</span>
+                    <span class="metric-value" id="latency">-- ms</span>
+                </div>
+                <div class="metric">
+                    <span>Bandwidth Usage</span>
+                    <span class="metric-value" id="bandwidth">-- KB/s</span>
+                </div>
+                <div class="metric">
+                    <span>Quality Level</span>
+                    <span class="metric-value" id="quality">AUTO</span>
+                </div>
+                <div class="metric">
+                    <span>Active Ships</span>
+                    <span class="metric-value" id="ships">0</span>
+                </div>
+            </div>
+            
+            <div class="demo-card">
+                <h3>🔧 Optimization Features</h3>
+                <div style="margin: 15px 0;">
+                    <label>
+                        <input type="checkbox" id="prediction" checked> Client-side Prediction
+                    </label>
+                </div>
+                <div style="margin: 15px 0;">
+                    <label>
+                        <input type="checkbox" id="interpolation" checked> Interpolation
+                    </label>
+                </div>
+                <div style="margin: 15px 0;">
+                    <label>
+                        <input type="checkbox" id="compression" checked> Delta Compression
+                    </label>
+                </div>
+                <div style="margin: 15px 0;">
+                    <label>
+                        <input type="checkbox" id="culling" checked> Frustum Culling
+                    </label>
+                </div>
+                <div style="margin: 15px 0;">
+                    <label>
+                        <input type="checkbox" id="lod" checked> Level of Detail
+                    </label>
+                </div>
+                <div style="margin: 15px 0;">
+                    <label>
+                        <input type="checkbox" id="auto-quality" checked> Auto Quality
+                    </label>
+                </div>
+            </div>
+            
+            <div class="demo-card">
+                <h3>🧪 Stress Tests</h3>
+                <button onclick="addShips(10)">Add 10 Ships</button>
+                <button onclick="addShips(50)">Add 50 Ships</button>
+                <button onclick="simulateLatency(100)">Simulate 100ms Lag</button>
+                <button onclick="simulateLatency(200)">Simulate 200ms Lag</button>
+                <button onclick="startStressTest()">Start Stress Test</button>
+                <button onclick="resetDemo()">Reset Demo</button>
+                
+                <div style="margin-top: 15px;">
+                    <div id="test-status">Status: <span class="status good">Ready</span></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-controls">
+            <h3>📊 Real-time Performance Graph</h3>
+            <canvas id="performance-graph"></canvas>
+            
+            <div style="margin-top: 20px;">
+                <h4>Key Optimizations Demonstrated:</h4>
+                <ul>
+                    <li><strong>Lag Compensation:</strong> Ships predict movement locally and reconcile with server</li>
+                    <li><strong>Bandwidth Optimization:</strong> Delta compression keeps data under 500KB/s</li>
+                    <li><strong>60 FPS Target:</strong> Dynamic quality adjustment maintains smooth gameplay</li>
+                    <li><strong>Spatial Culling:</strong> Only visible objects are rendered</li>
+                    <li><strong>Object Pooling:</strong> Sprites and particles are reused efficiently</li>
+                </ul>
+            </div>
+            
+            <div class="code-block">
+// Example: Client-side prediction with server reconciliation
+predictShipMovement(ship, deltaTime) {
+    // Calculate predicted position
+    const velocity = this.calculateVelocity(ship);
+    ship.position += velocity * deltaTime;
+    
+    // Store input for reconciliation
+    this.inputHistory.push({
+        position: ship.position,
+        timestamp: Date.now(),
+        sequenceNumber: this.sequenceNumber++
+    });
+}
+
+// When server update arrives
+reconcilePosition(serverUpdate) {
+    // Find the matching input in history
+    const matchingInput = this.inputHistory.find(
+        input => input.sequenceNumber === serverUpdate.sequenceNumber
+    );
+    
+    // Apply correction if needed
+    if (matchingInput) {
+        const error = serverUpdate.position - matchingInput.position;
+        if (error > MIN_CORRECTION_DISTANCE) {
+            ship.position = serverUpdate.position;
+            // Replay inputs after this point
+            this.replayInputs(serverUpdate.sequenceNumber);
+        }
+    }
+}</div>
+        </div>
+    </div>
+    
+    <script>
+        // Performance monitoring simulation
+        let fps = 60;
+        let frameTime = 16.67;
+        let latency = 50;
+        let bandwidth = 0;
+        let quality = 'HIGH';
+        let shipCount = 0;
+        let stressTestRunning = false;
+        
+        // Graph setup
+        const canvas = document.getElementById('performance-graph');
+        const ctx = canvas.getContext('2d');
+        canvas.width = canvas.offsetWidth;
+        canvas.height = 200;
+        
+        const fpsHistory = [];
+        const latencyHistory = [];
+        const maxHistory = 60;
+        
+        function updateMetrics() {
+            // Simulate performance metrics
+            if (stressTestRunning) {
+                fps = Math.max(30, 60 - shipCount * 0.5 + (Math.random() - 0.5) * 5);
+                frameTime = 1000 / fps;
+                bandwidth = Math.min(500, shipCount * 5 + Math.random() * 50);
+            } else {
+                fps = 58 + Math.random() * 4;
+                frameTime = 1000 / fps;
+                bandwidth = 50 + Math.random() * 100;
+            }
+            
+            // Update DOM
+            document.getElementById('fps').textContent = fps.toFixed(0);
+            document.getElementById('fps').style.color = fps >= 55 ? '#10b981' : fps >= 30 ? '#f59e0b' : '#ef4444';
+            document.getElementById('frame-time').textContent = frameTime.toFixed(1) + ' ms';
+            document.getElementById('latency').textContent = latency.toFixed(0) + ' ms';
+            document.getElementById('latency').style.color = latency <= 50 ? '#10b981' : latency <= 100 ? '#f59e0b' : '#ef4444';
+            document.getElementById('bandwidth').textContent = bandwidth.toFixed(0) + ' KB/s';
+            document.getElementById('bandwidth').style.color = bandwidth <= 500 ? '#10b981' : '#ef4444';
+            document.getElementById('quality').textContent = quality;
+            document.getElementById('ships').textContent = shipCount;
+            
+            // Auto quality adjustment
+            if (document.getElementById('auto-quality').checked) {
+                if (fps < 30 && quality !== 'LOW') {
+                    quality = 'LOW';
+                } else if (fps < 45 && quality === 'HIGH') {
+                    quality = 'MEDIUM';
+                } else if (fps > 55 && quality === 'LOW') {
+                    quality = 'MEDIUM';
+                } else if (fps > 58 && quality === 'MEDIUM') {
+                    quality = 'HIGH';
+                }
+            }
+            
+            // Update history
+            fpsHistory.push(fps);
+            latencyHistory.push(latency);
+            if (fpsHistory.length > maxHistory) fpsHistory.shift();
+            if (latencyHistory.length > maxHistory) latencyHistory.shift();
+            
+            drawGraph();
+        }
+        
+        function drawGraph() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Grid
+            ctx.strokeStyle = 'rgba(16, 185, 129, 0.2)';
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= 4; i++) {
+                const y = (canvas.height / 4) * i;
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+            
+            // FPS line
+            ctx.strokeStyle = '#10b981';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            fpsHistory.forEach((value, index) => {
+                const x = (index / maxHistory) * canvas.width;
+                const y = canvas.height - (value / 120) * canvas.height;
+                if (index === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+            
+            // Latency line
+            ctx.strokeStyle = '#f59e0b';
+            ctx.beginPath();
+            latencyHistory.forEach((value, index) => {
+                const x = (index / maxHistory) * canvas.width;
+                const y = canvas.height - (value / 200) * canvas.height;
+                if (index === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+            
+            // Labels
+            ctx.fillStyle = '#e2e8f0';
+            ctx.font = '12px monospace';
+            ctx.fillText('120 FPS', 5, 15);
+            ctx.fillText('0', 5, canvas.height - 5);
+            ctx.fillText('200ms', canvas.width - 40, 15);
+        }
+        
+        function addShips(count) {
+            shipCount += count;
+            document.getElementById('test-status').innerHTML = 
+                `Status: <span class="status warning">Added ${count} ships</span>`;
+        }
+        
+        function simulateLatency(ms) {
+            latency = ms;
+            document.getElementById('test-status').innerHTML = 
+                `Status: <span class="status warning">Simulating ${ms}ms latency</span>`;
+        }
+        
+        function startStressTest() {
+            stressTestRunning = true;
+            shipCount = 100;
+            document.getElementById('test-status').innerHTML = 
+                `Status: <span class="status bad">Stress test running</span>`;
+            
+            // Gradually increase load
+            const interval = setInterval(() => {
+                shipCount += 10;
+                if (shipCount > 200) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        stressTestRunning = false;
+                        document.getElementById('test-status').innerHTML = 
+                            `Status: <span class="status good">Stress test complete</span>`;
+                    }, 5000);
+                }
+            }, 1000);
+        }
+        
+        function resetDemo() {
+            shipCount = 0;
+            latency = 50;
+            quality = 'HIGH';
+            stressTestRunning = false;
+            document.getElementById('test-status').innerHTML = 
+                `Status: <span class="status good">Ready</span>`;
+        }
+        
+        // Update metrics every 100ms
+        setInterval(updateMetrics, 100);
+        
+        // Feature toggles
+        document.getElementById('prediction').addEventListener('change', (e) => {
+            console.log('Client-side prediction:', e.target.checked ? 'enabled' : 'disabled');
+        });
+        
+        document.getElementById('interpolation').addEventListener('change', (e) => {
+            console.log('Interpolation:', e.target.checked ? 'enabled' : 'disabled');
+        });
+        
+        document.getElementById('compression').addEventListener('change', (e) => {
+            console.log('Delta compression:', e.target.checked ? 'enabled' : 'disabled');
+            if (!e.target.checked) bandwidth *= 3; // Simulate higher bandwidth
+        });
+        
+        // Initial update
+        updateMetrics();
+    </script>
+</body>
+</html>

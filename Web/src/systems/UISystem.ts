@@ -56,8 +56,8 @@ export class UISystem {
           <div class="cash-value" style="font-size: 16px; font-weight: bold; color: #10b981;">$0</div>
         </div>
         <div class="stat-item">
-          <div style="font-size: 12px; color: #94a3b8;">Reputation</div>
-          <div class="reputation-value" style="font-size: 16px; font-weight: bold; color: #f59e0b;">0</div>
+          <div style="font-size: 12px; color: #94a3b8;">Level</div>
+          <div class="level-value" style="font-size: 16px; font-weight: bold; color: #3b82f6;">1</div>
         </div>
         <div class="stat-item">
           <div style="font-size: 12px; color: #94a3b8;">Ships</div>
@@ -73,6 +73,7 @@ export class UISystem {
         <button class="btn btn-primary" id="buy-ship-btn">Buy Ship</button>
         <button class="btn btn-secondary" id="create-route-btn">New Route</button>
         <button class="btn btn-secondary" id="markets-btn">Markets</button>
+        <button class="btn btn-secondary" id="achievements-btn">Achievements</button>
       </div>
     `;
 
@@ -559,7 +560,7 @@ export class UISystem {
     const player = this.gameState.player;
     
     (hud.querySelector('.cash-value') as HTMLElement).textContent = `$${this.formatNumber(player.cash)}`;
-    (hud.querySelector('.reputation-value') as HTMLElement).textContent = player.reputation.toString();
+    (hud.querySelector('.level-value') as HTMLElement).textContent = player.level.toString();
     (hud.querySelector('.ships-value') as HTMLElement).textContent = player.ships.length.toString();
     (hud.querySelector('.routes-value') as HTMLElement).textContent = player.tradeRoutes.length.toString();
   }
