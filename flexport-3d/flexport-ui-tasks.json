@@ -1,0 +1,50 @@
+{
+  "project": "FlexPort 3D UI/UX Improvements",
+  "parallel": true,
+  "tasks": [
+    {
+      "id": "minimap-routes",
+      "name": "Mini-map and Route Visualization",
+      "description": "Implement a mini-map showing global operations and ship routes with animated dotted lines",
+      "prompt": "You are working on the FlexPort 3D logistics game built with React Three Fiber. Your task is to implement a mini-map and route visualization system. The game is located at /Users/jfuginay/Documents/dev/FlexPort/flexport-3d/\n\nSpecifically:\n1. Create a new MiniMap component that shows a 2D top-down view of all ports and ships\n2. Add animated dotted lines showing ship routes from current position to destination\n3. Make the mini-map interactive - clicking on ships/ports should select them in the main view\n4. Position the mini-map in the bottom-right corner with a semi-transparent background\n5. Add zoom controls for the mini-map\n6. Show ship icons that match their type (container, bulk, tanker, plane)\n7. Color-code ports (green for owned, blue for others)\n8. Update the UI component to include the mini-map\n\nThe game uses Three.js, React Three Fiber, and Zustand for state management. Check the existing code structure in src/components/ and src/store/gameStore.ts",
+      "requirements": [
+        "Mini-map component with 2D view",
+        "Animated route lines",
+        "Interactive selection",
+        "Proper positioning and styling",
+        "Integration with existing game state"
+      ]
+    },
+    {
+      "id": "visual-effects",
+      "name": "Visual Effects (Ship Trails, Weather, Day/Night)",
+      "description": "Add impressive visual effects including ship wake trails, weather system, and day/night cycle",
+      "prompt": "You are working on the FlexPort 3D logistics game built with React Three Fiber. Your task is to implement visual effects to make the game more immersive. The game is located at /Users/jfuginay/Documents/dev/FlexPort/flexport-3d/\n\nSpecifically:\n1. Add ship wake trails - white foam trails that fade over time as ships move through water\n2. Implement a weather system with:\n   - Clear, cloudy, rainy, and stormy weather states\n   - Rain particles during rain/storm\n   - Darker lighting during storms\n   - Weather affects ship speed (storms slow ships)\n3. Add day/night cycle:\n   - Smooth transition between day and night\n   - Sun/moon movement\n   - Adjust ambient and directional light colors\n   - Port lights that turn on at night\n4. Update the ocean shader to respond to weather (bigger waves in storms)\n5. Add atmospheric fog that changes with weather\n\nUse React Three Fiber's post-processing capabilities and Three.js shaders. Check existing World.tsx and Ship.tsx components.",
+      "requirements": [
+        "Ship wake trail system",
+        "Weather states with visual effects",
+        "Day/night cycle with proper lighting",
+        "Ocean shader updates",
+        "Performance optimization"
+      ]
+    },
+    {
+      "id": "ui-polish",
+      "name": "Advanced UI Overlay and Information Dashboard",
+      "description": "Enhance the UI with better information architecture, animations, and real-time indicators",
+      "prompt": "You are working on the FlexPort 3D logistics game built with React Three Fiber. Your task is to enhance the UI overlay with better information display and polish. The game is located at /Users/jfuginay/Documents/dev/FlexPort/flexport-3d/\n\nSpecifically:\n1. Add a fleet efficiency dashboard showing:\n   - Real-time profit/loss ticker\n   - Fleet utilization percentage\n   - Average delivery time\n   - Fuel costs tracker\n2. Enhance contract display with:\n   - Urgency indicators (red for urgent, yellow for normal, green for plenty of time)\n   - Profit margin calculations\n   - Progress bars for active contracts\n3. Add smooth animations:\n   - Panel slide-in/out transitions\n   - Number counter animations for money changes\n   - Pulse animations for urgent items\n4. Implement notification system:\n   - Toast notifications for important events (contract completed, ship arrived, etc.)\n   - Sound effects for notifications\n5. Add quick action buttons:\n   - Auto-assign best ship to contract\n   - Recall all idle ships to home port\n   - Pause all ship movements\n6. Improve the existing UI with better typography and spacing\n\nUse React Spring for animations and ensure all UI updates are smooth. Check the existing UI.tsx component and UI.css.",
+      "requirements": [
+        "Fleet efficiency dashboard",
+        "Enhanced contract display",
+        "Smooth animations throughout",
+        "Notification system",
+        "Quick action buttons"
+      ]
+    }
+  ],
+  "output": {
+    "format": "detailed",
+    "saveToFile": true,
+    "filename": "flexport-ui-improvements-results.md"
+  }
+}

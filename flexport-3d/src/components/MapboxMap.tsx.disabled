@@ -1,0 +1,173 @@
+import React, { useRef, useCallback, useEffect, useState } from 'react';
+import Map, { Marker, Source, Layer, Popup } from 'react-map-gl';
+import type { MapMouseEvent, ViewStateChangeEvent } from 'react-map-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
+import { useGameStore } from '../store/gameStore';
+import { ShipStatus } from '../types/game.types';
+import './MapboxMap.css';
+
+// You'll need to add your Mapbox token to .env
+const MAPBOX_TOKEN = process.env.REACT_APP_MAPBOX_TOKEN || '';
+
+export const MapboxMap: React.FC = () => {
+  const { fleet, ports, selectShip, selectPort, selectedShipId, selectedPortId } = useGameStore();
+  const [popupInfo, setPopupInfo] = useState<any>(null);
+  const [viewState, setViewState] = useState({
+    longitude: 0,
+    latitude: 20,
+    zoom: 2,
+    pitch: 0,
+    bearing: 0
+  });
+
+  // Convert 3D position to lat/lng
+  const positionToLatLng = (position: { x: number, y: number, z: number }) => {
+    const normalized = {
+      x: position.x / 100,
+      y: position.y / 100,
+      z: position.z / 100
+    };
+    const lat = Math.asin(normalized.y) * (180 / Math.PI);
+    const lng = Math.atan2(normalized.z, -normalized.x) * (180 / Math.PI);
+    return { lat, lng };
+  };
+
+  // Create shipping routes data
+  const shippingRoutes = fleet
+    .filter(ship => ship.destination && ship.status === ShipStatus.SAILING)
+    .map(ship => {
+      const start = positionToLatLng(ship.position);
+      const end = positionToLatLng(ship.destination!.position);
+      return {
+        type: 'Feature' as const,
+        geometry: {
+          type: 'LineString' as const,
+          coordinates: [
+            [start.lng, start.lat],
+            [end.lng, end.lat]
+          ]
+        },
+        properties: {
+          shipId: ship.id,
+          shipName: ship.name
+        }
+      };
+    });
+
+  const routesGeoJSON = {
+    type: 'FeatureCollection' as const,
+    features: shippingRoutes
+  };
+
+  const handleMarkerClick = useCallback((e: MapMouseEvent, type: 'ship' | 'port', id: string) => {
+    e.originalEvent?.stopPropagation();
+    if (type === 'ship') {
+      selectShip(id);
+      const ship = fleet.find(s => s.id === id);
+      if (ship) {
+        const { lat, lng } = positionToLatLng(ship.position);
+        setPopupInfo({ type: 'ship', data: ship, lat, lng });
+      }
+    } else {
+      selectPort(id);
+      const port = ports.find(p => p.id === id);
+      if (port) {
+        const { lat, lng } = positionToLatLng(port.position);
+        setPopupInfo({ type: 'port', data: port, lat, lng });
+      }
+    }
+  }, [fleet, ports, selectShip, selectPort]);
+
+  return (
+    <Map
+      {...viewState}
+      onMove={(evt: ViewStateChangeEvent) => setViewState(evt.viewState)}
+      mapStyle="mapbox://styles/mapbox/dark-v11"
+      mapboxAccessToken={MAPBOX_TOKEN}
+      style={{ width: '100%', height: '100%' }}
+    >
+      {/* Shipping Routes */}
+      <Source id="shipping-routes" type="geojson" data={routesGeoJSON}>
+        <Layer
+          id="shipping-routes"
+          type="line"
+          paint={{
+            'line-color': '#3b82f6',
+            'line-width': 2,
+            'line-opacity': 0.6,
+            'line-dasharray': [2, 2]
+          }}
+        />
+      </Source>
+
+      {/* Port Markers */}
+      {ports.map(port => {
+        const { lat, lng } = positionToLatLng(port.position);
+        return (
+          <Marker
+            key={port.id}
+            longitude={lng}
+            latitude={lat}
+            onClick={(e: MapMouseEvent) => handleMarkerClick(e, 'port', port.id)}
+          >
+            <div className={`port-marker ${selectedPortId === port.id ? 'selected' : ''} ${port.isPlayerOwned ? 'owned' : ''}`}>
+              <div className="port-icon">🏢</div>
+              <div className="port-label">{port.name}</div>
+            </div>
+          </Marker>
+        );
+      })}
+
+      {/* Ship Markers */}
+      {fleet.map(ship => {
+        const { lat, lng } = positionToLatLng(ship.position);
+        const rotation = 0; // Ships don't have rotation in our current model
+        
+        return (
+          <Marker
+            key={ship.id}
+            longitude={lng}
+            latitude={lat}
+            onClick={(e: MapMouseEvent) => handleMarkerClick(e, 'ship', ship.id)}
+          >
+            <div className={`ship-marker ${selectedShipId === ship.id ? 'selected' : ''}`}>
+              <div className="ship-icon">🚢</div>
+              <div className="ship-label">{ship.name}</div>
+              <div className={`ship-status ${ship.status.toLowerCase()}`} />
+            </div>
+          </Marker>
+        );
+      })}
+
+      {/* Popup */}
+      {popupInfo && (
+        <Popup
+          longitude={popupInfo.lng}
+          latitude={popupInfo.lat}
+          anchor="bottom"
+          onClose={() => setPopupInfo(null)}
+          closeButton={true}
+          closeOnClick={false}
+        >
+          <div className="map-popup">
+            {popupInfo.type === 'ship' ? (
+              <>
+                <h3>🚢 {popupInfo.data.name}</h3>
+                <p>Status: {popupInfo.data.status}</p>
+                <p>Capacity: {popupInfo.data.cargo.length}/{popupInfo.data.capacity} TEU</p>
+                <p>Health: {popupInfo.data.health}%</p>
+              </>
+            ) : (
+              <>
+                <h3>🏢 {popupInfo.data.name}</h3>
+                <p>{popupInfo.data.country}</p>
+                <p>Demand: {popupInfo.data.demandLevel}</p>
+                {popupInfo.data.isPlayerOwned && <p className="owned-badge">Player Owned</p>}
+              </>
+            )}
+          </div>
+        </Popup>
+      )}
+    </Map>
+  );
+};

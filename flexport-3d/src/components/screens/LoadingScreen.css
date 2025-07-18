@@ -1,0 +1,263 @@
+.loading-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(135deg, #0a1929 0%, #1a237e 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  overflow: hidden;
+}
+
+.loading-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.grid-overlay {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 50px 50px;
+  animation: grid-move 10s linear infinite;
+}
+
+@keyframes grid-move {
+  0% { transform: translate(0, 0); }
+  100% { transform: translate(50px, 50px); }
+}
+
+.loading-content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  color: white;
+  max-width: 600px;
+  padding: 40px;
+}
+
+/* Logo Styling */
+.logo-container {
+  margin-bottom: 60px;
+  animation: logo-glow 2s ease-in-out infinite alternate;
+}
+
+@keyframes logo-glow {
+  from { filter: brightness(1) drop-shadow(0 0 20px rgba(59, 130, 246, 0.5)); }
+  to { filter: brightness(1.2) drop-shadow(0 0 40px rgba(59, 130, 246, 0.8)); }
+}
+
+.game-logo {
+  font-size: 72px;
+  font-weight: 900;
+  margin: 0;
+  letter-spacing: -2px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.logo-flex {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.logo-port {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.logo-global {
+  color: #e2e8f0;
+  font-weight: 300;
+  font-size: 36px;
+  align-self: flex-end;
+  margin-bottom: 8px;
+}
+
+.logo-tagline {
+  font-size: 18px;
+  color: #94a3b8;
+  margin-top: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+/* Loading Bar */
+.loading-bar-container {
+  margin-bottom: 40px;
+}
+
+.loading-task {
+  font-size: 16px;
+  color: #cbd5e1;
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+
+.loading-bar {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.loading-progress {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6 0%, #10b981 100%);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.loading-progress::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    transparent 100%
+  );
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.loading-percentage {
+  text-align: right;
+  font-size: 14px;
+  color: #94a3b8;
+  margin-top: 8px;
+  font-weight: 600;
+}
+
+/* Shipping Facts */
+.shipping-fact {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 40px;
+  min-height: 50px;
+  opacity: 0;
+  animation: fade-in 0.5s ease forwards;
+}
+
+@keyframes fade-in {
+  to { opacity: 1; }
+}
+
+.fact-icon {
+  font-size: 24px;
+}
+
+.fact-text {
+  font-size: 16px;
+  color: #cbd5e1;
+  font-style: italic;
+  line-height: 1.5;
+}
+
+/* Ship Animation */
+.loading-animation {
+  position: relative;
+  height: 120px;
+  margin-top: 40px;
+  background: linear-gradient(to bottom, transparent 0%, transparent 60%, rgba(0, 51, 102, 0.1) 80%, rgba(0, 51, 102, 0.2) 100%);
+  border-radius: 0 0 50% 50% / 0 0 20% 20%;
+}
+
+.ship-container {
+  position: relative;
+  animation: ship-sail 3s ease-in-out infinite;
+  height: 100px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 20px;
+}
+
+@keyframes ship-sail {
+  0%, 100% { transform: translateX(-30px) translateY(0); }
+  50% { transform: translateX(30px) translateY(-3px); }
+}
+
+.ship {
+  font-size: 48px;
+  display: inline-block;
+  animation: ship-bob 2s ease-in-out infinite;
+  position: relative;
+  z-index: 2;
+  margin-bottom: -10px;
+}
+
+@keyframes ship-bob {
+  0%, 100% { transform: rotate(-5deg) translateY(2px); }
+  50% { transform: rotate(5deg) translateY(-2px); }
+}
+
+.waves {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 300px;
+  height: 30px;
+  z-index: 1;
+}
+
+.wave {
+  position: absolute;
+  width: 100%;
+  height: 15px;
+  background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.4), transparent);
+  border-radius: 50%;
+  opacity: 0.8;
+  bottom: 0;
+}
+
+.wave1 {
+  animation: wave-move 3s ease-in-out infinite;
+  bottom: 5px;
+}
+
+.wave2 {
+  animation: wave-move 3s ease-in-out infinite 0.5s;
+  opacity: 0.6;
+  bottom: 2px;
+}
+
+.wave3 {
+  animation: wave-move 3s ease-in-out infinite 1s;
+  opacity: 0.4;
+  bottom: 0;
+}
+
+@keyframes wave-move {
+  0% { transform: translateX(-100%) scaleY(1) scaleX(1.2); }
+  50% { transform: translateX(0) scaleY(1.3) scaleX(1); }
+  100% { transform: translateX(100%) scaleY(1) scaleX(1.2); }
+}

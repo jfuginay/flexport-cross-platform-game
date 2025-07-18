@@ -1,0 +1,12 @@
+# Earth Blue Marble Texture
+
+This file is a placeholder for the Earth texture.
+
+To add a proper Earth texture:
+1. Download a free Earth texture from NASA's Blue Marble collection
+2. Save it as earth-blue-marble.jpg in this directory
+3. The texture will be automatically loaded by the SimpleEarth component
+
+Alternative sources:
+- NASA Visible Earth: https://visibleearth.nasa.gov/collection/1484/blue-marble
+- Natural Earth: https://www.naturalearthdata.com/

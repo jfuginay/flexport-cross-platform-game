@@ -1,0 +1,289 @@
+.client-details-container {
+  background: rgba(20, 20, 30, 0.95);
+  border-radius: 8px;
+  padding: 20px;
+  color: white;
+  max-width: 800px;
+  margin: 20px auto;
+  backdrop-filter: blur(10px);
+}
+
+.client-details-container h2 {
+  margin: 0 0 20px 0;
+  color: #4a90e2;
+  text-align: center;
+}
+
+.client-overview {
+  margin-bottom: 30px;
+}
+
+.client-stats {
+  display: flex;
+  justify-content: space-around;
+  gap: 20px;
+}
+
+.client-stats .stat {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 15px 25px;
+  border-radius: 8px;
+  text-align: center;
+  flex: 1;
+}
+
+.client-stats .label {
+  display: block;
+  font-size: 14px;
+  color: #888;
+  margin-bottom: 5px;
+}
+
+.client-stats .value {
+  display: block;
+  font-size: 24px;
+  font-weight: bold;
+  color: #4a90e2;
+}
+
+.client-list-section h3 {
+  color: #4a90e2;
+  margin-bottom: 15px;
+}
+
+.client-list {
+  display: grid;
+  gap: 15px;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.client-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(74, 144, 226, 0.3);
+  border-radius: 8px;
+  padding: 15px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.client-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(74, 144, 226, 0.5);
+  transform: translateX(5px);
+}
+
+.client-card.selected {
+  background: rgba(74, 144, 226, 0.1);
+  border-color: #4a90e2;
+}
+
+.client-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.client-header h4 {
+  margin: 0;
+  color: white;
+}
+
+.industry {
+  font-size: 12px;
+  color: #888;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.client-summary {
+  display: flex;
+  gap: 20px;
+  font-size: 14px;
+}
+
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.summary-item .label {
+  color: #888;
+  font-size: 12px;
+}
+
+.summary-item .value {
+  color: white;
+  font-weight: 500;
+}
+
+.rating {
+  color: #ffd700;
+}
+
+.client-details {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 500px;
+  }
+}
+
+.client-details h5 {
+  color: #4a90e2;
+  margin: 15px 0 10px 0;
+  font-size: 14px;
+}
+
+.route-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 15px 0;
+}
+
+.route-list li {
+  padding: 5px 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  margin-bottom: 5px;
+  font-size: 13px;
+}
+
+.contract-history {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 15px;
+}
+
+.history-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.status {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.status-completed {
+  background: rgba(0, 255, 0, 0.2);
+  color: #00ff00;
+}
+
+.status-active {
+  background: rgba(0, 128, 255, 0.2);
+  color: #0080ff;
+}
+
+.status-available {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.status-failed {
+  background: rgba(255, 0, 0, 0.2);
+  color: #ff0000;
+}
+
+.cargo {
+  color: #888;
+}
+
+.client-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.client-actions button {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid rgba(74, 144, 226, 0.5);
+  background: rgba(74, 144, 226, 0.2);
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 13px;
+}
+
+.client-actions button:hover {
+  background: rgba(74, 144, 226, 0.4);
+  transform: translateY(-2px);
+}
+
+.client-insights {
+  margin-top: 30px;
+}
+
+.client-insights h3 {
+  color: #4a90e2;
+  margin-bottom: 15px;
+}
+
+.insights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+}
+
+.insight-card {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 15px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.insight-card h4 {
+  color: #888;
+  font-size: 14px;
+  margin: 0 0 10px 0;
+  font-weight: normal;
+}
+
+.insight-card p {
+  color: #4a90e2;
+  font-size: 20px;
+  font-weight: bold;
+  margin: 0;
+}
+
+/* Scrollbar styling */
+.client-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.client-list::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.client-list::-webkit-scrollbar-thumb {
+  background: rgba(74, 144, 226, 0.5);
+  border-radius: 4px;
+}
+
+.client-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(74, 144, 226, 0.7);
+}

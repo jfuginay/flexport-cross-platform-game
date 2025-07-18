@@ -1,0 +1,602 @@
+.ui-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.ui-overlay > * {
+  pointer-events: auto;
+}
+
+/* Top bar */
+.top-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(10px);
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: white;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.company-info h1 {
+  font-size: 1.5rem;
+  margin: 0;
+  font-weight: 600;
+}
+
+.date {
+  font-size: 0.9rem;
+  opacity: 0.7;
+}
+
+.stats {
+  display: flex;
+  gap: 2rem;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stat .label {
+  font-size: 0.8rem;
+  opacity: 0.7;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.stat .value {
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.stat .value.money {
+  color: #4CAF50;
+}
+
+.stat .value.ai-progress {
+  color: #FF6B6B;
+}
+
+.game-controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.game-controls button,
+.game-controls select {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.game-controls button:hover,
+.game-controls select:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Side panel */
+.side-panel {
+  position: absolute;
+  right: 0;
+  top: 80px;
+  bottom: 0;
+  width: 350px;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(10px);
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  display: flex;
+  flex-direction: column;
+}
+
+.tabs {
+  display: flex;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tabs button {
+  flex: 1;
+  padding: 1rem;
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.7;
+  transition: all 0.2s;
+}
+
+.tabs button:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tabs button.active {
+  opacity: 1;
+  border-bottom: 2px solid #2196F3;
+}
+
+.tab-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+}
+
+/* Fleet tab */
+.add-ship-btn {
+  width: 100%;
+  padding: 1rem;
+  background: #2196F3;
+  border: none;
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-bottom: 1rem;
+}
+
+.add-ship-btn:hover {
+  background: #1976D2;
+}
+
+.fleet-list,
+.contracts-list,
+.ports-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.fleet-item,
+.contract-item,
+.port-item {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.fleet-item h3,
+.contract-item h3,
+.port-item h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.1rem;
+}
+
+.ship-info,
+.port-info {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.ship-type {
+  color: #2196F3;
+}
+
+.ship-status {
+  color: #4CAF50;
+}
+
+.ship-stats,
+.port-stats {
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+.ship-stats div,
+.port-stats div {
+  margin-top: 0.25rem;
+}
+
+/* Contracts tab */
+.contract-route {
+  font-size: 0.9rem;
+  opacity: 0.8;
+  margin-bottom: 0.5rem;
+}
+
+.contract-details {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.contract-value {
+  color: #4CAF50;
+  font-weight: 600;
+}
+
+.contract-deadline {
+  font-size: 0.85rem;
+  opacity: 0.7;
+  margin-bottom: 0.75rem;
+}
+
+.accept-btn {
+  background: #4CAF50;
+  border: none;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  width: 100%;
+}
+
+.accept-btn:hover {
+  background: #45a049;
+}
+
+/* Ports tab */
+.owned {
+  background: #4CAF50;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: #1a1a1a;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 2rem;
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  color: white;
+}
+
+.modal h2 {
+  margin: 0 0 1.5rem 0;
+  font-size: 1.5rem;
+}
+
+.ship-options {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.ship-option {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.ship-option h3 {
+  margin: 0 0 0.75rem 0;
+  color: #2196F3;
+}
+
+.ship-specs {
+  font-size: 0.9rem;
+  opacity: 0.8;
+  margin-bottom: 1rem;
+}
+
+.ship-specs div {
+  margin-bottom: 0.25rem;
+}
+
+.ship-option button {
+  width: 100%;
+  padding: 0.75rem;
+  background: #2196F3;
+  border: none;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.ship-option button:hover:not(:disabled) {
+  background: #1976D2;
+}
+
+.ship-option button:disabled {
+  background: #555;
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.close-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.close-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Singularity screen */
+.singularity-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #000;
+  color: #00FF00;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Courier New', monospace;
+  text-align: center;
+  z-index: 9999;
+}
+
+.singularity-overlay h1 {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  text-shadow: 0 0 20px #00FF00;
+  animation: pulse 2s infinite;
+}
+
+.singularity-overlay p {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.8;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .top-bar {
+    flex-direction: column;
+    padding: 0.5rem 1rem;
+    gap: 0.5rem;
+  }
+  
+  .stats {
+    gap: 1rem;
+  }
+  
+  .side-panel {
+    width: 100%;
+    top: auto;
+    bottom: 0;
+    height: 40vh;
+    border-left: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .ship-options {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* New styles for cargo and contract assignment */
+.ship-contract, .ship-destination {
+  margin-top: 0.5rem;
+  color: #00ff88;
+  font-size: 0.85rem;
+}
+
+.contract-actions {
+  margin-top: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.active-label {
+  background: #4CAF50;
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.contract-actions select {
+  flex: 1;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  color: white;
+  font-size: 0.9rem;
+}
+
+.contract-actions select option {
+  background: #333;
+  color: white;
+}
+
+/* Selection panel */
+.selection-panel {
+  position: absolute;
+  top: 50%;
+  left: 20px;
+  transform: translateY(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 1rem;
+  color: white;
+  min-width: 200px;
+  max-width: 300px;
+}
+
+.selection-panel h3 {
+  margin: 0 0 0.75rem 0;
+  color: #FFD700;
+  font-size: 1.2rem;
+}
+
+.selection-info {
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.selection-info div {
+  margin-bottom: 0.25rem;
+}
+
+.owned-badge {
+  background: #4CAF50;
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: inline-block;
+  margin-top: 0.5rem;
+}
+
+.selection-actions h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+}
+
+.selection-actions select {
+  width: 100%;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  color: white;
+  font-size: 0.9rem;
+}
+
+.selection-actions select option {
+  background: #333;
+  color: white;
+}
+
+/* Ship naming modal */
+.ship-naming {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.ship-preview {
+  text-align: center;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+.ship-preview h3 {
+  margin: 0 0 0.5rem 0;
+  color: #2196F3;
+}
+
+.name-input {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.name-input label {
+  font-weight: 600;
+  color: #FFD700;
+}
+
+.name-input input {
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  color: white;
+  font-size: 1rem;
+}
+
+.name-input input:focus {
+  outline: none;
+  border-color: #2196F3;
+  box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
+}
+
+.modal-buttons {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+.purchase-btn {
+  padding: 0.75rem 1.5rem;
+  background: #4CAF50;
+  border: none;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.purchase-btn:hover:not(:disabled) {
+  background: #45a049;
+}
+
+.purchase-btn:disabled {
+  background: #555;
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.cancel-btn {
+  padding: 0.75rem 1.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.cancel-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}

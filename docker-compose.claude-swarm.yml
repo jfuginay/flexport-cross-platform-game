@@ -1,0 +1,105 @@
+version: '3.8'
+
+services:
+  # Claude Instance 1: Tile Fetching & Caching Specialist
+  claude-tile-fetcher:
+    image: anthropic/claude:latest
+    container_name: claude-tile-fetcher
+    environment:
+      - TASK=TILE_FETCHING
+      - MAPTILER_KEY=YbCOFqTnXk0xnOtrQ6vG
+      - MAPBOX_TOKEN=pk.eyJ1IjoiamZ1Z2luYXkiLCJhIjoiY21icmNha2hrMGE0azJscHVzdmVuZTVjOSJ9.oiJoYvc_G-tLUmaSzGVsVQ
+    volumes:
+      - ./flexport-3d:/app
+      - tile-cache:/cache
+    command: |
+      Implement a robust tile fetching system that:
+      1. Fetches map tiles from MapTiler and Mapbox GL at multiple zoom levels
+      2. Implements proper caching with IndexedDB
+      3. Handles rate limiting and retries
+      4. Pre-fetches tiles for smooth zooming
+      Focus: Create TileFetchingService.ts with WebWorker support
+
+  # Claude Instance 2: Sphere Mapping & UV Specialist  
+  claude-sphere-mapper:
+    image: anthropic/claude:latest
+    container_name: claude-sphere-mapper
+    environment:
+      - TASK=SPHERE_MAPPING
+    volumes:
+      - ./flexport-3d:/app
+    command: |
+      Design and implement the mathematical transformation:
+      1. Convert Mercator projection tiles to equirectangular
+      2. Map equirectangular to sphere UV coordinates
+      3. Handle tile seams and distortion at poles
+      4. Implement adaptive subdivision for quality
+      Focus: Create SphericalMapping.ts with projection algorithms
+
+  # Claude Instance 3: WebGL Shader Specialist
+  claude-shader-expert:
+    image: anthropic/claude:latest
+    container_name: claude-shader-expert
+    environment:
+      - TASK=SHADER_DEVELOPMENT
+    volumes:
+      - ./flexport-3d:/app
+    command: |
+      Create advanced WebGL shaders for the globe:
+      1. Vertex shader for proper sphere tessellation
+      2. Fragment shader for multi-texture blending
+      3. Implement triplanar mapping for poles
+      4. Add atmospheric scattering
+      5. Ocean specular and wave displacement
+      Focus: Create GlobeShaders.ts with GLSL code
+
+  # Claude Instance 4: Three.js Integration Specialist
+  claude-threejs-integrator:
+    image: anthropic/claude:latest
+    container_name: claude-threejs-integrator
+    environment:
+      - TASK=THREEJS_INTEGRATION
+    volumes:
+      - ./flexport-3d:/app
+    command: |
+      Integrate the tile system with Three.js:
+      1. Create custom THREE.Geometry for tiled sphere
+      2. Implement LOD (Level of Detail) system
+      3. Dynamic tile loading based on camera distance
+      4. Smooth transitions between zoom levels
+      5. Memory management and tile disposal
+      Focus: Create TiledGlobeGeometry.ts
+
+  # Claude Instance 5: MapTiler/Mapbox API Specialist
+  claude-api-specialist:
+    image: anthropic/claude:latest
+    container_name: claude-api-specialist
+    environment:
+      - TASK=API_INTEGRATION
+    volumes:
+      - ./flexport-3d:/app
+    command: |
+      Optimize API usage for both MapTiler and Mapbox:
+      1. Implement intelligent tile request batching
+      2. Use vector tiles where appropriate
+      3. Blend satellite and vector data
+      4. Handle authentication and rate limits
+      5. Implement fallback strategies
+      Focus: Create MapProviderService.ts
+
+  # Coordinator service
+  coordinator:
+    image: redis:alpine
+    container_name: claude-coordinator
+    ports:
+      - "6379:6379"
+    volumes:
+      - coordinator-data:/data
+
+volumes:
+  tile-cache:
+  coordinator-data:
+
+networks:
+  default:
+    name: claude-swarm-network

@@ -1,0 +1,126 @@
+.port-marker {
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform: translate(-50%, -50%);
+}
+
+.port-marker.selected {
+  filter: drop-shadow(0 0 10px #fbbf24);
+}
+
+.port-marker.owned .port-icon {
+  filter: hue-rotate(120deg);
+}
+
+.port-icon {
+  font-size: 24px;
+  transition: transform 0.2s;
+}
+
+.port-marker:hover .port-icon {
+  transform: scale(1.2);
+}
+
+.port-label {
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  margin-top: 4px;
+  white-space: nowrap;
+}
+
+.ship-marker {
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform: translate(-50%, -50%);
+}
+
+.ship-marker.selected {
+  filter: drop-shadow(0 0 10px #3b82f6);
+}
+
+.ship-icon {
+  font-size: 20px;
+  transition: transform 0.2s;
+}
+
+.ship-marker:hover .ship-icon {
+  transform: scale(1.2);
+}
+
+.ship-label {
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  margin-top: 2px;
+  white-space: nowrap;
+}
+
+.ship-status {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-top: 2px;
+}
+
+.ship-status.idle { background: #10b981; }
+.ship-status.sailing { background: #3b82f6; }
+.ship-status.loading,
+.ship-status.unloading { background: #f59e0b; }
+.ship-status.maintenance { background: #ef4444; }
+
+.map-popup {
+  padding: 8px;
+  min-width: 150px;
+}
+
+.map-popup h3 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.map-popup p {
+  margin: 4px 0;
+  font-size: 14px;
+  color: #666;
+}
+
+.owned-badge {
+  background: #10b981;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  display: inline-block;
+  margin-top: 4px;
+}
+
+/* Mapbox overrides for dark theme */
+.mapboxgl-popup-content {
+  background: #1a1a2e;
+  color: white;
+  border: 1px solid #2d3748;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.mapboxgl-popup-close-button {
+  color: white;
+  font-size: 18px;
+}
+
+.mapboxgl-popup-close-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.mapboxgl-popup-tip {
+  border-top-color: #1a1a2e;
+}

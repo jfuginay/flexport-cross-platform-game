@@ -1,0 +1,154 @@
+.dashboard-container {
+  position: fixed;
+  top: 80px;
+  left: 20px;
+  width: 320px;
+  background: rgba(0, 10, 20, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  z-index: 90;
+  backdrop-filter: blur(10px);
+}
+
+.fleet-efficiency,
+.profit-tracker {
+  margin-bottom: 20px;
+}
+
+.fleet-efficiency h3,
+.profit-tracker h3 {
+  color: #ffffff;
+  font-size: 16px;
+  margin-bottom: 15px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.efficiency-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.stat-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  padding: 10px;
+  text-align: center;
+}
+
+.stat-label {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 11px;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+}
+
+.stat-value {
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.stat-value.large {
+  font-size: 28px;
+  color: #00ff88;
+}
+
+.stat-detail {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 10px;
+  margin-top: 5px;
+}
+
+.efficiency-bar {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.efficiency-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #00ff88, #00aa55);
+  transition: width 0.5s ease;
+}
+
+.profit-display {
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+.profit-label {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 12px;
+  margin-bottom: 5px;
+}
+
+.profit-value {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.profit-value.positive {
+  color: #00ff88;
+}
+
+.profit-value.negative {
+  color: #ff4444;
+}
+
+.profit-chart {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  height: 50px;
+  gap: 2px;
+  margin-bottom: 10px;
+}
+
+.profit-bar {
+  width: 8px;
+  transition: height 0.3s ease;
+}
+
+.profit-bar.positive {
+  background: #00ff88;
+}
+
+.profit-bar.negative {
+  background: #ff4444;
+}
+
+.profit-indicators {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.indicator {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.dot.positive {
+  background: #00ff88;
+}
+
+.dot.negative {
+  background: #ff4444;
+}

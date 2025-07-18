@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  task-minimap:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: flexport-minimap-dev
+    volumes:
+      - ./src:/app/src
+      - ./public:/app/public
+      - ./package.json:/app/package.json
+      - ./tsconfig.json:/app/tsconfig.json
+    environment:
+      - TASK_NAME=minimap
+      - TASK_DESCRIPTION=Implementing mini-map and route visualization
+    command: /app/scripts/work-on-task.sh minimap
+    networks:
+      - flexport-dev
+
+  task-effects:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: flexport-effects-dev
+    volumes:
+      - ./src:/app/src
+      - ./public:/app/public
+      - ./package.json:/app/package.json
+      - ./tsconfig.json:/app/tsconfig.json
+    environment:
+      - TASK_NAME=effects
+      - TASK_DESCRIPTION=Adding visual effects, weather, and day/night cycle
+    command: /app/scripts/work-on-task.sh effects
+    networks:
+      - flexport-dev
+
+  task-ui:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: flexport-ui-dev
+    volumes:
+      - ./src:/app/src
+      - ./public:/app/public
+      - ./package.json:/app/package.json
+      - ./tsconfig.json:/app/tsconfig.json
+    environment:
+      - TASK_NAME=ui
+      - TASK_DESCRIPTION=Enhancing UI with dashboard and animations
+    command: /app/scripts/work-on-task.sh ui
+    networks:
+      - flexport-dev
+
+  flexport-app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: flexport-main-app
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./src:/app/src
+      - ./public:/app/public
+      - ./package.json:/app/package.json
+      - ./tsconfig.json:/app/tsconfig.json
+      - /app/node_modules
+    command: npm start
+    networks:
+      - flexport-dev
+
+networks:
+  flexport-dev:
+    driver: bridge

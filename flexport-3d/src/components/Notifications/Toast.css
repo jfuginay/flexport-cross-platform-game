@@ -1,0 +1,35 @@
+/* Custom styles for toast notifications */
+.Toastify__toast-container {
+  z-index: 1000;
+}
+
+.Toastify__toast {
+  background: rgba(0, 20, 40, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  backdrop-filter: blur(10px);
+}
+
+.Toastify__toast--info {
+  background: rgba(0, 40, 80, 0.95);
+  border-color: rgba(100, 200, 255, 0.3);
+}
+
+.Toastify__toast--success {
+  background: rgba(0, 60, 30, 0.95);
+  border-color: rgba(0, 255, 136, 0.3);
+}
+
+.Toastify__toast--error {
+  background: rgba(60, 0, 0, 0.95);
+  border-color: rgba(255, 68, 68, 0.3);
+}
+
+.Toastify__toast--warning {
+  background: rgba(60, 40, 0, 0.95);
+  border-color: rgba(255, 170, 0, 0.3);
+}
+
+.Toastify__progress-bar {
+  background: rgba(255, 255, 255, 0.5);
+}

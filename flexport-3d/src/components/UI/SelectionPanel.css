@@ -1,0 +1,221 @@
+.selection-panel {
+  position: fixed;
+  left: 20px;
+  bottom: 20px;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 20px;
+  width: 320px;
+  max-height: 60vh;
+  overflow-y: auto;
+  color: white;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  z-index: 1000;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.panel-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 24px;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.close-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #e2e8f0;
+}
+
+.ship-details,
+.port-details {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+}
+
+.detail-row > span:first-child {
+  color: #94a3b8;
+}
+
+.detail-row > span:last-child {
+  color: #e2e8f0;
+  font-weight: 500;
+}
+
+.status {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.status.idle {
+  background: rgba(71, 85, 105, 0.5);
+  color: #cbd5e1;
+}
+
+.status.sailing {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+}
+
+.status.loading,
+.status.unloading {
+  background: rgba(251, 191, 36, 0.2);
+  color: #fbbf24;
+}
+
+.status.maintenance {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+}
+
+.health-bar,
+.load-bar {
+  flex: 1;
+  height: 6px;
+  background: rgba(71, 85, 105, 0.5);
+  border-radius: 3px;
+  overflow: hidden;
+  margin: 0 8px;
+}
+
+.health-fill,
+.load-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.load-fill {
+  background: #60a5fa;
+}
+
+.contract-info {
+  color: #60a5fa;
+  font-size: 13px;
+}
+
+.owned {
+  color: #10b981;
+}
+
+.not-owned {
+  color: #94a3b8;
+}
+
+.action-buttons {
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.action-buttons h4 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #cbd5e1;
+}
+
+.port-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.port-button {
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #e2e8f0;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+
+.port-button:hover:not(:disabled) {
+  background: rgba(51, 65, 85, 0.8);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.port-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.port-contracts {
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.port-contracts h4 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #cbd5e1;
+}
+
+.contract-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(30, 41, 59, 0.5);
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.contract-route {
+  font-size: 13px;
+  color: #cbd5e1;
+}
+
+.contract-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #10b981;
+}

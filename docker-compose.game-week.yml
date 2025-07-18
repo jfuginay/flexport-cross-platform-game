@@ -1,0 +1,158 @@
+version: '3.8'
+services:
+  claude-unity-lead:
+    image: ubuntu:22.04
+    container_name: flexport_unity_lead
+    environment:
+      - ASSIGNMENT=game_week_project
+      - GAME_TYPE=railroad_tycoon_inspired
+      - COMPLEXITY_TOLERANCE=zero
+      - SIMPLIFICATION_BANNED=true
+      - UNITY_VERSION=2023.3.0f1
+    volumes:
+      - ./FlexPort Unity:/workspace/unity-project
+      - ./game-assets:/workspace/assets
+      - ./logs:/workspace/logs
+    working_dir: /workspace
+    command: >
+      bash -c "
+        apt-get update && 
+        apt-get install -y curl wget git build-essential &&
+        echo 'Claude Unity Lead - Game Week Project Active' &&
+        echo 'Task: Implement Unity multiplayer foundation' > /workspace/logs/unity-lead.log &&
+        tail -f /workspace/logs/unity-lead.log
+      "
+    networks:
+      - flexport-network
+    
+  claude-csharp-economy:
+    image: ubuntu:22.04
+    container_name: flexport_csharp_economy
+    environment:
+      - FOCUS=ryan_four_market_system
+      - COMPOUND_GROWTH=mandatory
+      - AI_SINGULARITY=core_mechanic
+    volumes:
+      - ./FlexPort Unity/Assets/Scripts:/workspace/scripts
+      - ./logs:/workspace/logs
+    working_dir: /workspace
+    command: >
+      bash -c "
+        apt-get update && 
+        apt-get install -y mono-complete &&
+        echo 'Claude C# Economy - Four Market System Active' &&
+        echo 'Task: Implement Ryans Four Market Economic System' > /workspace/logs/csharp-economy.log &&
+        tail -f /workspace/logs/csharp-economy.log
+      "
+    networks:
+      - flexport-network
+      
+  claude-multiplayer-network:
+    image: ubuntu:22.04
+    container_name: flexport_multiplayer_network
+    environment:
+      - NETWORK_TYPE=real_time_multiplayer
+      - LATENCY_REQUIREMENT=low
+      - CONCURRENT_PLAYERS=minimum_4
+    volumes:
+      - ./FlexPort Unity/Assets/Scripts/Networking:/workspace/networking
+      - ./logs:/workspace/logs
+    ports:
+      - "7777:7777"
+      - "7778:7778"
+    working_dir: /workspace
+    command: >
+      bash -c "
+        apt-get update && 
+        apt-get install -y nodejs npm &&
+        echo 'Claude Multiplayer Network - Real-time Networking Active' &&
+        echo 'Task: Implement 4+ player real-time multiplayer' > /workspace/logs/multiplayer-network.log &&
+        tail -f /workspace/logs/multiplayer-network.log
+      "
+    networks:
+      - flexport-network
+      
+  claude-mobile-companion:
+    image: ubuntu:22.04
+    container_name: flexport_mobile_companion
+    environment:
+      - PLATFORMS=ios,android
+      - FOCUS=crud_monitoring
+      - UNITY_INTEGRATION=required
+    volumes:
+      - ./FlexPort iOS:/workspace/ios
+      - ./FlexPort Android:/workspace/android
+      - ./logs:/workspace/logs
+    working_dir: /workspace
+    command: >
+      bash -c "
+        apt-get update && 
+        apt-get install -y openjdk-11-jdk swift-lang &&
+        echo 'Claude Mobile Companion - iOS/Android Integration Active' &&
+        echo 'Task: Build companion apps with Unity integration' > /workspace/logs/mobile-companion.log &&
+        tail -f /workspace/logs/mobile-companion.log
+      "
+    networks:
+      - flexport-network
+      
+  claude-web-deployment:
+    image: ubuntu:22.04
+    container_name: flexport_web_deployment
+    environment:
+      - PLATFORM=web_webgl
+      - PERFORMANCE_TARGET=60fps
+      - OPTIMIZATION=maximum
+    volumes:
+      - ./Web:/workspace/web
+      - ./FlexPort Unity:/workspace/unity-project
+      - ./logs:/workspace/logs
+    ports:
+      - "3000:3000"
+      - "8080:8080"
+    working_dir: /workspace
+    command: >
+      bash -c "
+        apt-get update && 
+        apt-get install -y nodejs npm nginx &&
+        echo 'Claude Web Deployment - WebGL Optimization Active' &&
+        echo 'Task: Optimize Unity WebGL deployment' > /workspace/logs/web-deployment.log &&
+        tail -f /workspace/logs/web-deployment.log
+      "
+    networks:
+      - flexport-network
+
+  complexity-enforcer:
+    image: ubuntu:22.04
+    container_name: flexport_complexity_enforcer
+    environment:
+      - MONITOR_MODE=active
+      - GAME_WEEK_STANDARDS=enforced
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./logs:/workspace/logs
+      - ./scripts:/workspace/scripts
+    working_dir: /workspace
+    command: >
+      bash -c "
+        apt-get update && 
+        apt-get install -y docker.io &&
+        echo 'Complexity Enforcer - Game Week Standards Active' &&
+        echo 'Monitoring for Game Week compliance violations...' > /workspace/logs/complexity-enforcer.log &&
+        ./scripts/monitor-for-shortcuts.sh &
+        ./scripts/enforce-game-week-quality.sh &
+        tail -f /workspace/logs/complexity-enforcer.log
+      "
+    networks:
+      - flexport-network
+
+networks:
+  flexport-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  unity-project-data:
+  game-assets-data:
+  logs-data:

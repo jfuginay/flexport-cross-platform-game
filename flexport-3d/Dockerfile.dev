@@ -1,0 +1,31 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Install dependencies for development
+RUN apk add --no-cache \
+    git \
+    curl \
+    bash \
+    python3 \
+    make \
+    g++
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy the rest of the application
+COPY . .
+
+# Create scripts directory
+RUN mkdir -p /app/scripts
+
+# Make scripts executable
+RUN chmod +x /app/scripts/*.sh || true
+
+EXPOSE 3000
+
+CMD ["npm", "start"]

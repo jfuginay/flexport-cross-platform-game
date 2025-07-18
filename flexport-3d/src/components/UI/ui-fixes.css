@@ -1,0 +1,93 @@
+/* UI Component Fixes - Ensure proper interaction */
+
+/* Make sure all UI panels are interactive */
+.game-info-panel,
+.control-panel,
+.selection-panel,
+.minimap,
+.contract-notifications,
+.fleet-management,
+.ai-research-tab,
+.multiplayer-lobby,
+.navigation-toolbar {
+  pointer-events: auto !important;
+}
+
+/* Fix z-index hierarchy */
+.game-info-panel {
+  z-index: 200 !important;
+}
+
+.control-panel {
+  z-index: 200 !important;
+}
+
+.selection-panel {
+  z-index: 200 !important;
+}
+
+.minimap {
+  z-index: 100 !important;
+}
+
+.navigation-toolbar {
+  z-index: 300 !important;
+}
+
+.contract-notifications {
+  z-index: 400 !important;
+}
+
+.fleet-management {
+  z-index: 500 !important;
+  position: fixed !important;
+  inset: 0 !important;
+  pointer-events: auto !important;
+}
+
+.ai-research-tab {
+  z-index: 500 !important;
+  position: fixed !important;
+  inset: 0 !important;
+  pointer-events: auto !important;
+}
+
+.multiplayer-lobby {
+  z-index: 500 !important;
+  position: fixed !important;
+  inset: 0 !important;
+  pointer-events: auto !important;
+}
+
+/* Modal overlays should block interactions behind them */
+.modal-overlay {
+  z-index: 600 !important;
+  pointer-events: auto !important;
+}
+
+.purchase-modal {
+  z-index: 700 !important;
+  pointer-events: auto !important;
+}
+
+/* Ensure buttons and interactive elements work */
+button, 
+select, 
+input, 
+.nav-item,
+.contract-card,
+.ship-card,
+.action-btn {
+  pointer-events: auto !important;
+  cursor: pointer;
+}
+
+/* Fix for 3D canvas interactions */
+canvas {
+  pointer-events: auto !important;
+}
+
+/* Prevent UI from blocking canvas when not needed */
+.ui-layer > * {
+  pointer-events: auto !important;
+}

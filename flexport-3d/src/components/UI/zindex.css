@@ -1,0 +1,61 @@
+/* Z-Index Hierarchy Management */
+:root {
+  /* Base layers */
+  --z-canvas: 1;                    /* 3D Canvas */
+  
+  /* UI Overlays */
+  --z-minimap: 100;                 /* MiniMap */
+  --z-game-info: 200;               /* Game Info Panel */
+  --z-control-panel: 200;           /* Control Panel */
+  --z-selection-panel: 200;         /* Selection Panel */
+  
+  /* Interactive Elements */
+  --z-navigation-toolbar: 300;      /* Navigation Toolbar */
+  --z-contract-notifications: 400;  /* Contract Notifications */
+  
+  /* Modal Overlays */
+  --z-fleet-management: 500;        /* Fleet Management */
+  --z-ai-research: 500;             /* AI Research Tab */
+  --z-multiplayer-lobby: 500;       /* Multiplayer Lobby */
+  
+  /* Top-level Modals */
+  --z-modal-overlay: 600;           /* Modal Overlays */
+  --z-purchase-modal: 700;          /* Purchase Modal */
+  
+  /* System Level */
+  --z-loading-screen: 9999;         /* Loading Screen */
+}
+
+/* Ensure proper stacking context */
+.game-container {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Canvas should not block UI interactions */
+canvas {
+  position: absolute !important;
+  top: 0;
+  left: 0;
+  width: 100% !important;
+  height: 100% !important;
+  z-index: var(--z-canvas) !important;
+}
+
+/* UI containers should be above canvas */
+.ui-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Allow pointer events only on actual UI elements */
+.ui-layer > * {
+  pointer-events: auto;
+}

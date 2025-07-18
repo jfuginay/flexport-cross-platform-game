@@ -1,0 +1,193 @@
+.mapbox-globe-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: #000814;
+}
+
+/* Ship marker styles */
+.ship-marker {
+  transition: all 0.3s ease;
+  animation: ship-pulse 2s infinite;
+}
+
+.ship-marker:hover {
+  transform: scale(1.1);
+  filter: drop-shadow(0 0 15px #3b82f6);
+}
+
+@keyframes ship-pulse {
+  0% {
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.8;
+  }
+}
+
+/* Custom Mapbox controls styling */
+.mapboxgl-ctrl-group {
+  background: rgba(20, 20, 30, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  backdrop-filter: blur(10px);
+}
+
+.mapboxgl-ctrl-group button {
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  transition: all 0.2s ease;
+}
+
+.mapboxgl-ctrl-group button:hover {
+  background: rgba(59, 130, 246, 0.2);
+}
+
+.mapboxgl-ctrl-group button + button {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Popup styling */
+.mapboxgl-popup {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.mapboxgl-popup-content {
+  background: rgba(20, 20, 30, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #ffffff;
+  padding: 12px 16px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.mapboxgl-popup-close-button {
+  color: #ffffff;
+  font-size: 18px;
+  padding: 4px 8px;
+}
+
+.mapboxgl-popup-close-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.mapboxgl-popup-anchor-bottom .mapboxgl-popup-tip {
+  border-top-color: rgba(20, 20, 30, 0.95);
+}
+
+/* Port info popup */
+.port-popup {
+  min-width: 200px;
+}
+
+.port-popup h3 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #3b82f6;
+}
+
+.port-popup .port-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.port-popup .info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.port-popup .info-label {
+  color: #94a3b8;
+}
+
+.port-popup .info-value {
+  color: #ffffff;
+  font-weight: 500;
+}
+
+/* Ship info popup */
+.ship-popup {
+  min-width: 250px;
+}
+
+.ship-popup h3 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #10b981;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ship-popup .ship-status {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  background: rgba(59, 130, 246, 0.2);
+  color: #3b82f6;
+}
+
+.ship-popup .ship-info {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.ship-popup .info-block {
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+}
+
+.ship-popup .info-block-label {
+  font-size: 11px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.ship-popup .info-block-value {
+  font-size: 14px;
+  color: #ffffff;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+/* Route animation */
+@keyframes route-dash {
+  to {
+    stroke-dashoffset: -20;
+  }
+}
+
+/* Attribution styling */
+.mapboxgl-ctrl-attrib {
+  background: rgba(20, 20, 30, 0.8);
+  color: #94a3b8;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.mapboxgl-ctrl-attrib a {
+  color: #3b82f6;
+  text-decoration: none;
+}
+
+.mapboxgl-ctrl-attrib a:hover {
+  text-decoration: underline;
+}
