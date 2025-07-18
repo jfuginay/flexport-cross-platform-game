@@ -1,46 +1,147 @@
-# Getting Started with Create React App
+# FlexPort Global 🌍🚢
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+[![Version](https://img.shields.io/badge/version-1.0.0--beta.1-blue.svg)](https://github.com/yourusername/flexport-global)
+[![React](https://img.shields.io/badge/React-18.3.1-61dafb.svg)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-4.9.5-3178c6.svg)](https://www.typescriptlang.org/)
+[![Three.js](https://img.shields.io/badge/Three.js-latest-black.svg)](https://threejs.org/)
+[![Mapbox](https://img.shields.io/badge/Mapbox-3.8.0-4264fb.svg)](https://www.mapbox.com/)
 
-## Available Scripts
+> **Beta Release**: This is the first official beta release (v1.0.0-beta.1) of FlexPort Global. Join us in building the future of shipping simulation!
 
-In the project directory, you can run:
+## 🎮 Overview
 
-### `npm start`
+FlexPort Global is a sophisticated 3D global shipping simulation game where you build and manage your own shipping empire. Navigate real-world trade routes, manage diverse fleets, and compete in a dynamic global economy.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+![FlexPort Global Screenshot](https://via.placeholder.com/800x400?text=FlexPort+Global+Beta)
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+## ✨ Key Features
 
-### `npm test`
+### 🌐 Dual Globe Visualization
+- **Mapbox GL Globe**: Beautiful satellite imagery with real Earth data (default)
+- **Three.js 3D Globe**: Custom procedural Earth with optimized performance
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### 🚢 Fleet Management
+- Container Ships, Bulk Carriers, Tankers, and Cargo Planes
+- Real-time vessel tracking with animated movements
+- Dynamic route planning and optimization
 
-### `npm run build`
+### 🏭 Global Port Network
+- 50+ real-world major ports
+- Realistic capacity and berth management
+- Port ownership and upgrades
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### 📊 Economic Simulation
+- Dynamic contract generation based on trade patterns
+- Supply and demand fluctuations
+- Competitive AI shipping companies
+- Market events and global crises
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## 🚀 Quick Start
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### Prerequisites
+- Node.js 16+ and npm
+- A Mapbox account and API token (free tier available)
 
-### `npm run eject`
+### Installation
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/flexport-global.git
+cd flexport-global
+```
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+2. Install dependencies:
+```bash
+npm install
+```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+3. Create a `.env` file from the example:
+```bash
+cp .env.example .env
+```
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+4. Add your Mapbox token to `.env`:
+```
+REACT_APP_MAPBOX_TOKEN=your_mapbox_token_here
+```
 
-## Learn More
+5. Start the development server:
+```bash
+npm start
+```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+6. Open [http://localhost:3000](http://localhost:3000) and start building your empire!
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## 🎯 How to Play
+
+1. **Start Small**: Begin with a single ship and limited capital
+2. **Accept Contracts**: Choose profitable routes between ports
+3. **Expand Fleet**: Purchase new vessels as you earn money
+4. **Manage Operations**: Balance fuel, maintenance, and crew
+5. **Grow Empire**: Buy ports, research technology, dominate trade routes
+
+## 🛠️ Technology Stack
+
+- **Frontend**: React 18 + TypeScript
+- **3D Graphics**: Three.js + React Three Fiber
+- **Mapping**: Mapbox GL JS v3
+- **State Management**: Zustand
+- **Styling**: Tailwind CSS + Custom CSS
+- **Build Tool**: Create React App
+
+## 📱 Platform Support
+
+- ✅ Desktop Browsers (Chrome, Firefox, Safari, Edge)
+- 🚧 Mobile Web (Performance optimization in progress)
+- 📋 Native Apps (Planned via Capacitor)
+
+## 🗺️ Roadmap
+
+### Current (Beta)
+- [x] Core gameplay mechanics
+- [x] Globe visualization
+- [x] Fleet management
+- [x] Contract system
+- [x] Basic AI competitors
+
+### Coming Soon
+- [ ] Weather systems affecting routes
+- [ ] Advanced AI with personalities
+- [ ] Multiplayer support
+- [ ] Mobile app release
+- [ ] Steam integration
+- [ ] Mod support
+
+## 🐛 Known Issues
+
+- Tile loading optimization needed for Three.js view
+- Performance on older GPUs needs improvement
+- Mobile touch controls need refinement
+
+## 🤝 Contributing
+
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- NASA for Earth imagery references
+- OpenStreetMap contributors
+- Mapbox for mapping services
+- Three.js community
+- All beta testers and contributors
+
+## 📞 Contact
+
+- GitHub Issues: [Report bugs or request features](https://github.com/yourusername/flexport-global/issues)
+- Discord: [Join our community](https://discord.gg/flexportglobal)
+- Twitter: [@FlexPortGlobal](https://twitter.com/flexportglobal)
+
+---
+
+Built with ❤️ by the FlexPort Global team
+
+🤖 Generated with [Claude Code](https://claude.ai/code)
