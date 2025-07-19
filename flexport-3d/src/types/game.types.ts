@@ -43,6 +43,9 @@ export interface Ship {
   contractId?: string;
   loadingStartTime?: number;
   unloadingStartTime?: number;
+  waypoints?: any[]; // THREE.Vector3[]
+  currentWaypointIndex?: number;
+  rotation?: number;
 }
 
 export enum ShipType {

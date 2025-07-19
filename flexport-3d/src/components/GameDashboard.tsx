@@ -64,7 +64,6 @@ export const GameDashboard: React.FC<GameDashboardProps> = ({ children }) => {
   const [isFleetModalOpen, setIsFleetModalOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileView, setMobileView] = useState<'map' | 'fleet' | 'contracts' | 'alerts'>('map');
-  const [viewMode, setViewMode] = useState<'3d' | '2d'>('2d'); // Start with 2D map view to see ships
   
   // Initialize game world when component mounts
   useEffect(() => {
@@ -405,57 +404,9 @@ export const GameDashboard: React.FC<GameDashboardProps> = ({ children }) => {
           </div>
         </div>
         
-        {/* Game View - 3D or 2D */}
+        {/* Game View - 3D Earth */}
         <div className="game-view" style={{ opacity: isSceneReady ? 1 : 0, transition: 'opacity 0.5s ease-in-out' }}>
-          {/* View Mode Toggle */}
-          <div style={{
-            position: 'absolute',
-            top: '20px',
-            right: '20px',
-            zIndex: 100,
-            display: 'flex',
-            gap: '5px',
-            background: 'rgba(20, 20, 30, 0.9)',
-            padding: '5px',
-            borderRadius: '8px',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            backdropFilter: 'blur(10px)'
-          }}>
-            <button
-              onClick={() => setViewMode('3d')}
-              style={{
-                padding: '8px 16px',
-                background: viewMode === '3d' ? '#3b82f6' : 'transparent',
-                color: 'white',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: '500',
-                transition: 'all 0.2s'
-              }}
-            >
-              🌍 3D Globe
-            </button>
-            <button
-              onClick={() => setViewMode('2d')}
-              style={{
-                padding: '8px 16px',
-                background: viewMode === '2d' ? '#3b82f6' : 'transparent',
-                color: 'white',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: '500',
-                transition: 'all 0.2s'
-              }}
-            >
-              🗺️ 2D Map
-            </button>
-          </div>
-
-          {/* Unified Map View - All map types in one place */}
+          {/* Unified Map View - 3D Realistic Earth */}
           <UnifiedMapView className="map-view" />
           
           {/* Mini Map Overlay - temporarily disabled due to performance */}
