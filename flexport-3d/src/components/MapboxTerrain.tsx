@@ -331,7 +331,7 @@ export const MapboxTerrain: React.FC<MapboxTerrainProps> = ({ className }) => {
       animationRef.current = requestAnimationFrame(animate);
     };
 
-    animate();
+    animate(0);
 
     return () => {
       if (animationRef.current) {
