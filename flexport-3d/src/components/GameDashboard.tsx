@@ -26,6 +26,8 @@ import { MobileContractsView } from './mobile/MobileContractsView';
 import { MobileAlertsView } from './mobile/MobileAlertsView';
 // Map components
 import { MapboxGlobe } from './MapboxGlobe';
+import { MapSwitcher } from './MapSwitcher';
+import { UnifiedMapView } from './UnifiedMapView';
 import './GameDashboard.css';
 
 interface GameDashboardProps {
@@ -453,72 +455,8 @@ export const GameDashboard: React.FC<GameDashboardProps> = ({ children }) => {
             </button>
           </div>
 
-          <div style={{ width: '100%', height: '100%', position: 'relative', background: '#000814' }}>
-            {/* 2D Map View */}
-            {viewMode === '2d' && (
-              <MapboxGlobe className="map-view" />
-            )}
-            
-            {/* 3D Canvas View */}
-            {viewMode === '3d' && (
-              <Canvas 
-              shadows 
-              gl={{ 
-                antialias: true, 
-                alpha: false,
-                toneMapping: THREE.ACESFilmicToneMapping,
-                toneMappingExposure: 1.0
-              }}
-              style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
-              onCreated={({ gl, camera, scene }) => {
-                console.log('Canvas created!');
-                console.log('Camera position:', camera.position);
-                console.log('Scene children:', scene.children.length);
-                gl.setClearColor(0x87CEEB, 1);
-              }}
-            >
-            <PerspectiveCamera 
-              makeDefault 
-              position={[400, 300, 400]} 
-              fov={45}
-              near={1}
-              far={10000}
-            />
-            <SphericalCameraController />
-            
-            <ambientLight intensity={0.8} />
-            <directionalLight
-              position={[100, 100, 50]}
-              intensity={1.5}
-              castShadow
-              shadow-mapSize={[2048, 2048]}
-              color={0xffffff}
-            />
-            {/* Additional lights for better Earth visibility */}
-            <pointLight position={[-100, 50, -50]} intensity={0.7} color="#ffffff" />
-            <pointLight position={[50, -50, 100]} intensity={0.5} color="#aaccff" />
-            
-            <DayNightCycle timeOfDay={timeOfDay} />
-            <Weather weatherState={weatherState} />
-            
-            <World isEarthRotating={isEarthRotating} timeOfDay={timeOfDay} />
-            
-            {fleet.map(ship => (
-              <Ship
-                key={ship.id}
-                ship={ship}
-                onClick={(ship) => selectShip(ship.id)}
-                isSelected={selectedShipId === ship.id}
-              />
-            ))}
-            
-            {/* Stats temporarily disabled */}
-            {/* {process.env.NODE_ENV === 'development' && <Stats />} */}
-            
-            {/* Post-processing effects disabled */}
-            </Canvas>
-            )}
-          </div>
+          {/* Unified Map View - All map types in one place */}
+          <UnifiedMapView className="map-view" />
           
           {/* Mini Map Overlay - temporarily disabled due to performance */}
           {/* <div className="minimap-overlay">
