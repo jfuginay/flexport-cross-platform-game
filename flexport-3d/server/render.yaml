@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: flexport-multiplayer-server
+    runtime: node
+    buildCommand: npm install
+    startCommand: node index.js
+    envVars:
+      - key: PORT
+        value: 3001
+    healthCheckPath: /health
