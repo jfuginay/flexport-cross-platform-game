@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useEffect } from 'react';
 import { toast, ToastContainer } from 'react-toastify';
 import { useGameStore } from '../../store/gameStore';

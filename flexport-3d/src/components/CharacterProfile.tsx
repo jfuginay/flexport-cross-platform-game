@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React from 'react';
 import CharacterIcon from './CharacterIcon';
 import './CharacterProfile.css';

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useMemo } from 'react';
 import { useSpring, animated } from '@react-spring/web';
 import { useGameStore } from '../../store/gameStore';

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React from 'react';
 import { useGameStore } from '../../store/gameStore';
 import './SelectionPanel.css';

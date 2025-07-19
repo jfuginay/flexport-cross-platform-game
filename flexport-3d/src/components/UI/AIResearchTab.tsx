@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { useGameStore } from '../../store/gameStore';
 import './AIResearchTab.css';

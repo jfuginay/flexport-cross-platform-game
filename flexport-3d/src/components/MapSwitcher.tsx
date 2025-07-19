@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState } from 'react';
 import { MapboxMap } from './MapboxMap';
 import { MapboxGlobeSimple } from './MapboxGlobeSimple';

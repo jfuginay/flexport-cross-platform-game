@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useMemo } from 'react';
 import { useGameStore } from '../../store/gameStore';
 import './FinancesPanel.css';

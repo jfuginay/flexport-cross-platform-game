@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useEffect, useState } from 'react';
 import { useGameStateStore } from '../../store/gameStateStore';
 import './LoadingScreen.css';

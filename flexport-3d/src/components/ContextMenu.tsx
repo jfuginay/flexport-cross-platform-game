@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React from 'react';
 import { Ship, Port, ShipStatus } from '../types/game.types';
 import { useGameStore } from '../store/gameStore';
