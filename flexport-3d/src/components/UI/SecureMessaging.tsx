@@ -26,8 +26,22 @@ export const SecureMessaging: React.FC<SecureMessagingProps> = ({ isOpen, onClos
   }, []);
 
   const handleAction = (messageId: string, action: string) => {
-    executiveNotificationService.respondToMessage(messageId, action);
-    setSelectedMessage(null);
+    // Show immediate feedback
+    const message = messages.find(m => m.id === messageId);
+    if (message) {
+      // Visual feedback
+      setIsAnimating(true);
+      setTimeout(() => setIsAnimating(false), 500);
+      
+      // Execute the action
+      executiveNotificationService.respondToMessage(messageId, action);
+      
+      // Remove the message from list after action
+      setTimeout(() => {
+        setMessages(prev => prev.filter(m => m.id !== messageId));
+        setSelectedMessage(null);
+      }, 1000);
+    }
   };
 
   const formatTime = (date: Date) => {

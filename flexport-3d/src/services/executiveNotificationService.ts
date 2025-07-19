@@ -143,8 +143,8 @@ class ExecutiveNotificationService {
   private executeAction(message: SecureMessage, action: any): void {
     // Import crisisEventService dynamically to avoid circular dependency
     import('./crisisEventService').then(({ crisisEventService }) => {
-      // Find the crisis event by matching the message ID
-      const crisisId = message.id.replace('SEC-', 'CRISIS-');
+      // The crisis ID is stored in the message ID
+      const crisisId = message.id;
       crisisEventService.resolveCrisis(crisisId, action.action);
     });
   }

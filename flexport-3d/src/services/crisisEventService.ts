@@ -280,9 +280,10 @@ class CrisisEventService {
       }))
     });
     
-    // Update message ID to match crisis ID for proper resolution
-    const updatedMessageId = sentMessage.id.replace('SEC-', 'CRISIS-');
-    crisis.id = updatedMessageId;
+    // Store the crisis with the message ID for proper resolution
+    this.activeEvents.delete(crisis.id);
+    crisis.id = sentMessage.id;
+    this.activeEvents.set(crisis.id, crisis);
 
     // Set expiration timer
     if (crisis.expiresIn) {
@@ -314,14 +315,27 @@ class CrisisEventService {
 
     // Apply consequences
     const gameStore = useGameStore.getState();
+    const currentMoney = gameStore.money;
+    const currentRep = gameStore.reputation;
+    
     if (option.consequences.financial) {
-      useGameStore.setState({ money: gameStore.money + option.consequences.financial });
+      const newMoney = Math.max(0, currentMoney + option.consequences.financial);
+      useGameStore.setState({ money: newMoney });
+      
+      // Show financial impact notification
+      this.showImpactNotification('financial', option.consequences.financial);
     }
+    
     if (option.consequences.reputation) {
-      useGameStore.setState({ 
-        reputation: Math.max(0, Math.min(100, gameStore.reputation + option.consequences.reputation)) 
-      });
+      const newRep = Math.max(0, Math.min(100, currentRep + option.consequences.reputation));
+      useGameStore.setState({ reputation: newRep });
+      
+      // Show reputation impact notification
+      this.showImpactNotification('reputation', option.consequences.reputation);
     }
+
+    // Additional global power consequences
+    this.applyGlobalPowerConsequences(crisis, option);
 
     // Log resolution
     console.log(`Crisis resolved: ${crisis.title} - ${option.consequences.resolution}`);
@@ -329,6 +343,62 @@ class CrisisEventService {
     // Move to history
     this.eventHistory.push(crisis);
     this.activeEvents.delete(crisisId);
+  }
+
+  private showImpactNotification(type: 'financial' | 'reputation', amount: number): void {
+    // Create floating notification element
+    const notification = document.createElement('div');
+    notification.className = `impact-notification ${type} ${amount > 0 ? 'positive' : 'negative'}`;
+    notification.textContent = type === 'financial' 
+      ? `${amount > 0 ? '+' : ''}$${Math.abs(amount).toLocaleString()}`
+      : `${amount > 0 ? '+' : ''}${amount} Reputation`;
+    
+    notification.style.cssText = `
+      position: fixed;
+      top: 100px;
+      right: 20px;
+      padding: 12px 24px;
+      background: ${amount > 0 ? '#10b981' : '#ef4444'};
+      color: white;
+      font-weight: bold;
+      border-radius: 8px;
+      z-index: 10001;
+      animation: slideInRight 0.3s ease-out, fadeOut 0.5s ease-out 2s forwards;
+    `;
+    
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+  }
+
+  private applyGlobalPowerConsequences(crisis: CrisisEvent, option: CrisisOption): void {
+    // Every decision affects global standing
+    const gameStore = useGameStore.getState();
+    
+    // Affect port relationships based on decision
+    if (crisis.impact.ports) {
+      // Decisions affect port efficiency and costs
+      const portMultiplier = option.id === 'pay-off' ? 0.9 : // Corruption reduces efficiency
+                             option.id === 'raise-wages' ? 1.1 : // Better paid workers = better efficiency
+                             0.7; // Strikes severely impact efficiency
+      
+      // This would affect future port operations
+      console.log(`Port efficiency multiplier: ${portMultiplier} for ports:`, crisis.impact.ports);
+    }
+
+    // Affect shipping routes
+    if (crisis.impact.routes) {
+      // Some routes may become more expensive or dangerous
+      const routeRiskMultiplier = option.id === 'call-bluff' ? 1.5 : 1.0;
+      console.log(`Route risk multiplier: ${routeRiskMultiplier} for routes:`, crisis.impact.routes);
+    }
+
+    // Long-term market effects
+    const marketConfidence = option.id === 'raise-wages' ? 1.05 : 
+                           option.id === 'pay-off' ? 0.95 : 
+                           0.85;
+    
+    // This affects future contract values
+    console.log(`Market confidence: ${marketConfidence}`);
   }
 
   private autoResolveCrisis(crisisId: string): void {
