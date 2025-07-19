@@ -23,7 +23,8 @@ import { MobileNavigation } from './mobile/MobileNavigation';
 import { MobileFleetView } from './mobile/MobileFleetView';
 import { MobileContractsView } from './mobile/MobileContractsView';
 import { MobileAlertsView } from './mobile/MobileAlertsView';
-// Removed MapboxGlobe - all functionality integrated into 3D view
+// Map components
+import { MapboxGlobe } from './MapboxGlobe';
 import './GameDashboard.css';
 
 interface GameDashboardProps {
@@ -59,7 +60,7 @@ export const GameDashboard: React.FC<GameDashboardProps> = ({ children }) => {
   const [isFleetModalOpen, setIsFleetModalOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileView, setMobileView] = useState<'map' | 'fleet' | 'contracts' | 'alerts'>('map');
-  // Single 3D view only - no toggle needed
+  const [viewMode, setViewMode] = useState<'3d' | '2d'>('2d'); // Start with 2D map view to see ships
   
   // Initialize game world when component mounts
   useEffect(() => {
@@ -375,11 +376,65 @@ export const GameDashboard: React.FC<GameDashboardProps> = ({ children }) => {
           </div>
         </div>
         
-        {/* Game View - 3D Only */}
+        {/* Game View - 3D or 2D */}
         <div className="game-view" style={{ opacity: isSceneReady ? 1 : 0, transition: 'opacity 0.5s ease-in-out' }}>
+          {/* View Mode Toggle */}
+          <div style={{
+            position: 'absolute',
+            top: '20px',
+            right: '20px',
+            zIndex: 100,
+            display: 'flex',
+            gap: '5px',
+            background: 'rgba(20, 20, 30, 0.9)',
+            padding: '5px',
+            borderRadius: '8px',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            backdropFilter: 'blur(10px)'
+          }}>
+            <button
+              onClick={() => setViewMode('3d')}
+              style={{
+                padding: '8px 16px',
+                background: viewMode === '3d' ? '#3b82f6' : 'transparent',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '500',
+                transition: 'all 0.2s'
+              }}
+            >
+              🌍 3D Globe
+            </button>
+            <button
+              onClick={() => setViewMode('2d')}
+              style={{
+                padding: '8px 16px',
+                background: viewMode === '2d' ? '#3b82f6' : 'transparent',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '500',
+                transition: 'all 0.2s'
+              }}
+            >
+              🗺️ 2D Map
+            </button>
+          </div>
+
           <div style={{ width: '100%', height: '100%', position: 'relative', background: '#000814' }}>
-            {/* 3D Canvas with integrated map features */}
-            <Canvas 
+            {/* 2D Map View */}
+            {viewMode === '2d' && (
+              <MapboxGlobe className="map-view" />
+            )}
+            
+            {/* 3D Canvas View */}
+            {viewMode === '3d' && (
+              <Canvas 
               shadows 
               gl={{ 
                 antialias: true, 
@@ -435,6 +490,7 @@ export const GameDashboard: React.FC<GameDashboardProps> = ({ children }) => {
             
             {/* Post-processing effects disabled */}
             </Canvas>
+            )}
           </div>
           
           {/* Mini Map Overlay - temporarily disabled due to performance */}

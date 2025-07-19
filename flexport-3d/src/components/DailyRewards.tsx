@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useGameStore } from '../store/gameStore';
+import { ShipType } from '../types/game.types';
 import './DailyRewards.css';
 
 interface DailyReward {
@@ -25,7 +26,7 @@ export const DailyRewards: React.FC = () => {
   const [currentStreak, setCurrentStreak] = useState(0);
   const [canClaim, setCanClaim] = useState(false);
   const [showRewards, setShowRewards] = useState(false);
-  const { addMoney, addShip } = useGameStore();
+  const { addMoney, addFreeShip } = useGameStore();
   
   useEffect(() => {
     // Check last claim time
@@ -68,14 +69,9 @@ export const DailyRewards: React.FC = () => {
         addMoney(todayReward.reward.amount);
         break;
       case 'ship':
-        // Add a basic ship
-        addShip({
-          name: `Daily Reward Ship ${Date.now()}`,
-          type: 'CONTAINER',
-          capacity: 5000,
-          speed: 0.02,
-          price: 0
-        });
+        // Add a free ship
+        const shipName = currentStreak === 7 ? 'Premium Reward Ship' : 'Daily Reward Ship';
+        addFreeShip(ShipType.CONTAINER, shipName);
         break;
       case 'boost':
         // Implement boost logic

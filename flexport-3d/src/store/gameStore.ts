@@ -26,6 +26,7 @@ interface GameStore extends GameState {
   
   // Fleet actions
   purchaseShip: (type: ShipType, name: string) => void;
+  addFreeShip: (type: ShipType, name: string) => void;
   moveShip: (shipId: string, destination: Port) => void;
   sendShipToPort: (shipId: string, portId: string) => void;
   repairShip: (shipId: string) => void;
@@ -150,6 +151,31 @@ export const useGameStore = create<GameStore>((set, get) => ({
       
       set(state => ({ fleet: [...state.fleet, newShip] }));
     }
+  },
+  
+  addFreeShip: (type, name) => {
+    const homePort = get().ports.find(p => p.isPlayerOwned) || get().ports[0];
+    const spawnPosition = { ...homePort.position };
+    
+    const newShip: Ship = {
+      id: `ship-${Date.now()}`,
+      name,
+      type,
+      position: spawnPosition,
+      destination: null,
+      cargo: [],
+      capacity: getShipCapacity(type),
+      speed: getShipSpeed(type),
+      fuel: 100,
+      condition: 100,
+      health: 100,
+      value: getShipValue(type),
+      status: ShipStatus.IDLE,
+      currentPortId: homePort.id,
+    };
+    
+    console.log(`Free ship "${name}" added at port "${homePort.name}"`);
+    set(state => ({ fleet: [...state.fleet, newShip] }));
   },
   
   moveShip: (shipId, destination) => {
