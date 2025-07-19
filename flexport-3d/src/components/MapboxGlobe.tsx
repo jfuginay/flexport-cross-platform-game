@@ -170,6 +170,10 @@ export const MapboxGlobe: React.FC<MapboxGlobeProps> = ({ className }) => {
   useEffect(() => {
     if (!mapContainer.current || map.current || isInitializing.current) return;
     
+    // Add a small delay to ensure container is fully rendered
+    const initTimer = setTimeout(() => {
+      if (!mapContainer.current || map.current) return;
+    
     isInitializing.current = true;
     
     // Create new map instance with enhanced settings
@@ -342,9 +346,11 @@ export const MapboxGlobe: React.FC<MapboxGlobeProps> = ({ className }) => {
     map.current.on('drag', () => {
       lastUserInteraction.current = Date.now();
     });
+    }, 100); // End of setTimeout
     
     // Cleanup
     return () => {
+      clearTimeout(initTimer);
       cancelAnimationFrame(rotationAnimation);
       if (cameraAnimationFrame.current) {
         cancelAnimationFrame(cameraAnimationFrame.current);

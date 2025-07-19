@@ -25,6 +25,7 @@ import { MobileContractsView } from './mobile/MobileContractsView';
 import { MobileAlertsView } from './mobile/MobileAlertsView';
 // Map components
 import { MapboxGlobe } from './MapboxGlobe';
+import { SimpleMapboxTest } from './SimpleMapboxTest';
 import './GameDashboard.css';
 
 interface GameDashboardProps {
@@ -440,7 +441,8 @@ export const GameDashboard: React.FC<GameDashboardProps> = ({ children }) => {
           <div style={{ width: '100%', height: '100%', position: 'relative', background: '#000814' }}>
             {/* 2D Map View */}
             {viewMode === '2d' && (
-              <MapboxGlobe className="map-view" />
+              <SimpleMapboxTest />
+              // <MapboxGlobe className="map-view" />
             )}
             
             {/* 3D Canvas View */}
