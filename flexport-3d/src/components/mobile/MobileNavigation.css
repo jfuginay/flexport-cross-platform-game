@@ -1,0 +1,140 @@
+.mobile-top-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background-color: #0f172a;
+  border-bottom: 1px solid #334155;
+  padding: 12px 16px;
+  z-index: 100;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.balance-display {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.balance-label {
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+.balance-value {
+  color: #4ade80;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.stats-row {
+  display: flex;
+  justify-content: space-around;
+  gap: 16px;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.stat-value {
+  color: #f8fafc;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.stat-label {
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.mobile-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: #0f172a;
+  border-top: 1px solid #334155;
+  display: flex;
+  justify-content: space-around;
+  padding: 8px 0;
+  z-index: 100;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding-bottom: env(safe-area-inset-bottom, 8px);
+}
+
+.nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px;
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  transition: color 0.2s;
+  position: relative;
+}
+
+.nav-item:active {
+  transform: scale(0.95);
+}
+
+.nav-item.active {
+  color: #3b82f6;
+}
+
+.nav-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.nav-label {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.nav-badge {
+  position: absolute;
+  top: 4px;
+  right: 20%;
+  background-color: #ef4444;
+  color: white;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 10px;
+  min-width: 18px;
+  text-align: center;
+}
+
+@media (max-width: 375px) {
+  .mobile-top-bar {
+    padding: 8px 12px;
+  }
+  
+  .balance-value {
+    font-size: 20px;
+  }
+  
+  .stat-value {
+    font-size: 16px;
+  }
+  
+  .nav-icon {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .nav-label {
+    font-size: 11px;
+  }
+}

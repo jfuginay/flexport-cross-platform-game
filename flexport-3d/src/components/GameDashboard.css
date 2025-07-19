@@ -12,6 +12,17 @@
   padding-top: 50px; /* Account for news ticker */
 }
 
+/* Mobile Dashboard */
+.game-dashboard.mobile {
+  padding-top: 0;
+}
+
+.mobile-game-view {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
 /* Animated Background Pattern */
 .game-dashboard::before {
   content: '';

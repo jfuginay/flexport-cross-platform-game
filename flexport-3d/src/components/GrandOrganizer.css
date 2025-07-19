@@ -1,0 +1,347 @@
+.grand-organizer {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  z-index: 1000;
+  transform: translateX(500px);
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  max-width: 500px;
+}
+
+.grand-organizer.visible {
+  transform: translateX(0);
+}
+
+/* Advisor Portrait */
+.advisor-portrait {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  border: 2px solid #3b82f6;
+  border-radius: 12px;
+  padding: 15px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  min-width: 120px;
+  text-align: center;
+}
+
+.portrait-frame {
+  position: relative;
+}
+
+.portrait-image {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 10px;
+  border-radius: 50%;
+  background: #2563eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+}
+
+/* Animated Avatar */
+.advisor-avatar {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  animation: advisor-bounce 3s ease-in-out infinite;
+}
+
+.avatar-head {
+  width: 40px;
+  height: 40px;
+  background: #fdbcb4;
+  border-radius: 50%;
+  position: absolute;
+  top: 5px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.avatar-hair {
+  position: absolute;
+  top: -5px;
+  left: -5px;
+  right: -5px;
+  height: 25px;
+  background: #8B4513;
+  border-radius: 50% 50% 0 0;
+}
+
+.avatar-face {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.avatar-eyes {
+  position: absolute;
+  top: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+}
+
+.eye {
+  width: 6px;
+  height: 6px;
+  background: #333;
+  border-radius: 50%;
+  animation: blink 4s infinite;
+}
+
+.avatar-mouth {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 15px;
+  height: 2px;
+  background: #e74c3c;
+  border-radius: 0 0 10px 10px;
+}
+
+.avatar-body {
+  width: 30px;
+  height: 25px;
+  background: #3b82f6;
+  position: absolute;
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 10px 10px 0 0;
+}
+
+.portrait-name {
+  font-weight: 600;
+  color: #ffffff;
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+
+.portrait-title {
+  font-size: 11px;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+/* Message Box */
+.advisor-message {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  border: 2px solid #3b82f6;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  min-width: 300px;
+  animation: message-slide-in 0.5s ease-out;
+}
+
+.message-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.message-header h3 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.message-content {
+  color: #cbd5e1;
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+.message-content p {
+  margin: 0;
+}
+
+/* Message Actions */
+.message-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.action-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.action-btn.primary {
+  background: #3b82f6;
+  color: white;
+}
+
+.action-btn.primary:hover {
+  background: #2563eb;
+  transform: translateY(-1px);
+}
+
+.action-btn.secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+}
+
+.action-btn.secondary:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Message Types */
+.grand-organizer.warning .advisor-message {
+  border-color: #f59e0b;
+}
+
+.grand-organizer.warning .portrait-image {
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
+}
+
+.grand-organizer.disaster .advisor-message {
+  border-color: #ef4444;
+  animation: disaster-pulse 2s ease-in-out infinite;
+}
+
+.grand-organizer.disaster .portrait-image {
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.8);
+}
+
+.grand-organizer.congratulation .advisor-message {
+  border-color: #10b981;
+}
+
+.grand-organizer.congratulation .portrait-image {
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+}
+
+/* Message type colors */
+.grand-organizer.strategic .advisor-message {
+  border-color: #10b981;
+}
+
+.grand-organizer.technical .advisor-message {
+  border-color: #8b5cf6;
+}
+
+/* Queue Indicator */
+.queue-indicator {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  background: #3b82f6;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Animations */
+@keyframes advisor-bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes blink {
+  0%, 90%, 100% {
+    transform: scaleY(1);
+  }
+  95% {
+    transform: scaleY(0.1);
+  }
+}
+
+@keyframes message-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes disaster-pulse {
+  0%, 100% {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  }
+  50% {
+    box-shadow: 0 4px 30px rgba(239, 68, 68, 0.6);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .grand-organizer {
+    bottom: 10px;
+    right: 10px;
+    left: 10px;
+    max-width: none;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .advisor-portrait {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 10px;
+  }
+  
+  .portrait-frame {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .portrait-image {
+    width: 60px;
+    height: 60px;
+    margin: 0;
+  }
+  
+  .advisor-message {
+    padding: 15px;
+  }
+}

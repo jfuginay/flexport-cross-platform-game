@@ -17,8 +17,13 @@ import { FinancesPanel } from './UI/FinancesPanel';
 // import { PostProcessingEffects } from './PostProcessingEffects';
 import { NewsTicker } from './UI/NewsTicker';
 import { FleetManagementModal } from './FleetManagementModal';
-// import { MapboxGlobe } from './MapboxGlobe';
-import { MapboxGlobeSimple as MapboxGlobe } from './MapboxGlobeSimple';
+import { GrandOrganizer } from './GrandOrganizer';
+// Mobile components
+import { MobileNavigation } from './mobile/MobileNavigation';
+import { MobileFleetView } from './mobile/MobileFleetView';
+import { MobileContractsView } from './mobile/MobileContractsView';
+import { MobileAlertsView } from './mobile/MobileAlertsView';
+// Removed MapboxGlobe - all functionality integrated into 3D view
 import './GameDashboard.css';
 
 interface GameDashboardProps {
@@ -52,7 +57,9 @@ export const GameDashboard: React.FC<GameDashboardProps> = ({ children }) => {
   const [isInitialized, setIsInitialized] = useState(false);
   const [isSceneReady, setIsSceneReady] = useState(false);
   const [isFleetModalOpen, setIsFleetModalOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<'3d' | 'mapbox'>('mapbox'); // Default to beautiful Mapbox view
+  const [isMobile, setIsMobile] = useState(false);
+  const [mobileView, setMobileView] = useState<'map' | 'fleet' | 'contracts' | 'alerts'>('map');
+  // Single 3D view only - no toggle needed
   
   // Initialize game world when component mounts
   useEffect(() => {
@@ -64,6 +71,18 @@ export const GameDashboard: React.FC<GameDashboardProps> = ({ children }) => {
       setTimeout(() => setIsSceneReady(true), 100);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  
+  // Check if device is mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
   
   // Game update loop
@@ -108,6 +127,83 @@ export const GameDashboard: React.FC<GameDashboardProps> = ({ children }) => {
     }
   };
   
+  // Mobile views
+  if (isMobile) {
+    return (
+      <div className="game-dashboard mobile">
+        <MobileNavigation 
+          onFleetClick={() => setMobileView('fleet')}
+          onContractsClick={() => setMobileView('contracts')}
+          onAlertsClick={() => setMobileView('alerts')}
+        />
+        
+        {/* Mobile 3D View */}
+        <div className="mobile-game-view" style={{ 
+          position: 'fixed',
+          top: '100px',
+          bottom: '72px',
+          left: 0,
+          right: 0,
+          background: '#000814'
+        }}>
+          <Canvas 
+            shadows 
+            gl={{ 
+              antialias: true, 
+              alpha: false,
+              toneMapping: THREE.ACESFilmicToneMapping,
+              toneMappingExposure: 1.0
+            }}
+          >
+            <PerspectiveCamera 
+              makeDefault 
+              position={[400, 300, 400]} 
+              fov={45}
+              near={1}
+              far={10000}
+            />
+            <SphericalCameraController />
+            
+            <ambientLight intensity={0.8} />
+            <directionalLight
+              position={[100, 100, 50]}
+              intensity={1.5}
+              castShadow
+              shadow-mapSize={[1024, 1024]}
+              color={0xffffff}
+            />
+            
+            <DayNightCycle timeOfDay={timeOfDay} />
+            <Weather weatherState={weatherState} />
+            
+            <World isEarthRotating={isEarthRotating} timeOfDay={timeOfDay} />
+            
+            {fleet.map(ship => (
+              <Ship
+                key={ship.id}
+                ship={ship}
+                onClick={(ship) => selectShip(ship.id)}
+                isSelected={selectedShipId === ship.id}
+              />
+            ))}
+          </Canvas>
+        </div>
+        
+        {/* Mobile Overlays */}
+        {mobileView === 'fleet' && (
+          <MobileFleetView onClose={() => setMobileView('map')} />
+        )}
+        {mobileView === 'contracts' && (
+          <MobileContractsView onClose={() => setMobileView('map')} />
+        )}
+        {mobileView === 'alerts' && (
+          <MobileAlertsView onClose={() => setMobileView('map')} />
+        )}
+      </div>
+    );
+  }
+  
+  // Desktop view
   return (
     <div className="game-dashboard">
       {/* News Ticker */}
@@ -174,22 +270,6 @@ export const GameDashboard: React.FC<GameDashboardProps> = ({ children }) => {
             </button>
           </div>
           
-          <div className="view-toggle">
-            <button 
-              className={`view-btn ${viewMode === '3d' ? 'active' : ''}`}
-              onClick={() => setViewMode('3d')}
-              title="3D Globe View"
-            >
-              🌍 3D
-            </button>
-            <button 
-              className={`view-btn ${viewMode === 'mapbox' ? 'active' : ''}`}
-              onClick={() => setViewMode('mapbox')}
-              title="Mapbox Globe View"
-            >
-              🗺️ Map
-            </button>
-          </div>
         </div>
       </div>
       
@@ -295,21 +375,11 @@ export const GameDashboard: React.FC<GameDashboardProps> = ({ children }) => {
           </div>
         </div>
         
-        {/* Game View */}
+        {/* Game View - 3D Only */}
         <div className="game-view" style={{ opacity: isSceneReady ? 1 : 0, transition: 'opacity 0.5s ease-in-out' }}>
-          {/* Toggle between 3D Canvas and Mapbox views */}
-          {viewMode === 'mapbox' ? (
-            <MapboxGlobe className="mapbox-view" />
-          ) : (
-            <>
-              {/* Debug info */}
-              <div style={{ position: 'absolute', top: 10, left: 10, color: 'white', zIndex: 1000, background: 'rgba(0,0,0,0.5)', padding: '10px' }}>
-                <div>Scene Ready: {isSceneReady ? 'Yes' : 'No'}</div>
-                <div>Ports: {ports.length}</div>
-                <div>Fleet: {fleet.length}</div>
-              </div>
-              <div style={{ width: '100%', height: '100%', position: 'relative', background: '#222' }}>
-                <Canvas 
+          <div style={{ width: '100%', height: '100%', position: 'relative', background: '#000814' }}>
+            {/* 3D Canvas with integrated map features */}
+            <Canvas 
               shadows 
               gl={{ 
                 antialias: true, 
@@ -365,9 +435,7 @@ export const GameDashboard: React.FC<GameDashboardProps> = ({ children }) => {
             
             {/* Post-processing effects disabled */}
             </Canvas>
-              </div>
-            </>
-          )}
+          </div>
           
           {/* Mini Map Overlay - temporarily disabled due to performance */}
           {/* <div className="minimap-overlay">
@@ -455,6 +523,9 @@ export const GameDashboard: React.FC<GameDashboardProps> = ({ children }) => {
         isOpen={isFleetModalOpen}
         onClose={() => setIsFleetModalOpen(false)}
       />
+      
+      {/* Grand Organizer - Advisor System */}
+      <GrandOrganizer />
     </div>
   );
 };

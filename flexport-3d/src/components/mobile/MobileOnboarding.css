@@ -1,0 +1,115 @@
+.mobile-onboarding {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 40px 20px;
+  z-index: 2000;
+}
+
+.skip-button {
+  position: absolute;
+  top: 40px;
+  right: 20px;
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 16px;
+  padding: 8px 16px;
+  cursor: pointer;
+}
+
+.onboarding-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  max-width: 300px;
+}
+
+.step-icon {
+  font-size: 80px;
+  margin-bottom: 32px;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.step-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #f8fafc;
+  margin: 0 0 16px 0;
+}
+
+.step-description {
+  font-size: 18px;
+  color: #cbd5e1;
+  margin: 0 0 40px 0;
+  line-height: 1.5;
+}
+
+.step-indicators {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 40px;
+}
+
+.indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #334155;
+  transition: all 0.3s ease;
+}
+
+.indicator.active {
+  background-color: #3b82f6;
+  transform: scale(1.5);
+}
+
+.indicator.completed {
+  background-color: #4ade80;
+}
+
+.next-button {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border: none;
+  border-radius: 28px;
+  padding: 16px 48px;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+}
+
+.next-button:active {
+  transform: scale(0.95);
+}
+
+@media (max-width: 375px) {
+  .step-icon {
+    font-size: 60px;
+  }
+  
+  .step-title {
+    font-size: 24px;
+  }
+  
+  .step-description {
+    font-size: 16px;
+  }
+}
