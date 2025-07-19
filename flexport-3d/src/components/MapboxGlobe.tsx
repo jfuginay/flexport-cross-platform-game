@@ -20,6 +20,7 @@ export const MapboxGlobe: React.FC<MapboxGlobeProps> = ({ className }) => {
   const map = useRef<mapboxgl.Map | null>(null);
   const shipMarkers = useRef<Map<string, mapboxgl.Marker>>(new Map());
   const [isMapLoaded, setIsMapLoaded] = React.useState(false);
+  const [mapError, setMapError] = React.useState<string | null>(null);
   const isInitializing = useRef(false);
   const [showWeather, setShowWeather] = React.useState(false);
   const [showRain, setShowRain] = React.useState(false);
@@ -172,8 +173,14 @@ export const MapboxGlobe: React.FC<MapboxGlobeProps> = ({ className }) => {
     isInitializing.current = true;
     
     // Create new map instance with enhanced settings
-    console.log('Initializing Mapbox Globe...', mapboxgl.accessToken);
+    console.log('Initializing Mapbox Globe...');
+    console.log('Access Token:', mapboxgl.accessToken ? 'Token present' : 'No token!');
     console.log('Container element:', mapContainer.current);
+    console.log('Container dimensions:', {
+      width: mapContainer.current.offsetWidth,
+      height: mapContainer.current.offsetHeight,
+      display: window.getComputedStyle(mapContainer.current).display
+    });
     
     try {
       map.current = new mapboxgl.Map({
@@ -191,8 +198,12 @@ export const MapboxGlobe: React.FC<MapboxGlobeProps> = ({ className }) => {
         minZoom: 1.5,
         maxZoom: 20
       });
+      console.log('Map instance created successfully');
     } catch (error) {
       console.error('Failed to initialize Mapbox:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      setMapError(`Failed to initialize map: ${errorMessage}`);
+      setIsMapLoaded(true); // Hide loading screen to show error
       return;
     }
     
@@ -1367,7 +1378,7 @@ export const MapboxGlobe: React.FC<MapboxGlobeProps> = ({ className }) => {
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
-      {!isMapLoaded && (
+      {!isMapLoaded && !mapError && (
         <div style={{ 
           position: 'absolute',
           top: '50%',
@@ -1379,6 +1390,28 @@ export const MapboxGlobe: React.FC<MapboxGlobeProps> = ({ className }) => {
         }}>
           <div className="mapbox-globe-loading"></div>
           <p style={{ marginTop: '20px' }}>Loading map...</p>
+        </div>
+      )}
+      {mapError && (
+        <div style={{ 
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          color: '#ef4444', 
+          textAlign: 'center',
+          zIndex: 10,
+          maxWidth: '400px',
+          padding: '20px',
+          background: 'rgba(0, 0, 0, 0.8)',
+          borderRadius: '8px',
+          border: '1px solid #ef4444'
+        }}>
+          <h3 style={{ margin: '0 0 10px 0' }}>Map Loading Error</h3>
+          <p style={{ margin: '0 0 10px 0' }}>{mapError}</p>
+          <p style={{ margin: '0', fontSize: '14px', color: '#94a3b8' }}>
+            Please check the browser console for more details.
+          </p>
         </div>
       )}
       <div 
