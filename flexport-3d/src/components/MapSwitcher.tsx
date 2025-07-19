@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MapboxGlobe } from './MapboxGlobe';
+import { MapboxMap } from './MapboxMap';
 import { MapboxGlobeSimple } from './MapboxGlobeSimple';
 import { MapboxGlobeAdvanced } from './MapboxGlobeAdvanced';
 import { MapboxGlobeCombined } from './MapboxGlobeCombined';
@@ -53,7 +53,7 @@ export const MapSwitcher: React.FC<MapSwitcherProps> = ({ className }) => {
   const renderMap = () => {
     switch (selectedMap) {
       case 'mapbox-globe':
-        return <MapboxGlobe className={className} />;
+        return <MapboxMap className={className} />;
       case 'mapbox-simple':
         return <MapboxGlobeSimple />;
       case 'mapbox-advanced':
@@ -69,7 +69,7 @@ export const MapSwitcher: React.FC<MapSwitcherProps> = ({ className }) => {
       case 'globe-d3':
         return <GlobeMap />;
       default:
-        return <MapboxGlobe className={className} />;
+        return <MapboxMap className={className} />;
     }
   };
 

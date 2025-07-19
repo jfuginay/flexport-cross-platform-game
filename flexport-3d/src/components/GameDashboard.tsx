@@ -358,21 +358,9 @@ export const GameDashboard: React.FC<GameDashboardProps> = ({ children }) => {
           </div>
         </div>
         
-<<<<<<< HEAD
-        {/* Game View - 3D Earth */}
+        {/* Game View - Unified Map View */}
         <div className="game-view" style={{ opacity: isSceneReady ? 1 : 0, transition: 'opacity 0.5s ease-in-out' }}>
-          {/* Unified Map View - 3D Realistic Earth */}
           <UnifiedMapView className="map-view" />
-          
-          {/* Mini Map Overlay - temporarily disabled due to performance */}
-          {/* <div className="minimap-overlay">
-            <GlobeMap />
-          </div> */}
-=======
-        {/* Game View - Mapbox Satellite */}
-        <div className="game-view" style={{ opacity: isSceneReady ? 1 : 0, transition: 'opacity 0.5s ease-in-out' }}>
-          <MapboxMap className="mapbox-container" />
->>>>>>> deb06d3 (🚀 Add multiplayer functionality with WebSocket server)
         </div>
         
         {/* Right Sidebar - Selection & Actions */}
