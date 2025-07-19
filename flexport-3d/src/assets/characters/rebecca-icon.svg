@@ -5,43 +5,59 @@
   <!-- Inner glow -->
   <circle cx="60" cy="60" r="54" fill="url(#glow)" opacity="0.3"/>
   
-  <!-- Character silhouette -->
+  <!-- Character -->
   <g transform="translate(60, 60)">
-    <!-- Head -->
+    <!-- Neck -->
+    <rect x="-8" y="10" width="16" height="10" fill="#8B6B47"/>
+    
+    <!-- Head/Face - Main brown skin tone -->
     <ellipse cx="0" cy="-10" rx="22" ry="26" fill="#8B6B47"/>
     
-    <!-- Hair (natural textured style) -->
-    <path d="M -25 -35 Q -28 -42 -22 -45 Q -15 -48 0 -47 Q 15 -48 22 -45 Q 28 -42 25 -35 L 24 -25 Q 23 -20 20 -18 L 18 -15 Q 15 -12 12 -10 L 10 -8 Q 8 -6 5 -5 L -5 -5 Q -8 -6 -10 -8 L -12 -10 Q -15 -12 -18 -15 L -20 -18 Q -23 -20 -24 -25 Z" 
-          fill="#2C1810" stroke="#1a0a05" stroke-width="0.5"/>
+    <!-- Hair (natural African American style) -->
+    <path d="M -25 -36 C -25 -44, -20 -48, 0 -47 C 20 -48, 25 -44, 25 -36 L 24 -25 C 23 -20, 20 -18, 18 -15 L 15 -10 C 12 -6, 8 -4, 0 -3 C -8 -4, -12 -6, -15 -10 L -18 -15 C -20 -18, -23 -20, -24 -25 Z" 
+          fill="#1C0F08"/>
     
-    <!-- Hair texture detail -->
-    <path d="M -20 -38 Q -18 -40 -15 -39 M -10 -42 Q -8 -44 -5 -43 M 5 -43 Q 8 -44 10 -42 M 15 -39 Q 18 -40 20 -38" 
-          stroke="#1a0a05" stroke-width="0.8" fill="none" opacity="0.5"/>
+    <!-- Hair detail/edges -->
+    <path d="M -23 -38 C -21 -40, -18 -39, -15 -38 M -10 -42 C -8 -44, -5 -43, -2 -42 M 2 -42 C 5 -43, 8 -44, 10 -42 M 15 -38 C 18 -39, 21 -40, 23 -38" 
+          stroke="#0A0604" stroke-width="1" fill="none"/>
     
-    <!-- Face features -->
-    <ellipse cx="-8" cy="-10" rx="3" ry="2" fill="#2C1810"/> <!-- Left eye -->
-    <ellipse cx="8" cy="-10" rx="3" ry="2" fill="#2C1810"/> <!-- Right eye -->
-    <path d="M -5 -2 Q 0 1 5 -2" stroke="#5C4033" stroke-width="1.5" fill="none"/> <!-- Smile -->
+    <!-- Eyes -->
+    <ellipse cx="-8" cy="-12" rx="4" ry="3" fill="#FFFFFF"/>
+    <ellipse cx="8" cy="-12" rx="4" ry="3" fill="#FFFFFF"/>
+    <circle cx="-8" cy="-12" r="2" fill="#2C1810"/>
+    <circle cx="8" cy="-12" r="2" fill="#2C1810"/>
     
-    <!-- Cheek highlight -->
-    <circle cx="-12" cy="-5" r="3" fill="#A0826D" opacity="0.3"/>
-    <circle cx="12" cy="-5" r="3" fill="#A0826D" opacity="0.3"/>
+    <!-- Eyebrows -->
+    <path d="M -12 -18 C -10 -19, -6 -19, -4 -18" stroke="#1C0F08" stroke-width="1.5" fill="none"/>
+    <path d="M 4 -18 C 6 -19, 10 -19, 12 -18" stroke="#1C0F08" stroke-width="1.5" fill="none"/>
     
-    <!-- Professional attire collar -->
-    <path d="M -22 15 L -22 5 Q -22 0 -18 -2 L -8 -5 L 8 -5 L 18 -2 Q 22 0 22 5 L 22 15" 
+    <!-- Nose -->
+    <path d="M -2 -8 C -2 -6, -1 -4, 0 -4 C 1 -4, 2 -6, 2 -8" 
+          stroke="#6B4E3D" stroke-width="1" fill="none"/>
+    
+    <!-- Smile -->
+    <path d="M -6 -1 C -4 2, 4 2, 6 -1" 
+          stroke="#6B4E3D" stroke-width="1.5" fill="none"/>
+    
+    <!-- Professional blazer -->
+    <path d="M -22 20 L -22 8 C -22 2, -18 -1, -10 -3 L 10 -3 C 18 -1, 22 2, 22 8 L 22 20" 
           fill="#3282b8"/>
     
-    <!-- Lapels -->
-    <path d="M -22 15 L -15 5 L -8 0 M 22 15 L 15 5 L 8 0" 
+    <!-- Blazer collar/lapels -->
+    <path d="M -22 20 L -15 8 L -8 2 M 22 20 L 15 8 L 8 2" 
           stroke="#1a1a2e" stroke-width="2" fill="none"/>
     
-    <!-- Necklace detail -->
-    <path d="M -10 0 Q 0 2 10 0" stroke="#D4AF37" stroke-width="1" fill="none"/>
-    <circle cx="0" cy="2" r="2" fill="#D4AF37"/>
+    <!-- White shirt collar -->
+    <path d="M -10 2 L -10 -2 L 0 -3 L 10 -2 L 10 2" 
+          fill="#FFFFFF" stroke="#E0E0E0" stroke-width="0.5"/>
+    
+    <!-- Gold necklace -->
+    <ellipse cx="0" cy="4" rx="8" ry="3" fill="none" stroke="#D4AF37" stroke-width="1"/>
+    <circle cx="0" cy="7" r="2" fill="#D4AF37"/>
   </g>
   
-  <!-- Professional badge/pin -->
-  <circle cx="75" cy="75" r="4" fill="#bbe1fa" stroke="#0f4c75" stroke-width="1"/>
+  <!-- Name badge -->
+  <rect x="70" y="70" width="10" height="10" rx="2" fill="#bbe1fa" stroke="#0f4c75" stroke-width="1"/>
   
   <!-- Gradient definitions -->
   <defs>
