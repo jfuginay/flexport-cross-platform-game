@@ -29,6 +29,9 @@ import { MobileAlertsView } from './mobile/MobileAlertsView';
 import { MapboxMap } from './MapboxMap';
 import { MapSwitcher } from './MapSwitcher';
 import { UnifiedMapView } from './UnifiedMapView';
+import { ExecutiveNotificationIcon } from './UI/ExecutiveNotificationIcon';
+import { SecureMessaging } from './UI/SecureMessaging';
+import { crisisEventService } from '../services/crisisEventService';
 import './GameDashboard.css';
 
 interface GameDashboardProps {
@@ -62,6 +65,7 @@ export const GameDashboard: React.FC<GameDashboardProps> = ({ children }) => {
   const [isFleetModalOpen, setIsFleetModalOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileView, setMobileView] = useState<'map' | 'fleet' | 'contracts' | 'alerts'>('map');
+  const [isSecureMessagingOpen, setIsSecureMessagingOpen] = useState(false);
   
   // Initialize game world when component mounts
   useEffect(() => {
@@ -71,6 +75,20 @@ export const GameDashboard: React.FC<GameDashboardProps> = ({ children }) => {
       setIsInitialized(true);
       // Delay scene visibility to prevent flicker
       setTimeout(() => setIsSceneReady(true), 100);
+      
+      // Trigger first crisis event after 30 seconds
+      setTimeout(() => {
+        crisisEventService.triggerUnionCrisis();
+      }, 30000);
+      
+      // Random crisis events every 2-5 minutes
+      const crisisInterval = setInterval(() => {
+        if (Math.random() > 0.7) { // 30% chance
+          crisisEventService.triggerRandomCrisis();
+        }
+      }, 120000 + Math.random() * 180000); // 2-5 minutes
+      
+      return () => clearInterval(crisisInterval);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -256,6 +274,9 @@ export const GameDashboard: React.FC<GameDashboardProps> = ({ children }) => {
             </button>
           </div>
           
+          <ExecutiveNotificationIcon 
+            onClick={() => setIsSecureMessagingOpen(true)}
+          />
         </div>
       </div>
       
@@ -444,6 +465,12 @@ export const GameDashboard: React.FC<GameDashboardProps> = ({ children }) => {
       
       {/* Grand Organizer - Advisor System */}
       {/* <GrandOrganizer /> */}
+      
+      {/* Secure Messaging Modal */}
+      <SecureMessaging 
+        isOpen={isSecureMessagingOpen}
+        onClose={() => setIsSecureMessagingOpen(false)}
+      />
     </div>
   );
 };
