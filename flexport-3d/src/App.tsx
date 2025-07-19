@@ -1,16 +1,24 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useGameStateStore, GameState } from './store/gameStateStore';
 import { LoadingScreen } from './components/screens/LoadingScreen';
 import { TitleScreen } from './components/screens/TitleScreen';
 import { LobbyScreen } from './components/screens/LobbyScreen';
 import { GameDashboard } from './components/GameDashboard';
 import { MultiplayerLobby } from './components/UI/MultiplayerLobby';
+import { initializeTouchOptimizations, optimizeMobilePerformance } from './utils/touchOptimizations';
 import './App.css';
 import './components/UI/ui-fixes.css';
 import './components/UI/zindex.css';
+import './components/mobile/mobile-styles.css';
 
 function App() {
   const { currentState } = useGameStateStore();
+  
+  useEffect(() => {
+    // Initialize touch optimizations on mount
+    initializeTouchOptimizations();
+    optimizeMobilePerformance();
+  }, []);
   
   const renderScreen = () => {
     switch (currentState) {

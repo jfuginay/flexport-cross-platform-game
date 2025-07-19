@@ -46,9 +46,19 @@ class MultiplayerService {
 
   constructor() {
     // Use local server in development, production server in production
-    this.serverUrl = process.env.NODE_ENV === 'production' 
-      ? process.env.REACT_APP_MULTIPLAYER_SERVER_URL || 'http://34.215.161.218:3001' // Your EC2 server
-      : 'http://localhost:3001';
+    if (process.env.NODE_ENV === 'production') {
+      // Use the custom server URL if provided, otherwise use EC2
+      const customUrl = process.env.REACT_APP_MULTIPLAYER_SERVER_URL;
+      if (customUrl) {
+        this.serverUrl = customUrl;
+      } else {
+        // For now, use HTTP since EC2 doesn't have SSL certificate
+        // Note: This will cause mixed content warnings on HTTPS sites
+        this.serverUrl = 'http://34.215.161.218:3001';
+      }
+    } else {
+      this.serverUrl = 'http://localhost:3001';
+    }
   }
 
   connect(): Promise<void> {

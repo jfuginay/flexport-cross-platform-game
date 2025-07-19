@@ -46,7 +46,7 @@ export const LoadingScreen: React.FC = () => {
         </div>
         
         {/* Loading Bar */}
-        <div className="loading-bar-container">
+        <div className="loading-bar-container progress-container">
           <div className="loading-task">{loadingProgress.currentTask}</div>
           <div className="loading-bar">
             <div 
@@ -58,7 +58,7 @@ export const LoadingScreen: React.FC = () => {
         </div>
         
         {/* Shipping Facts */}
-        <div className="shipping-fact">
+        <div className="shipping-fact loading-tip">
           <div className="fact-icon">💡</div>
           <div className="fact-text">{shippingFacts[currentFact]}</div>
         </div>

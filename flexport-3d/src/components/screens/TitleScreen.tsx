@@ -89,15 +89,15 @@ export const TitleScreen: React.FC = () => {
             <span className="title-port">PORT</span>
             <span className="title-global">GLOBAL</span>
           </h1>
-          <div className="title-subtitle">Command the Seas. Dominate Trade. Build an Empire.</div>
+          <div className="title-subtitle tagline">Command the Seas. Dominate Trade. Build an Empire.</div>
         </div>
         
         {/* Main Menu */}
-        <div className="main-menu">
+        <div className="main-menu menu-options">
           {menuOptions.map((option, index) => (
             <button
               key={option.label}
-              className={`menu-option ${selectedOption === index ? 'selected' : ''} ${option.disabled ? 'disabled' : ''}`}
+              className={`menu-option menu-button ${selectedOption === index ? 'selected' : ''} ${option.disabled ? 'disabled' : ''}`}
               onClick={() => !option.disabled && option.action()}
               onMouseEnter={() => setSelectedOption(index)}
               disabled={option.disabled}
