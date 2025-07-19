@@ -1,5 +1,5 @@
 import React from 'react';
-import { Map, Globe3D } from 'lucide-react';
+import { Map, Globe } from 'lucide-react';
 import './ViewToggle.css';
 
 interface ViewToggleProps {
@@ -23,7 +23,7 @@ export const ViewToggle: React.FC<ViewToggleProps> = ({ currentView, onViewChang
         onClick={() => onViewChange('3D')}
         title="3D Globe View"
       >
-        <Globe3D size={20} />
+        <Globe size={20} />
         <span>3D</span>
       </button>
     </div>
