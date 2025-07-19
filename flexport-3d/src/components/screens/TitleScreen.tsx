@@ -27,8 +27,7 @@ export const TitleScreen: React.FC = () => {
     },
     {
       label: 'Multiplayer',
-      action: () => setGameState(GameState.LOBBY),
-      disabled: true // Coming soon
+      action: () => setGameState(GameState.MULTIPLAYER_LOBBY)
     },
     {
       label: 'Settings',

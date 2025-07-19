@@ -1,165 +1,254 @@
 import React, { useState, useEffect } from 'react';
+import { multiplayerService, Player, Room, ChatMessage } from '../../services/multiplayerService';
 import './MultiplayerLobby.css';
 
-interface Player {
-  id: string;
-  name: string;
-  isAI: boolean;
-  avatar: string;
-  rating: number;
-  status: 'ready' | 'waiting';
-  stats: {
-    gamesPlayed: number;
-    winRate: number;
-    avgProfit: number;
-  };
+interface MultiplayerLobbyProps {
+  onStartGame: () => void;
+  playerName?: string;
+  playerAvatar?: string;
 }
 
-interface GameSettings {
-  startingCapital: number;
-  gameDuration: string;
-  mapSize: string;
-  difficulty: string;
-}
-
-export const MultiplayerLobby: React.FC<{ onStartGame: () => void }> = ({ onStartGame }) => {
-  const [players, setPlayers] = useState<Player[]>([]);
-  const [gameSettings, setGameSettings] = useState<GameSettings>({
-    startingCapital: 50000000,
-    gameDuration: '30 minutes',
-    mapSize: 'Standard',
-    difficulty: 'Normal'
-  });
-  const [isHost, setIsHost] = useState(true);
-  const [chatMessages, setChatMessages] = useState<{ player: string; message: string }[]>([]);
+export const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({ 
+  onStartGame,
+  playerName = 'Player',
+  playerAvatar = '👤'
+}) => {
+  const [isConnecting, setIsConnecting] = useState(true);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
+  const [room, setRoom] = useState<Room | null>(null);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
+  const [joinRoomCode, setJoinRoomCode] = useState('');
+  const [showJoinDialog, setShowJoinDialog] = useState(false);
+  const [playerStatus, setPlayerStatus] = useState<'ready' | 'waiting'>('waiting');
 
   useEffect(() => {
-    // Initialize with player and AI players
-    const aiNames = ['TradeBot 3000', 'Captain AI', 'LogisticsMaster', 'CargoKing'];
-    const aiPersonalities = ['Aggressive', 'Balanced', 'Conservative', 'Opportunistic'];
-    
-    const initialPlayers: Player[] = [
-      {
-        id: 'player-1',
-        name: 'You',
-        isAI: false,
-        avatar: '👤',
-        rating: 1200,
-        status: 'ready',
-        stats: {
-          gamesPlayed: 42,
-          winRate: 65,
-          avgProfit: 125000000
-        }
+    // Connect to multiplayer server
+    const connectToServer = async () => {
+      try {
+        await multiplayerService.connect();
+        setIsConnecting(false);
+        
+        // Set up event listeners
+        multiplayerService.on('room-created', handleRoomUpdate);
+        multiplayerService.on('player-joined', handleRoomUpdate);
+        multiplayerService.on('player-left', handleRoomUpdate);
+        multiplayerService.on('player-status-updated', handleRoomUpdate);
+        multiplayerService.on('ai-player-added', handleRoomUpdate);
+        multiplayerService.on('ai-player-removed', handleRoomUpdate);
+        multiplayerService.on('room-filled-with-ai', handleRoomUpdate);
+        multiplayerService.on('settings-updated', handleSettingsUpdate);
+        multiplayerService.on('chat-message', handleChatMessage);
+        multiplayerService.on('game-starting', handleGameStarting);
+        multiplayerService.on('error', handleError);
+      } catch (error) {
+        setConnectionError('Failed to connect to multiplayer server. Playing offline.');
+        setIsConnecting(false);
       }
-    ];
+    };
 
-    // Add AI players to fill slots
-    for (let i = 0; i < 3; i++) {
-      initialPlayers.push({
-        id: `ai-${i}`,
-        name: aiNames[i],
-        isAI: true,
-        avatar: '🤖',
-        rating: 900 + Math.floor(Math.random() * 500),
-        status: 'ready',
-        stats: {
-          gamesPlayed: Math.floor(Math.random() * 1000),
-          winRate: 40 + Math.floor(Math.random() * 30),
-          avgProfit: 50000000 + Math.floor(Math.random() * 100000000)
-        }
-      });
-    }
+    connectToServer();
 
-    setPlayers(initialPlayers);
-
-    // Simulate AI chat messages
-    const aiMessages = [
-      'Ready for some competitive shipping!',
-      'May the best logistics company win',
-      'I\'ve optimized my route algorithms',
-      'Good luck everyone!'
-    ];
-
-    setTimeout(() => {
-      setChatMessages([{
-        player: aiNames[0],
-        message: aiMessages[Math.floor(Math.random() * aiMessages.length)]
-      }]);
-    }, 2000);
+    return () => {
+      multiplayerService.disconnect();
+    };
   }, []);
 
+  const handleRoomUpdate = (data: { room: Room }) => {
+    setRoom(data.room);
+  };
+
+  const handleSettingsUpdate = (data: { settings: any }) => {
+    if (room) {
+      setRoom({ ...room, settings: data.settings });
+    }
+  };
+
+  const handleChatMessage = (message: ChatMessage) => {
+    setChatMessages(prev => [...prev, message]);
+  };
+
+  const handleGameStarting = (data: any) => {
+    // Show countdown or preparation UI
+    setTimeout(() => {
+      onStartGame();
+    }, 3000);
+  };
+
+  const handleError = (data: { message: string }) => {
+    alert(data.message);
+  };
+
+  const createRoom = async () => {
+    const playerData = {
+      name: playerName,
+      avatar: playerAvatar,
+      rating: 1200,
+      stats: {
+        gamesPlayed: 0,
+        winRate: 0,
+        avgProfit: 0
+      }
+    };
+    
+    await multiplayerService.createRoom(playerData);
+  };
+
+  const joinRoom = async () => {
+    if (!joinRoomCode) return;
+    
+    const playerData = {
+      name: playerName,
+      avatar: playerAvatar,
+      rating: 1200,
+      stats: {
+        gamesPlayed: 0,
+        winRate: 0,
+        avgProfit: 0
+      }
+    };
+    
+    await multiplayerService.joinRoom(joinRoomCode.toUpperCase(), playerData);
+    setShowJoinDialog(false);
+  };
+
   const handleSendMessage = () => {
-    if (chatInput.trim()) {
-      setChatMessages(prev => [...prev, { player: 'You', message: chatInput }]);
+    if (chatInput.trim() && room) {
+      multiplayerService.sendChatMessage(chatInput);
       setChatInput('');
-
-      // AI response
-      setTimeout(() => {
-        const aiPlayer = players.find(p => p.isAI);
-        if (aiPlayer) {
-          const responses = [
-            'Good luck to you too!',
-            'Let\'s see who dominates the seas',
-            'My algorithms are ready',
-            'Bring it on!'
-          ];
-          setChatMessages(prev => [...prev, {
-            player: aiPlayer.name,
-            message: responses[Math.floor(Math.random() * responses.length)]
-          }]);
-        }
-      }, 1000 + Math.random() * 2000);
     }
   };
 
-  const addAIPlayer = () => {
-    if (players.length < 8) {
-      const aiNames = ['ShipBot Pro', 'Admiral AI', 'FreightMaster', 'OceanTrader'];
-      const newAI: Player = {
-        id: `ai-${Date.now()}`,
-        name: aiNames[Math.floor(Math.random() * aiNames.length)] + ` ${players.length}`,
-        isAI: true,
-        avatar: '🤖',
-        rating: 800 + Math.floor(Math.random() * 600),
-        status: 'ready',
-        stats: {
-          gamesPlayed: Math.floor(Math.random() * 500),
-          winRate: 35 + Math.floor(Math.random() * 35),
-          avgProfit: 40000000 + Math.floor(Math.random() * 80000000)
-        }
-      };
-      setPlayers(prev => [...prev, newAI]);
+  const toggleReady = () => {
+    const newStatus = playerStatus === 'ready' ? 'waiting' : 'ready';
+    setPlayerStatus(newStatus);
+    multiplayerService.updateStatus(newStatus);
+  };
+
+  const handleSettingChange = (key: string, value: any) => {
+    if (room && multiplayerService.isHost()) {
+      multiplayerService.updateSettings({ [key]: value });
     }
   };
 
-  const removePlayer = (playerId: string) => {
-    setPlayers(prev => prev.filter(p => p.id !== playerId && !p.isAI));
+  const handleStartGame = () => {
+    if (room && multiplayerService.isHost()) {
+      multiplayerService.startGame();
+    }
   };
+
+  // Loading state
+  if (isConnecting) {
+    return (
+      <div className="multiplayer-lobby">
+        <div>
+          <div className="loading-container">
+            <h2>Connecting to multiplayer server...</h2>
+            <div className="spinner"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Connection error - fallback to offline mode
+  if (connectionError) {
+    return (
+      <div className="multiplayer-lobby">
+        <div>
+          <div className="error-container">
+            <h3>{connectionError}</h3>
+            <button onClick={onStartGame}>Play Offline</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // No room - show create/join options
+  if (!room) {
+    return (
+      <div className="multiplayer-lobby">
+        <div>
+          <div className="lobby-welcome">
+            <h2>🚢 FlexPort Multiplayer</h2>
+            <div className="lobby-options">
+              <button className="primary-button" onClick={createRoom}>
+                Create New Room
+              </button>
+              <button className="secondary-button" onClick={() => setShowJoinDialog(true)}>
+                Join Existing Room
+              </button>
+            </div>
+            
+            {showJoinDialog && (
+              <div className="join-dialog">
+                <input
+                  type="text"
+                  placeholder="Enter room code (e.g., FLEX-ABC123)"
+                  value={joinRoomCode}
+                  onChange={(e) => setJoinRoomCode(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && joinRoom()}
+                />
+                <div className="dialog-buttons">
+                  <button onClick={joinRoom}>Join</button>
+                  <button onClick={() => setShowJoinDialog(false)}>Cancel</button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const isHost = multiplayerService.isHost();
+  const allPlayers = room.players || [];
+  const readyCount = allPlayers.filter(p => p.status === 'ready').length;
+  const canStart = readyCount >= 2 && room.state === 'waiting';
 
   return (
     <div className="multiplayer-lobby">
-      <div className="lobby-header">
-        <h2>Multiplayer Lobby</h2>
-        <div className="lobby-code">
-          <span>Room Code:</span>
-          <code>FLEX-{Math.random().toString(36).substr(2, 6).toUpperCase()}</code>
-          <button className="copy-button">📋</button>
+      <div>
+        <div className="lobby-header">
+          <h2>Multiplayer Lobby</h2>
+          <div className="lobby-code">
+            <span>Room Code:</span>
+            <code>{room.code}</code>
+            <button className="copy-button" onClick={() => navigator.clipboard.writeText(room.code)}>
+              📋
+            </button>
+          </div>
         </div>
-      </div>
 
       <div className="lobby-content">
         <div className="players-section">
           <div className="section-header">
-            <h3>Players ({players.length}/8)</h3>
-            <button className="add-ai-button" onClick={addAIPlayer} disabled={players.length >= 8}>
-              + Add AI Player
-            </button>
+            <h3>Players ({allPlayers.length}/{room.settings.maxPlayers})</h3>
+            <div className="player-actions">
+              {isHost && (
+                <>
+                  <button 
+                    className="add-ai-button" 
+                    onClick={() => multiplayerService.addAIPlayer()} 
+                    disabled={allPlayers.length >= room.settings.maxPlayers}
+                  >
+                    + Add AI
+                  </button>
+                  <button 
+                    className="fill-ai-button" 
+                    onClick={() => multiplayerService.fillWithAI()}
+                    disabled={allPlayers.length >= 4}
+                  >
+                    Fill with AI
+                  </button>
+                </>
+              )}
+            </div>
           </div>
 
           <div className="players-grid">
-            {players.map(player => (
+            {allPlayers.map(player => (
               <div key={player.id} className={`player-card ${player.isAI ? 'ai' : 'human'}`}>
                 <div className="player-header">
                   <div className="player-info">
@@ -192,7 +281,7 @@ export const MultiplayerLobby: React.FC<{ onStartGame: () => void }> = ({ onStar
                 {player.isAI && isHost && (
                   <button 
                     className="remove-button"
-                    onClick={() => removePlayer(player.id)}
+                    onClick={() => multiplayerService.removeAIPlayer(player.id)}
                   >
                     ✕
                   </button>
@@ -209,8 +298,8 @@ export const MultiplayerLobby: React.FC<{ onStartGame: () => void }> = ({ onStar
               <div className="setting-item">
                 <label>Starting Capital</label>
                 <select 
-                  value={gameSettings.startingCapital}
-                  onChange={(e) => setGameSettings(prev => ({ ...prev, startingCapital: Number(e.target.value) }))}
+                  value={room.settings.startingCapital}
+                  onChange={(e) => handleSettingChange('startingCapital', Number(e.target.value))}
                   disabled={!isHost}
                 >
                   <option value={25000000}>$25M</option>
@@ -221,8 +310,8 @@ export const MultiplayerLobby: React.FC<{ onStartGame: () => void }> = ({ onStar
               <div className="setting-item">
                 <label>Game Duration</label>
                 <select 
-                  value={gameSettings.gameDuration}
-                  onChange={(e) => setGameSettings(prev => ({ ...prev, gameDuration: e.target.value }))}
+                  value={room.settings.gameDuration}
+                  onChange={(e) => handleSettingChange('gameDuration', e.target.value)}
                   disabled={!isHost}
                 >
                   <option value="15 minutes">15 minutes</option>
@@ -233,8 +322,8 @@ export const MultiplayerLobby: React.FC<{ onStartGame: () => void }> = ({ onStar
               <div className="setting-item">
                 <label>Map Size</label>
                 <select 
-                  value={gameSettings.mapSize}
-                  onChange={(e) => setGameSettings(prev => ({ ...prev, mapSize: e.target.value }))}
+                  value={room.settings.mapSize}
+                  onChange={(e) => handleSettingChange('mapSize', e.target.value)}
                   disabled={!isHost}
                 >
                   <option value="Small">Small</option>
@@ -245,8 +334,8 @@ export const MultiplayerLobby: React.FC<{ onStartGame: () => void }> = ({ onStar
               <div className="setting-item">
                 <label>AI Difficulty</label>
                 <select 
-                  value={gameSettings.difficulty}
-                  onChange={(e) => setGameSettings(prev => ({ ...prev, difficulty: e.target.value }))}
+                  value={room.settings.difficulty}
+                  onChange={(e) => handleSettingChange('difficulty', e.target.value)}
                   disabled={!isHost}
                 >
                   <option value="Easy">Easy</option>
@@ -260,9 +349,9 @@ export const MultiplayerLobby: React.FC<{ onStartGame: () => void }> = ({ onStar
           <div className="chat-section">
             <h3>Chat</h3>
             <div className="chat-messages">
-              {chatMessages.map((msg, index) => (
-                <div key={index} className="chat-message">
-                  <span className="chat-player">{msg.player}:</span>
+              {chatMessages.map((msg) => (
+                <div key={msg.id} className="chat-message">
+                  <span className="chat-player">{msg.playerName}:</span>
                   <span className="chat-text">{msg.message}</span>
                 </div>
               ))}
@@ -282,14 +371,27 @@ export const MultiplayerLobby: React.FC<{ onStartGame: () => void }> = ({ onStar
       </div>
 
       <div className="lobby-actions">
-        <button className="cancel-button">Leave Lobby</button>
         <button 
-          className="start-button"
-          onClick={onStartGame}
-          disabled={players.filter(p => p.status === 'ready').length < 2}
+          className={`ready-button ${playerStatus}`}
+          onClick={toggleReady}
         >
-          Start Game ({players.filter(p => p.status === 'ready').length} Ready)
+          {playerStatus === 'ready' ? 'Ready ✅' : 'Not Ready ⏳'}
         </button>
+        
+        {isHost ? (
+          <button 
+            className="start-button"
+            onClick={handleStartGame}
+            disabled={!canStart}
+          >
+            Start Game ({readyCount} Ready)
+          </button>
+        ) : (
+          <div className="waiting-for-host">
+            Waiting for host to start... ({readyCount} Ready)
+          </div>
+        )}
+      </div>
       </div>
     </div>
   );

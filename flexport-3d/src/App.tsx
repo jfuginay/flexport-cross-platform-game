@@ -4,6 +4,7 @@ import { LoadingScreen } from './components/screens/LoadingScreen';
 import { TitleScreen } from './components/screens/TitleScreen';
 import { LobbyScreen } from './components/screens/LobbyScreen';
 import { GameDashboard } from './components/GameDashboard';
+import { MultiplayerLobby } from './components/UI/MultiplayerLobby';
 import './App.css';
 import './components/UI/ui-fixes.css';
 import './components/UI/zindex.css';
@@ -19,6 +20,10 @@ function App() {
         return <TitleScreen />;
       case GameState.LOBBY:
         return <LobbyScreen />;
+      case GameState.MULTIPLAYER_LOBBY:
+        return <MultiplayerLobby 
+          onStartGame={() => useGameStateStore.getState().setGameState(GameState.PLAYING)}
+        />;
       case GameState.PLAYING:
       case GameState.PAUSED:
         return <GameDashboard />;

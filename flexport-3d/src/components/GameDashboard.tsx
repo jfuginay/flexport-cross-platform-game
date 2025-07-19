@@ -15,17 +15,15 @@ import { ContractsList } from './UI/ContractsList';
 import { PortsOverview } from './UI/PortsOverview';
 import { AIResearchPanel } from './UI/AIResearchPanel';
 import { FinancesPanel } from './UI/FinancesPanel';
-// import { PostProcessingEffects } from './PostProcessingEffects';
 import { NewsTicker } from './UI/NewsTicker';
 import { FleetManagementModal } from './FleetManagementModal';
-// import { GrandOrganizer } from './GrandOrganizer';
 // Mobile components
 import { MobileNavigation } from './mobile/MobileNavigation';
 import { MobileFleetView } from './mobile/MobileFleetView';
 import { MobileContractsView } from './mobile/MobileContractsView';
 import { MobileAlertsView } from './mobile/MobileAlertsView';
 // Map components
-import { MapboxGlobe } from './MapboxGlobe';
+import { MapboxMap } from './MapboxMap';
 import { MapSwitcher } from './MapSwitcher';
 import { UnifiedMapView } from './UnifiedMapView';
 import './GameDashboard.css';
@@ -55,9 +53,6 @@ export const GameDashboard: React.FC<GameDashboardProps> = ({ children }) => {
     addFreeShip
   } = useGameStore();
   
-  const [isEarthRotating] = useState(true);
-  const [weatherState] = useState<WeatherState>(WeatherState.CLEAR);
-  const [timeOfDay] = useState(12);
   const [activePanel, setActivePanel] = useState<string>('overview');
   const [isInitialized, setIsInitialized] = useState(false);
   const [isSceneReady, setIsSceneReady] = useState(false);
@@ -152,56 +147,15 @@ export const GameDashboard: React.FC<GameDashboardProps> = ({ children }) => {
           onAlertsClick={() => setMobileView('alerts')}
         />
         
-        {/* Mobile 3D View */}
+        {/* Mobile View */}
         <div className="mobile-game-view" style={{ 
           position: 'fixed',
           top: '100px',
           bottom: '72px',
           left: 0,
-          right: 0,
-          background: '#000814'
+          right: 0
         }}>
-          <Canvas 
-            shadows 
-            gl={{ 
-              antialias: true, 
-              alpha: false,
-              toneMapping: THREE.ACESFilmicToneMapping,
-              toneMappingExposure: 1.0
-            }}
-          >
-            <PerspectiveCamera 
-              makeDefault 
-              position={[400, 300, 400]} 
-              fov={45}
-              near={1}
-              far={10000}
-            />
-            <SphericalCameraController />
-            
-            <ambientLight intensity={0.8} />
-            <directionalLight
-              position={[100, 100, 50]}
-              intensity={1.5}
-              castShadow
-              shadow-mapSize={[1024, 1024]}
-              color={0xffffff}
-            />
-            
-            <DayNightCycle timeOfDay={timeOfDay} />
-            <Weather weatherState={weatherState} />
-            
-            <World isEarthRotating={isEarthRotating} timeOfDay={timeOfDay} />
-            
-            {fleet.map(ship => (
-              <Ship
-                key={ship.id}
-                ship={ship}
-                onClick={(ship) => selectShip(ship.id)}
-                isSelected={selectedShipId === ship.id}
-              />
-            ))}
-          </Canvas>
+          <MapboxMap className="mapbox-container" />
         </div>
         
         {/* Mobile Overlays */}
@@ -404,6 +358,7 @@ export const GameDashboard: React.FC<GameDashboardProps> = ({ children }) => {
           </div>
         </div>
         
+<<<<<<< HEAD
         {/* Game View - 3D Earth */}
         <div className="game-view" style={{ opacity: isSceneReady ? 1 : 0, transition: 'opacity 0.5s ease-in-out' }}>
           {/* Unified Map View - 3D Realistic Earth */}
@@ -413,6 +368,11 @@ export const GameDashboard: React.FC<GameDashboardProps> = ({ children }) => {
           {/* <div className="minimap-overlay">
             <GlobeMap />
           </div> */}
+=======
+        {/* Game View - Mapbox Satellite */}
+        <div className="game-view" style={{ opacity: isSceneReady ? 1 : 0, transition: 'opacity 0.5s ease-in-out' }}>
+          <MapboxMap className="mapbox-container" />
+>>>>>>> deb06d3 (🚀 Add multiplayer functionality with WebSocket server)
         </div>
         
         {/* Right Sidebar - Selection & Actions */}
@@ -474,16 +434,12 @@ export const GameDashboard: React.FC<GameDashboardProps> = ({ children }) => {
       {/* Bottom Status Bar */}
       <div className="bottom-bar">
         <div className="status-item">
-          <span className="status-icon">🌡️</span>
-          <span className="status-text">Weather: {weatherState}</span>
+          <span className="status-icon">📍</span>
+          <span className="status-text">Fleet Status: Operational</span>
         </div>
         <div className="status-item">
-          <span className="status-icon">🕐</span>
-          <span className="status-text">Time: {Math.floor(timeOfDay)}:00</span>
-        </div>
-        <div className="status-item">
-          <span className="status-icon">🌍</span>
-          <span className="status-text">Earth Rotation: {isEarthRotating ? 'ON' : 'OFF'}</span>
+          <span className="status-icon">🌐</span>
+          <span className="status-text">Network: Connected</span>
         </div>
         <div className="game-tips">
           <span className="tip">💡 Tip: Click on ships or ports to select them</span>
