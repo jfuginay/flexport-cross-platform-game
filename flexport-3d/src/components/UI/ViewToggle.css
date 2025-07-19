@@ -1,34 +1,48 @@
-/* View Toggle Button */
-.view-toggle-btn {
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(15, 23, 42, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: white;
-  padding: 12px 24px;
-  border-radius: 24px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
+.view-toggle-container {
+  display: flex;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  padding: 4px;
+  gap: 4px;
   backdrop-filter: blur(10px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
-  z-index: 250;
-  pointer-events: auto;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.view-toggle-btn {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  padding: 8px 16px;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
 }
 
 .view-toggle-btn:hover {
-  background: rgba(30, 41, 59, 0.95);
-  border-color: rgba(59, 130, 246, 0.5);
-  transform: translateX(-50%) translateY(-2px);
-  box-shadow: 0 8px 12px -1px rgba(0, 0, 0, 0.4);
+  color: #e2e8f0;
+  background: rgba(255, 255, 255, 0.05);
 }
 
-.view-toggle-btn:active {
-  transform: translateX(-50%) translateY(0);
+.view-toggle-btn.active {
+  color: #fff;
+  background: rgba(59, 130, 246, 0.3);
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.5);
+}
+
+.view-toggle-btn.active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, transparent 100%);
+  pointer-events: none;
 }

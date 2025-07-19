@@ -5,6 +5,8 @@ import * as THREE from 'three';
 import { useGameStore } from '../store/gameStore';
 import { positionToLatLng } from '../utils/geoUtils';
 import { ShipStatus, ShipType } from '../types/game.types';
+import { createShip3DModel, createShip3DModelLOD } from './mapbox3D/Ship3DModel';
+import { createPort3DModel, createPort3DModelLOD } from './mapbox3D/Port3DModel';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import './MapboxGlobe.css';
 
@@ -24,7 +26,186 @@ export const MapboxGlobeCombined: React.FC<MapboxGlobeCombinedProps> = ({ classN
   const [showWeather, setShowWeather] = useState(false);
   const [showRain, setShowRain] = useState(false);
   
+  // 3D model references
+  const shipMeshes = useRef<Map<string, THREE.Group>>(new Map());
+  const portMeshes = useRef<Map<string, THREE.Group>>(new Map());
+  const previousPositions = useRef<Map<string, {lng: number, lat: number}>>(new Map());
+  const customLayer3D = useRef<any>(null);
+  
   const { fleet, ports, selectedShipId, selectShip, selectPort } = useGameStore();
+  
+  // Add custom 3D layer for advanced mode
+  const addCustom3DLayer = useCallback(() => {
+    if (!map.current || customLayer3D.current) return;
+    
+    customLayer3D.current = {
+      id: '3d-models',
+      type: 'custom',
+      renderingMode: '3d',
+      onAdd: function(map, gl) {
+        this.camera = new THREE.Camera();
+        this.scene = new THREE.Scene();
+        this.map = map;
+
+        // Lighting setup
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        this.scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(50, 100, 50).normalize();
+        directionalLight.castShadow = true;
+        this.scene.add(directionalLight);
+
+        // Renderer
+        this.renderer = new THREE.WebGLRenderer({
+          canvas: map.getCanvas(),
+          context: gl,
+          antialias: true
+        });
+
+        this.renderer.autoClear = false;
+        this.renderer.shadowMap.enabled = true;
+        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      },
+      
+      render: function(gl, matrix) {
+        const rotationX = new THREE.Matrix4().makeRotationAxis(
+          new THREE.Vector3(1, 0, 0),
+          Math.PI / 2
+        );
+
+        const m = new THREE.Matrix4().fromArray(matrix);
+        this.camera.projectionMatrix = m.multiply(rotationX);
+
+        // Update ships
+        fleet.forEach(ship => {
+          let shipMesh = shipMeshes.current.get(ship.id);
+          
+          if (!shipMesh) {
+            // Create new ship mesh with LOD
+            const zoom = map.current.getZoom();
+            shipMesh = zoom > 10 ? 
+              createShip3DModel(ship.type) : 
+              createShip3DModelLOD(ship.type);
+            
+            this.scene.add(shipMesh);
+            shipMeshes.current.set(ship.id, shipMesh);
+          }
+
+          // Convert position
+          const coords = positionToLatLng(new THREE.Vector3(
+            ship.position.x, 
+            ship.position.y, 
+            ship.position.z
+          ));
+          
+          const modelAsMercatorCoordinate = mapboxgl.MercatorCoordinate.fromLngLat(
+            [coords.lng, coords.lat],
+            0
+          );
+
+          // Calculate rotation based on movement
+          const prevPos = previousPositions.current.get(ship.id);
+          if (prevPos) {
+            const dlng = coords.lng - prevPos.lng;
+            const dlat = coords.lat - prevPos.lat;
+            
+            if (Math.abs(dlng) > 0.0001 || Math.abs(dlat) > 0.0001) {
+              const angle = Math.atan2(dlat, dlng);
+              shipMesh.rotation.z = -angle + Math.PI / 2;
+            }
+          }
+          previousPositions.current.set(ship.id, coords);
+
+          // Update position and scale
+          const scale = modelAsMercatorCoordinate.meterInMercatorCoordinateUnits() * 30;
+          
+          shipMesh.position.set(
+            modelAsMercatorCoordinate.x,
+            modelAsMercatorCoordinate.y,
+            modelAsMercatorCoordinate.z
+          );
+          shipMesh.scale.set(scale, -scale, scale);
+          
+          // Highlight selected ship
+          if (ship.id === selectedShipId) {
+            shipMesh.traverse((child) => {
+              if (child.isMesh) {
+                child.material.emissive = new THREE.Color(0x00ff00);
+                child.material.emissiveIntensity = 0.3;
+              }
+            });
+          } else {
+            shipMesh.traverse((child) => {
+              if (child.isMesh && child.material.emissive) {
+                child.material.emissiveIntensity = 0;
+              }
+            });
+          }
+        });
+
+        // Update ports
+        ports.forEach(port => {
+          let portMesh = portMeshes.current.get(port.id);
+          
+          if (!portMesh) {
+            // Create new port mesh with LOD
+            const zoom = map.current.getZoom();
+            portMesh = zoom > 8 ? 
+              createPort3DModel(port.capacity) : 
+              createPort3DModelLOD();
+            
+            this.scene.add(portMesh);
+            portMeshes.current.set(port.id, portMesh);
+          }
+
+          const modelAsMercatorCoordinate = mapboxgl.MercatorCoordinate.fromLngLat(
+            [port.position.lng, port.position.lat],
+            0
+          );
+
+          // Update position and scale
+          const scale = modelAsMercatorCoordinate.meterInMercatorCoordinateUnits() * 50;
+          
+          portMesh.position.set(
+            modelAsMercatorCoordinate.x,
+            modelAsMercatorCoordinate.y,
+            modelAsMercatorCoordinate.z
+          );
+          portMesh.scale.set(scale, -scale, scale);
+          
+          // Animate cranes
+          const time = Date.now() * 0.001;
+          const cranes = portMesh.children.filter(child => child.name === 'crane');
+          cranes.forEach((crane, index) => {
+            crane.rotation.y = Math.sin(time * 0.5 + index) * 0.3;
+          });
+        });
+
+        // Clean up removed entities
+        shipMeshes.current.forEach((mesh, id) => {
+          if (!fleet.find(s => s.id === id)) {
+            this.scene.remove(mesh);
+            shipMeshes.current.delete(id);
+            previousPositions.current.delete(id);
+          }
+        });
+
+        portMeshes.current.forEach((mesh, id) => {
+          if (!ports.find(p => p.id === id)) {
+            this.scene.remove(mesh);
+            portMeshes.current.delete(id);
+          }
+        });
+
+        this.renderer.resetState();
+        this.renderer.render(this.scene, this.camera);
+        this.map.triggerRepaint();
+      }
+    };
+    
+    map.current.addLayer(customLayer3D.current);
+  }, [fleet, ports, selectedShipId]);
 
   // Initialize map - ONLY ONCE
   useEffect(() => {
@@ -84,6 +265,9 @@ export const MapboxGlobeCombined: React.FC<MapboxGlobeCombinedProps> = ({ classN
               source: 'mapbox-dem', 
               exaggeration: 2.0
             });
+            
+            // Add 3D models layer
+            addCustom3DLayer();
           }
         }
       });
@@ -130,17 +314,35 @@ export const MapboxGlobeCombined: React.FC<MapboxGlobeCombinedProps> = ({ classN
           source: 'mapbox-dem', 
           exaggeration: 2.0
         });
+        
+        // Add 3D models layer
+        addCustom3DLayer();
+        
+        // Remove HTML markers (will be replaced by 3D models)
+        shipMarkers.current.forEach(marker => marker.remove());
+        shipMarkers.current.clear();
       } else {
         // Disable advanced features
         if (map.current!.getTerrain()) {
           map.current!.setTerrain(null);
+        }
+        
+        // Remove 3D layer
+        if (customLayer3D.current && map.current!.getLayer('3d-models')) {
+          map.current!.removeLayer('3d-models');
+          customLayer3D.current = null;
+          
+          // Clear 3D meshes
+          shipMeshes.current.clear();
+          portMeshes.current.clear();
+          previousPositions.current.clear();
         }
         // Keep the dem source for potential re-enabling
       }
       
       return newMode;
     });
-  }, [isMapLoaded]);
+  }, [isMapLoaded, addCustom3DLayer]);
 
   // Add ports to map
   useEffect(() => {
@@ -236,6 +438,13 @@ export const MapboxGlobeCombined: React.FC<MapboxGlobeCombinedProps> = ({ classN
   // Update ship markers
   useEffect(() => {
     if (!map.current || !isMapLoaded) return;
+
+    // If using 3D models in advanced mode, hide HTML markers
+    if (isAdvancedMode && customLayer3D.current) {
+      shipMarkers.current.forEach(marker => marker.remove());
+      shipMarkers.current.clear();
+      return;
+    }
 
     // Remove old markers
     shipMarkers.current.forEach((marker, shipId) => {
