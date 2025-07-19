@@ -52,19 +52,8 @@ class MultiplayerService {
       if (customUrl) {
         this.serverUrl = customUrl;
       } else {
-        // For Vercel deployment on HTTPS, we need WSS
-        // But EC2 with HTTP works fine for development
-        if (window.location.protocol === 'https:') {
-          console.warn('🔒 Multiplayer requires secure WebSocket (WSS) on HTTPS sites');
-          console.warn('💡 Options:');
-          console.warn('1. Access the game via HTTP instead of HTTPS');
-          console.warn('2. Deploy server to Render.com for free SSL');
-          console.warn('3. Add SSL certificate to EC2 instance');
-          this.serverUrl = 'https://multiplayer-disabled-on-https';
-        } else {
-          // HTTP site can connect to HTTP WebSocket
-          this.serverUrl = 'http://34.215.161.218:3001';
-        }
+        // Use secure domain with SSL
+        this.serverUrl = 'https://flexportglobal.engindearing.soy';
       }
     } else {
       this.serverUrl = 'http://localhost:3001';
@@ -75,6 +64,12 @@ class MultiplayerService {
     return new Promise((resolve, reject) => {
       if (this.socket?.connected) {
         resolve();
+        return;
+      }
+
+      // Check if multiplayer is disabled (HTTPS without SSL)
+      if (!this.serverUrl) {
+        reject(new Error('Multiplayer is disabled on HTTPS. Please access the game via HTTP or configure SSL.'));
         return;
       }
 

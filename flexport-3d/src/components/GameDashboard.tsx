@@ -18,6 +18,8 @@ import { AIResearchPanel } from './UI/AIResearchPanel';
 import { FinancesPanel } from './UI/FinancesPanel';
 import { NewsTicker } from './UI/NewsTicker';
 import { FleetManagementModal } from './FleetManagementModal';
+import { ShipAssignment } from './UI/ShipAssignment';
+import { ShipTracking } from './UI/ShipTracking';
 // Mobile components
 import { MobileNavigation } from './mobile/MobileNavigation';
 import { MobileFleetView } from './mobile/MobileFleetView';
@@ -182,7 +184,7 @@ export const GameDashboard: React.FC<GameDashboardProps> = ({ children }) => {
       <div className="top-bar">
         <div className="company-info">
           <h1 className="company-name">{companyName}</h1>
-          <div className="game-date">{currentDate.toLocaleDateString()}</div>
+          <div className="game-date">{currentDate?.toLocaleDateString?.() || 'Loading...'}</div>
         </div>
         
         <div className="resource-bar">
@@ -338,7 +340,7 @@ export const GameDashboard: React.FC<GameDashboardProps> = ({ children }) => {
             )}
             
             {activePanel === 'fleet' && (
-              <FleetManagement embedded={true} onClose={() => setActivePanel('overview')} />
+              <ShipTracking />
             )}
             
             {activePanel === 'contracts' && (
@@ -377,24 +379,23 @@ export const GameDashboard: React.FC<GameDashboardProps> = ({ children }) => {
               {/* Port details */}
             </div>
           ) : (
-            <div className="quick-actions">
-              <h3>Quick Actions</h3>
-              <button 
-                className="action-btn primary"
-                onClick={() => setIsFleetModalOpen(true)}
-              >
-                <span className="btn-icon">➕</span>
-                Purchase Ship
-              </button>
-              <button className="action-btn">
-                <span className="btn-icon">📋</span>
-                View Contracts
-              </button>
-              <button className="action-btn">
-                <span className="btn-icon">📊</span>
-                Market Report
-              </button>
-            </div>
+            <>
+              <ShipAssignment />
+              <div className="quick-actions">
+                <h3>Quick Actions</h3>
+                <button 
+                  className="action-btn primary"
+                  onClick={() => setIsFleetModalOpen(true)}
+                >
+                  <span className="btn-icon">➕</span>
+                  Purchase Ship
+                </button>
+                <button className="action-btn">
+                  <span className="btn-icon">📊</span>
+                  Market Report
+                </button>
+              </div>
+            </>
           )}
           
           {/* Contract Notifications */}
@@ -408,7 +409,7 @@ export const GameDashboard: React.FC<GameDashboardProps> = ({ children }) => {
                     <span className="notification-title">New Contract</span>
                   </div>
                   <div className="notification-body">
-                    {contract.origin.name} → {contract.destination.name}
+                    {contract.origin?.name || 'Unknown'} → {contract.destination?.name || 'Unknown'}
                   </div>
                   <div className="notification-value">${contract.value.toLocaleString()}</div>
                 </div>

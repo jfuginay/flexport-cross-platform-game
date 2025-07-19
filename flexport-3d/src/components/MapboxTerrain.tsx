@@ -14,7 +14,7 @@ interface MapboxTerrainProps {
 mapboxgl.accessToken = 'pk.eyJ1IjoiamZ1Z2luYXkiLCJhIjoiY21icmNha2hrMGE0azJscHVzdmVuZTVjOSJ9.oiJoYvc_G-tLUmaSzGVsVQ';
 
 // Ship emoji icon with pulsing animation
-const createShipIcon = () => {
+const createShipIcon = (status: string = 'idle') => {
   const size = 100;
   const icon: any = {
     width: size,
@@ -40,17 +40,31 @@ const createShipIcon = () => {
       // Clear canvas
       context.clearRect(0, 0, this.width, this.height);
 
-      // Draw pulsing circle behind ship
-      const radius = 20;
+      // Draw pulsing circle behind ship with status-based color
+      const radius = 25;
       const outerRadius = radius * 1.5 * (1 + t * 0.5);
+      
+      // Different colors for different statuses
+      let color = 'rgba(59, 130, 246, '; // Blue for idle
+      if (status === 'SAILING') {
+        color = 'rgba(16, 185, 129, '; // Green for sailing
+      } else if (status === 'LOADING' || status === 'UNLOADING') {
+        color = 'rgba(251, 191, 36, '; // Yellow for loading/unloading
+      }
       
       context.beginPath();
       context.arc(this.width / 2, this.height / 2, outerRadius, 0, Math.PI * 2);
-      context.fillStyle = `rgba(59, 130, 246, ${0.3 * (1 - t)})`;
+      context.fillStyle = color + `${0.4 * (1 - t)})`;
+      context.fill();
+      
+      // Draw solid background circle
+      context.beginPath();
+      context.arc(this.width / 2, this.height / 2, radius, 0, Math.PI * 2);
+      context.fillStyle = color + '0.8)';
       context.fill();
 
       // Draw ship emoji
-      context.font = `${30 * scale}px Arial`;
+      context.font = `${35 * scale}px Arial`;
       context.textAlign = 'center';
       context.textBaseline = 'middle';
       context.fillText('🚢', this.width / 2, this.height / 2);
@@ -82,17 +96,66 @@ export const MapboxTerrain: React.FC<MapboxTerrainProps> = ({ className }) => {
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
-    const map = new mapboxgl.Map({
+    // Wait for container to have dimensions
+    const checkContainer = () => {
+      const container = mapContainerRef.current;
+      if (!container) return false;
+      
+      const rect = container.getBoundingClientRect();
+      return rect.width > 0 && rect.height > 0;
+    };
+
+    // If container doesn't have dimensions yet, wait
+    if (!checkContainer()) {
+      const checkInterval = setInterval(() => {
+        if (checkContainer()) {
+          clearInterval(checkInterval);
+          initializeMap();
+        }
+      }, 100);
+      
+      // Timeout after 5 seconds
+      setTimeout(() => clearInterval(checkInterval), 5000);
+      return;
+    }
+
+    initializeMap();
+
+    function initializeMap() {
+      if (!mapContainerRef.current) return;
+      
+      const rect = mapContainerRef.current.getBoundingClientRect();
+      console.log('Initializing Mapbox map with dimensions:', rect.width, 'x', rect.height);
+      
+      // Configure Mapbox to handle WebGL context loss better
+      const map = new mapboxgl.Map({
       container: mapContainerRef.current,
       style: 'mapbox://styles/mapbox/standard-satellite',
       center: [0, 20],
       zoom: 2.5,
       pitch: 45,
       bearing: 0,
-      projection: 'globe' as any
+      projection: 'globe' as any,
+      preserveDrawingBuffer: true,
+      failIfMajorPerformanceCaveat: false,
+      refreshExpiredTiles: false,
+      maxTileCacheSize: 100
     });
 
     mapRef.current = map;
+
+    // Handle WebGL context loss
+    const canvas = map.getCanvas();
+    canvas.addEventListener('webglcontextlost', (e) => {
+      console.warn('WebGL context lost, preventing default behavior');
+      e.preventDefault();
+    });
+    
+    canvas.addEventListener('webglcontextrestored', () => {
+      console.log('WebGL context restored');
+      // Force map to re-render
+      map.triggerRepaint();
+    });
 
     map.on('style.load', () => {
       // Add 3D terrain
@@ -103,10 +166,12 @@ export const MapboxTerrain: React.FC<MapboxTerrainProps> = ({ className }) => {
         maxzoom: 14
       });
       
-      map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
+      map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.0 });
 
-      // Add custom ship icon
-      map.addImage('ship-icon', createShipIcon() as any, { pixelRatio: 2 });
+      // Add custom ship icons for different statuses
+      map.addImage('ship-icon-idle', createShipIcon('IDLE') as any, { pixelRatio: 2 });
+      map.addImage('ship-icon-sailing', createShipIcon('SAILING') as any, { pixelRatio: 2 });
+      map.addImage('ship-icon-loading', createShipIcon('LOADING') as any, { pixelRatio: 2 });
 
       // Add atmosphere
       map.setFog({
@@ -131,11 +196,30 @@ export const MapboxTerrain: React.FC<MapboxTerrainProps> = ({ className }) => {
         type: 'symbol',
         source: 'ships',
         layout: {
-          'icon-image': 'ship-icon',
-          'icon-size': 1,
+          'icon-image': [
+            'case',
+            ['==', ['get', 'status'], 'SAILING'], 'ship-icon-sailing',
+            ['==', ['get', 'status'], 'LOADING'], 'ship-icon-loading',
+            ['==', ['get', 'status'], 'UNLOADING'], 'ship-icon-loading',
+            'ship-icon-idle'
+          ],
+          'icon-size': 1.2,
           'icon-rotate': ['get', 'bearing'],
           'icon-rotation-alignment': 'map',
-          'icon-allow-overlap': true
+          'icon-allow-overlap': true,
+          'icon-pitch-alignment': 'map',
+          'text-field': ['get', 'name'],
+          'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+          'text-size': 12,
+          'text-offset': [0, 2],
+          'text-anchor': 'top',
+          'text-color': '#ffffff',
+          'text-halo-color': '#000000',
+          'text-halo-width': 2,
+          'text-allow-overlap': true
+        },
+        paint: {
+          'text-opacity': 0.9
         }
       });
 
@@ -186,13 +270,34 @@ export const MapboxTerrain: React.FC<MapboxTerrainProps> = ({ className }) => {
       });
     });
 
+    // Add error handling
+    map.on('error', (e) => {
+      console.error('Mapbox error:', e);
+      // Try to recover by triggering a repaint
+      if (map && !map.isRemoved()) {
+        setTimeout(() => {
+          map.triggerRepaint();
+        }, 1000);
+      }
+    });
+
     // Cleanup
     return () => {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
-      map.remove();
+      if (mapRef.current) {
+        // Remove event listeners
+        const canvas = mapRef.current.getCanvas();
+        if (canvas) {
+          canvas.removeEventListener('webglcontextlost', () => {});
+          canvas.removeEventListener('webglcontextrestored', () => {});
+        }
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
     };
+    } // End of initializeMap function
   }, [ports, selectShip, positionToLatLng]);
 
   // Animate ships
@@ -398,7 +503,11 @@ export const MapboxTerrain: React.FC<MapboxTerrainProps> = ({ className }) => {
       style={{ 
         width: '100%', 
         height: '100%',
-        position: 'relative'
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0
       }}
     />
   );
