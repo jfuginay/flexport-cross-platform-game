@@ -8,6 +8,7 @@ import { Ship } from './Ship';
 import { SphericalCameraController } from './SphericalCameraController';
 import { DayNightCycle } from './DayNightCycle';
 import { Weather, WeatherState } from './Weather';
+import { ShipType } from '../types/game.types';
 import { VesselTracker } from './VesselTracker';
 import { FleetManagement } from './UI/FleetManagement';
 import { ContractsList } from './UI/ContractsList';
@@ -25,7 +26,6 @@ import { MobileContractsView } from './mobile/MobileContractsView';
 import { MobileAlertsView } from './mobile/MobileAlertsView';
 // Map components
 import { MapboxGlobe } from './MapboxGlobe';
-import { SimpleMapboxTest } from './SimpleMapboxTest';
 import './GameDashboard.css';
 
 interface GameDashboardProps {
@@ -49,7 +49,8 @@ export const GameDashboard: React.FC<GameDashboardProps> = ({ children }) => {
     selectShip,
     selectedShipId,
     selectedPortId,
-    startGame
+    startGame,
+    addFreeShip
   } = useGameStore();
   
   const [isEarthRotating] = useState(true);
@@ -241,6 +242,20 @@ export const GameDashboard: React.FC<GameDashboardProps> = ({ children }) => {
             <span className="resource-icon">🚢</span>
             <span className="resource-value">{fleet.length} Ships</span>
           </div>
+          {fleet.length === 0 && (
+            <button 
+              className="control-btn"
+              onClick={() => addFreeShip(ShipType.CONTAINER, 'Starter Ship')}
+              style={{ 
+                background: '#10b981', 
+                padding: '8px 16px',
+                borderRadius: '8px',
+                marginLeft: '10px'
+              }}
+            >
+              🚢 Add Starter Ship
+            </button>
+          )}
           <div className="resource-item contract-count">
             <span className="resource-icon">📋</span>
             <span className="resource-value">{contracts.filter(c => c.status === 'ACTIVE').length} Active</span>
@@ -441,8 +456,7 @@ export const GameDashboard: React.FC<GameDashboardProps> = ({ children }) => {
           <div style={{ width: '100%', height: '100%', position: 'relative', background: '#000814' }}>
             {/* 2D Map View */}
             {viewMode === '2d' && (
-              <SimpleMapboxTest />
-              // <MapboxGlobe className="map-view" />
+              <MapboxGlobe className="map-view" />
             )}
             
             {/* 3D Canvas View */}
