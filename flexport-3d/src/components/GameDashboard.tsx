@@ -17,7 +17,7 @@ import { FinancesPanel } from './UI/FinancesPanel';
 // import { PostProcessingEffects } from './PostProcessingEffects';
 import { NewsTicker } from './UI/NewsTicker';
 import { FleetManagementModal } from './FleetManagementModal';
-import { GrandOrganizer } from './GrandOrganizer';
+// import { GrandOrganizer } from './GrandOrganizer';
 // Mobile components
 import { MobileNavigation } from './mobile/MobileNavigation';
 import { MobileFleetView } from './mobile/MobileFleetView';
@@ -581,7 +581,7 @@ export const GameDashboard: React.FC<GameDashboardProps> = ({ children }) => {
       />
       
       {/* Grand Organizer - Advisor System */}
-      <GrandOrganizer />
+      {/* <GrandOrganizer /> */}
     </div>
   );
 };
