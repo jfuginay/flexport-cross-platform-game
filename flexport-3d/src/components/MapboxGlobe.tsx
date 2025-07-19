@@ -170,6 +170,8 @@ export const MapboxGlobe: React.FC<MapboxGlobeProps> = ({ className }) => {
   useEffect(() => {
     if (!mapContainer.current || map.current || isInitializing.current) return;
     
+    let rotationAnimation: number;
+    
     // Add a small delay to ensure container is fully rendered
     const initTimer = setTimeout(() => {
       if (!mapContainer.current || map.current) return;
@@ -274,7 +276,6 @@ export const MapboxGlobe: React.FC<MapboxGlobeProps> = ({ className }) => {
     });
     
     // Smooth globe rotation
-    let rotationAnimation: number;
     let isUserInteracting = false;
     let lastInteractionTime = 0;
     
@@ -351,7 +352,9 @@ export const MapboxGlobe: React.FC<MapboxGlobeProps> = ({ className }) => {
     // Cleanup
     return () => {
       clearTimeout(initTimer);
-      cancelAnimationFrame(rotationAnimation);
+      if (rotationAnimation) {
+        cancelAnimationFrame(rotationAnimation);
+      }
       if (cameraAnimationFrame.current) {
         cancelAnimationFrame(cameraAnimationFrame.current);
       }
