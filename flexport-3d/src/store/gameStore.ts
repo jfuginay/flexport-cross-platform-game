@@ -417,22 +417,32 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const state = get();
     if (state.isPaused || state.isSingularityActive) return;
     
+    // Batch all state updates together to avoid multiple re-renders
+    const updates: Partial<GameState> = {};
+    
     // Update game time
     const newDate = new Date(state.currentDate.getTime() + deltaTime * state.gameSpeed * 1000);
-    set({ currentDate: newDate });
+    updates.currentDate = newDate;
     
     // Update AI development
     const aiIncrement = deltaTime * 0.01; // Slow progression
-    get().incrementAI(aiIncrement);
+    const newAILevel = Math.min(100, state.aiDevelopmentLevel + aiIncrement);
+    updates.aiDevelopmentLevel = newAILevel;
     
     // Check for singularity
-    if (state.aiDevelopmentLevel >= 100 && !state.isSingularityActive) {
-      get().triggerSingularity();
+    if (newAILevel >= 100 && !state.isSingularityActive) {
+      updates.isSingularityActive = true;
+      console.log('🤖 THE SINGULARITY HAS ARRIVED! Humans are now in zoos.');
     }
     
     // Generate new contracts periodically (every ~30 seconds game time)
+    let newContracts = state.contracts;
     if (Math.random() < deltaTime / 30) {
-      get().generateNewContract();
+      const newContract = generateDynamicContract(state.ports, state.reputation);
+      if (newContract) {
+        newContracts = [...state.contracts, newContract];
+        updates.contracts = newContracts;
+      }
     }
     
     // Update ships
@@ -490,15 +500,67 @@ export const useGameStore = create<GameStore>((set, get) => ({
                 ship.destination.id === contract.origin.id) {
               // At origin port, need to load cargo
               nextStatus = ShipStatus.LOADING;
-              setTimeout(() => {
-                get().loadCargo(ship.id, contract.id);
-              }, 100);
+              // Handle loading in a separate update cycle
+              if (!ship.loadingStartTime) {
+                return {
+                  ...ship,
+                  position: { ...ship.destination.position },
+                  status: nextStatus,
+                  destination: null,
+                  waypoints: undefined,
+                  currentWaypointIndex: 0,
+                  loadingStartTime: Date.now(),
+                } as any;
+              } else if (Date.now() - ship.loadingStartTime > 100) {
+                // Loading complete, load cargo
+                const cargo: Container = {
+                  id: `cargo-${Date.now()}`,
+                  type: contract.cargo,
+                  weight: contract.quantity * 1000, // Convert tons to kg
+                  value: contract.value,
+                  origin: contract.origin,
+                  destination: contract.destination,
+                };
+                return {
+                  ...ship,
+                  position: { ...ship.destination.position },
+                  status: ShipStatus.IDLE,
+                  cargo: [cargo],
+                  destination: null,
+                  waypoints: undefined,
+                  currentWaypointIndex: 0,
+                  loadingStartTime: undefined,
+                } as any;
+              }
             } else if (ship.cargo.length > 0) {
               // Has cargo, need to unload
               nextStatus = ShipStatus.UNLOADING;
-              setTimeout(() => {
-                get().unloadCargo(ship.id);
-              }, 2000); // 2 second unload time
+              // Handle unloading in a separate update cycle
+              if (!ship.unloadingStartTime) {
+                return {
+                  ...ship,
+                  position: { ...ship.destination.position },
+                  status: nextStatus,
+                  destination: null,
+                  waypoints: undefined,
+                  currentWaypointIndex: 0,
+                  unloadingStartTime: Date.now(),
+                } as any;
+              } else if (Date.now() - ship.unloadingStartTime > 2000) {
+                // Unloading complete
+                const cargoValue = ship.cargo.reduce((sum, item) => sum + item.value, 0);
+                updates.money = (updates.money || state.money) + cargoValue;
+                return {
+                  ...ship,
+                  position: { ...ship.destination.position },
+                  status: ShipStatus.IDLE,
+                  cargo: [],
+                  destination: null,
+                  waypoints: undefined,
+                  currentWaypointIndex: 0,
+                  unloadingStartTime: undefined,
+                } as any;
+              }
             }
             
             return {
@@ -548,7 +610,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
       return ship;
     });
     
-    set({ fleet: updatedFleet });
+    // Apply fleet updates to the batch
+    updates.fleet = updatedFleet;
+    
+    // Apply all updates in a single state change to avoid multiple re-renders
+    set(updates);
   },
 }));
 

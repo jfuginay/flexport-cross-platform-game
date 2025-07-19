@@ -90,14 +90,25 @@ export const GameDashboard: React.FC<GameDashboardProps> = ({ children }) => {
   useEffect(() => {
     let lastTime = Date.now();
     let animationFrameId: number;
+    let accumulatedTime = 0;
+    const MIN_UPDATE_INTERVAL = 1000 / 60; // Cap at 60 FPS
     
     const gameLoop = () => {
       const currentTime = Date.now();
-      const deltaTime = (currentTime - lastTime) / 1000; // Convert to seconds
+      const frameTime = currentTime - lastTime;
       lastTime = currentTime;
       
-      // Update game state
-      useGameStore.getState().updateGame(deltaTime);
+      // Accumulate time to ensure consistent updates
+      accumulatedTime += frameTime;
+      
+      // Only update if enough time has passed (prevents excessive updates)
+      if (accumulatedTime >= MIN_UPDATE_INTERVAL) {
+        const deltaTime = accumulatedTime / 1000; // Convert to seconds
+        accumulatedTime = 0;
+        
+        // Update game state
+        useGameStore.getState().updateGame(deltaTime);
+      }
       
       animationFrameId = requestAnimationFrame(gameLoop);
     };

@@ -41,6 +41,8 @@ export interface Ship {
   currentCapacityUsed?: number;
   destinationPortId?: string;
   contractId?: string;
+  loadingStartTime?: number;
+  unloadingStartTime?: number;
 }
 
 export enum ShipType {
