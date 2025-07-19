@@ -8,12 +8,101 @@
 /* Ship marker styles */
 .ship-marker {
   transition: all 0.3s ease;
-  animation: ship-pulse 2s infinite;
+  z-index: 999 !important;
+  cursor: pointer;
 }
 
 .ship-marker:hover {
-  transform: scale(1.1);
-  filter: drop-shadow(0 0 15px #3b82f6);
+  z-index: 1000 !important;
+}
+
+.ship-marker:hover .ship-icon-container {
+  transform: scale(1.15) !important;
+}
+
+.ship-marker:hover .ship-glow {
+  animation-duration: 0.8s !important;
+}
+
+/* Ship icon responsive scaling */
+.ship-icon-container {
+  transition: transform 0.3s ease, filter 0.3s ease;
+}
+
+/* Zoom-based scaling */
+@media (min-resolution: 2dppx) {
+  .ship-marker {
+    transform: translate(-50%, -50%) scale(0.8);
+  }
+}
+
+/* Ship label styles */
+.ship-label {
+  user-select: none;
+  pointer-events: none;
+  transition: all 0.3s ease;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.ship-marker:hover .ship-label {
+  transform: translateX(-50%) translateY(5px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5), 0 0 20px currentColor;
+}
+
+/* Status indicator animations */
+.ship-status {
+  transition: all 0.3s ease;
+}
+
+/* Wave effect styles */
+.ship-wake {
+  pointer-events: none;
+}
+
+.ship-wake svg {
+  overflow: visible;
+}
+
+/* Engine glow for planes */
+.plane-engine-1, .plane-engine-2, .plane-engine-3, .plane-engine-4 {
+  filter: drop-shadow(0 0 4px #fbbf24);
+}
+
+/* Different ship type hover effects */
+.ship-marker[data-ship-type="CONTAINER"]:hover .ship-icon-container {
+  filter: drop-shadow(0 4px 16px rgba(0,0,0,0.5)) drop-shadow(0 0 40px #60a5fa) !important;
+}
+
+.ship-marker[data-ship-type="BULK"]:hover .ship-icon-container {
+  filter: drop-shadow(0 4px 16px rgba(0,0,0,0.5)) drop-shadow(0 0 40px #34d399) !important;
+}
+
+.ship-marker[data-ship-type="TANKER"]:hover .ship-icon-container {
+  filter: drop-shadow(0 4px 16px rgba(0,0,0,0.5)) drop-shadow(0 0 40px #fb923c) !important;
+}
+
+.ship-marker[data-ship-type="CARGO_PLANE"]:hover .ship-icon-container {
+  filter: drop-shadow(0 4px 16px rgba(0,0,0,0.5)) drop-shadow(0 0 40px #a78bfa) !important;
+}
+
+/* Ensure Mapbox markers are visible */
+.mapboxgl-marker {
+  z-index: 999 !important;
+  position: absolute !important;
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Force marker containers to be visible */
+.mapboxgl-canvas-container {
+  position: relative !important;
+}
+
+.mapboxgl-marker > * {
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
 }
 
 @keyframes ship-pulse {
@@ -190,4 +279,65 @@
 
 .mapboxgl-ctrl-attrib a:hover {
   text-decoration: underline;
+}
+
+/* Loading animation */
+.mapbox-globe-loading {
+  width: 60px;
+  height: 60px;
+  position: relative;
+  display: inline-block;
+}
+
+.mapbox-globe-loading::before,
+.mapbox-globe-loading::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 4px solid transparent;
+  border-top-color: #3b82f6;
+  animation: loading-spin 1.5s linear infinite;
+}
+
+.mapbox-globe-loading::after {
+  width: 80%;
+  height: 80%;
+  top: 10%;
+  left: 10%;
+  border-top-color: #60a5fa;
+  animation-duration: 0.75s;
+  animation-direction: reverse;
+}
+
+@keyframes loading-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Smooth marker transitions */
+.mapboxgl-marker {
+  transition: transform 0.15s ease-out;
+}
+
+/* Port marker enhancements */
+.mapboxgl-marker.port-marker {
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3));
+}
+
+/* Selected ship emphasis */
+.ship-marker.selected .ship-icon-container {
+  animation: selected-pulse 2s ease-in-out infinite;
+}
+
+@keyframes selected-pulse {
+  0%, 100% { 
+    transform: scale(1.2);
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.4)) drop-shadow(0 0 30px currentColor);
+  }
+  50% { 
+    transform: scale(1.25);
+    filter: drop-shadow(0 4px 16px rgba(0,0,0,0.5)) drop-shadow(0 0 40px currentColor);
+  }
 }

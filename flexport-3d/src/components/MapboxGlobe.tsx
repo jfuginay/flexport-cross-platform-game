@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import mapboxgl from 'mapbox-gl';
 import * as THREE from 'three';
 import { useGameStore } from '../store/gameStore';
@@ -10,6 +10,7 @@ import './MapboxGlobe.css';
 // Set your Mapbox access token
 mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_TOKEN || 'pk.eyJ1IjoiamZ1Z2luYXkiLCJhIjoiY21icmNha2hrMGE0azJscHVzdmVuZTVjOSJ9.oiJoYvc_G-tLUmaSzGVsVQ';
 
+
 interface MapboxGlobeProps {
   className?: string;
 }
@@ -19,6 +20,7 @@ export const MapboxGlobe: React.FC<MapboxGlobeProps> = ({ className }) => {
   const map = useRef<mapboxgl.Map | null>(null);
   const shipMarkers = useRef<Map<string, mapboxgl.Marker>>(new Map());
   const [isMapLoaded, setIsMapLoaded] = React.useState(false);
+  const isInitializing = useRef(false);
   const [showWeather, setShowWeather] = React.useState(false);
   const [showRain, setShowRain] = React.useState(false);
   
@@ -165,7 +167,9 @@ export const MapboxGlobe: React.FC<MapboxGlobeProps> = ({ className }) => {
   
   // Initialize map
   useEffect(() => {
-    if (!mapContainer.current || map.current) return;
+    if (!mapContainer.current || map.current || isInitializing.current) return;
+    
+    isInitializing.current = true;
     
     // Create new map instance with enhanced settings
     console.log('Initializing Mapbox Globe...', mapboxgl.accessToken);
@@ -175,6 +179,7 @@ export const MapboxGlobe: React.FC<MapboxGlobeProps> = ({ className }) => {
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
         style: 'mapbox://styles/mapbox/satellite-streets-v12', // Using satellite style
+        projection: 'globe', // Enable globe projection
         center: [0, 20],
         zoom: 2.5,
         pitch: 0,
@@ -186,11 +191,6 @@ export const MapboxGlobe: React.FC<MapboxGlobeProps> = ({ className }) => {
         minZoom: 1.5,
         maxZoom: 20
       });
-      
-      // Set projection after map is created
-      if (map.current.setProjection) {
-        map.current.setProjection('globe');
-      }
     } catch (error) {
       console.error('Failed to initialize Mapbox:', error);
       return;
@@ -202,6 +202,10 @@ export const MapboxGlobe: React.FC<MapboxGlobeProps> = ({ className }) => {
     // Add error handler
     map.current.on('error', (e) => {
       console.error('Mapbox error:', e.error);
+      // Check if it's a token error
+      if (e.error && e.error.message && e.error.message.includes('access token')) {
+        console.error('Token validation failed. Please check your Mapbox access token.');
+      }
     });
     
     // Configure globe settings
@@ -688,33 +692,16 @@ export const MapboxGlobe: React.FC<MapboxGlobeProps> = ({ className }) => {
       const ship = fleet.find(s => s.id === selectedShipId);
       if (ship) {
         const coords = positionToLatLng(new THREE.Vector3(ship.position.x, ship.position.y, ship.position.z));
-        const speed = calculateShipSpeed(ship.id, coords);
-        const targetZoom = calculateDynamicZoom(speed, ship.status);
-        const { pitch, bearing } = getCameraAngle(ship.type, ship.status, cameraMode);
         
-        // Determine transition duration based on current distance
-        const currentCenter = map.current.getCenter();
-        const distance = Math.sqrt(
-          Math.pow(coords.lng - currentCenter.lng, 2) + 
-          Math.pow(coords.lat - currentCenter.lat, 2)
-        );
-        const transitionDuration = Math.min(3000, Math.max(1500, distance * 50));
-        
+        // Just do initial camera positioning, disable smooth follow for now
         map.current.flyTo({
           center: [coords.lng, coords.lat],
-          zoom: targetZoom,
-          pitch: pitch,
-          bearing: bearing,
-          duration: transitionDuration,
-          essential: true,
-          curve: 1.42, // Smoother curve for cinematic effect
-          speed: 1.2
+          zoom: 10,
+          pitch: 45,
+          bearing: 0,
+          duration: 2000,
+          essential: true
         });
-        
-        // Start smooth following after initial transition
-        setTimeout(() => {
-          smoothCameraFollow();
-        }, transitionDuration + 100);
       }
     } else {
       // Stop camera tracking
@@ -729,29 +716,15 @@ export const MapboxGlobe: React.FC<MapboxGlobeProps> = ({ className }) => {
         cancelAnimationFrame(cameraAnimationFrame.current);
       }
     };
-  }, [selectedShipId, followMode, isMapLoaded, cameraMode]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedShipId, followMode, isMapLoaded]);
   
-  // Auto-focus on single ship
-  useEffect(() => {
-    if (!map.current || !isMapLoaded) return;
-    
-    // If user has only one ship, follow it
-    if (fleet.length === 1 && !selectedShipId) {
-      const ship = fleet[0];
-      selectShip(ship.id);
-    }
-  }, [fleet.length, isMapLoaded, selectedShipId]);
+  // Auto-focus on single ship - removed to prevent infinite loop
   
   
   // Update ship markers
   useEffect(() => {
     if (!map.current || !isMapLoaded) return;
-    
-    console.log('Updating ship markers:', {
-      mapLoaded: isMapLoaded,
-      fleetSize: fleet.length,
-      existingMarkers: shipMarkers.current.size
-    });
     
     // Remove old markers that no longer exist
     shipMarkers.current.forEach((marker, shipId) => {
@@ -1266,7 +1239,8 @@ export const MapboxGlobe: React.FC<MapboxGlobeProps> = ({ className }) => {
         statusDiv.style.animation = ship.status === ShipStatus.SAILING ? 'statusPulse 1.5s ease-in-out infinite' : 'none';
       }
     });
-  }, [fleet, selectedShipId, selectShip]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fleet, selectedShipId]);
   
   // Add ship routes
   useEffect(() => {
@@ -1393,10 +1367,27 @@ export const MapboxGlobe: React.FC<MapboxGlobeProps> = ({ className }) => {
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+      {!isMapLoaded && (
+        <div style={{ 
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          color: '#64748b', 
+          textAlign: 'center',
+          zIndex: 10
+        }}>
+          <div className="mapbox-globe-loading"></div>
+          <p style={{ marginTop: '20px' }}>Loading map...</p>
+        </div>
+      )}
       <div 
         ref={mapContainer} 
         className={`mapbox-globe-container ${className || ''}`}
-        style={{ width: '100%', height: '100%' }}
+        style={{ 
+          width: '100%', 
+          height: '100%'
+        }}
       />
       
       {/* Camera Controls */}

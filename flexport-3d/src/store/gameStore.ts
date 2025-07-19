@@ -78,7 +78,27 @@ export const useGameStore = create<GameStore>((set, get) => ({
     // Generate initial world
     const ports = generateInitialPorts();
     const contracts = generateEnhancedContracts(ports, 15);
-    set({ ports, contracts });
+    
+    // Create an initial ship for testing visibility
+    const homePort = ports[0]; // LA port
+    const testShip: Ship = {
+      id: 'initial-ship-1',
+      name: 'SS FlexPort One',
+      type: ShipType.CONTAINER,
+      position: { ...homePort.position },
+      destination: null,
+      cargo: [],
+      capacity: getShipCapacity(ShipType.CONTAINER),
+      speed: getShipSpeed(ShipType.CONTAINER),
+      fuel: 100,
+      condition: 100,
+      health: 100,
+      value: getShipValue(ShipType.CONTAINER),
+      status: ShipStatus.IDLE,
+      currentPortId: homePort.id,
+    };
+    
+    set({ ports, contracts, fleet: [testShip] });
   },
   
   pauseGame: () => set({ isPaused: true }),
@@ -103,18 +123,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const cost = getShipCost(type);
     if (get().spendMoney(cost)) {
       const homePort = get().ports.find(p => p.isPlayerOwned) || get().ports[0];
-      // Ensure ship spawns at proper altitude above Earth
-      const earthRadius = 100;
-      const shipAltitude = type === ShipType.CARGO_PLANE ? 15 : 2;
-      const portPos = new THREE.Vector3(homePort.position.x, homePort.position.y, homePort.position.z);
-      const normalizedPos = portPos.normalize();
-      const spawnPosition = normalizedPos.multiplyScalar(earthRadius + shipAltitude);
+      // Ship spawns at port position (port positions are already elevated)
+      const spawnPosition = { ...homePort.position };
       
       const newShip: Ship = {
         id: `ship-${Date.now()}`,
         name,
         type,
-        position: { x: spawnPosition.x, y: spawnPosition.y, z: spawnPosition.z },
+        position: spawnPosition,
         destination: null,
         cargo: [],
         capacity: getShipCapacity(type),
@@ -126,6 +142,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
         status: ShipStatus.IDLE,
         currentPortId: homePort.id,
       };
+      
+      console.log(`New ship "${name}" spawned at port "${homePort.name}"`, {
+        portPosition: homePort.position,
+        shipPosition: spawnPosition
+      });
       
       set(state => ({ fleet: [...state.fleet, newShip] }));
     }

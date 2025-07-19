@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Ship, Anchor, TrendingUp, AlertCircle, Navigation, Package, DollarSign, Clock, MapPin, Activity } from 'lucide-react';
+import { X, Ship, Anchor, TrendingUp, AlertCircle, Navigation, Package, DollarSign, Clock, MapPin, Activity, Truck, Droplet, Plane } from 'lucide-react';
 import { useGameStore } from '../store/gameStore';
-import { Ship as ShipType, ShipStatus } from '../types/game.types';
+import { Ship as ShipInterface, ShipStatus, ShipType } from '../types/game.types';
 import './FleetManagementModal.css';
 
 interface FleetManagementModalProps {
@@ -20,8 +21,52 @@ interface FleetStats {
 }
 
 export const FleetManagementModal: React.FC<FleetManagementModalProps> = ({ isOpen, onClose }) => {
-  const { fleet: ships, ports, contracts } = useGameStore();
+  const { fleet: ships, ports, contracts, money, purchaseShip } = useGameStore();
   const [selectedShip, setSelectedShip] = useState<string | null>(null);
+  const [showPurchaseView, setShowPurchaseView] = useState(false);
+  const [selectedShipType, setSelectedShipType] = useState<ShipType | null>(null);
+  const [newShipName, setNewShipName] = useState('');
+  
+  // Ship type configurations
+  const shipTypes = [
+    {
+      type: ShipType.CONTAINER,
+      name: 'Container Ship',
+      icon: <Package className="w-8 h-8" />,
+      cost: 20000000,
+      capacity: 20000,
+      speed: 0.5,
+      description: 'Standard cargo vessel for containers'
+    },
+    {
+      type: ShipType.BULK,
+      name: 'Bulk Carrier',
+      icon: <Truck className="w-8 h-8" />,
+      cost: 15000000,
+      capacity: 30000,
+      speed: 0.3,
+      description: 'Large capacity for bulk goods'
+    },
+    {
+      type: ShipType.TANKER,
+      name: 'Oil Tanker',
+      icon: <Droplet className="w-8 h-8" />,
+      cost: 25000000,
+      capacity: 25000,
+      speed: 0.4,
+      description: 'Specialized for liquid cargo'
+    },
+    {
+      type: ShipType.CARGO_PLANE,
+      name: 'Cargo Plane',
+      icon: <Plane className="w-8 h-8" />,
+      cost: 50000000,
+      capacity: 500,
+      speed: 2.0,
+      description: 'Fast air transport for urgent cargo'
+    }
+  ];
+  
   const [fleetStats, setFleetStats] = useState<FleetStats>({
     totalShips: 0,
     activeShips: 0,
@@ -35,11 +80,11 @@ export const FleetManagementModal: React.FC<FleetManagementModalProps> = ({ isOp
     // Calculate fleet statistics
     const stats: FleetStats = {
       totalShips: ships.length,
-      activeShips: ships.filter((s: ShipType) => s.status === ShipStatus.SAILING || s.status === ShipStatus.LOADING).length,
-      idleShips: ships.filter((s: ShipType) => s.status === ShipStatus.IDLE).length,
-      totalCapacity: ships.reduce((sum: number, ship: ShipType) => sum + ship.capacity, 0),
-      totalRevenue: ships.reduce((sum: number, ship: ShipType) => sum + (ship.totalEarnings || 0), 0),
-      maintenanceCost: ships.reduce((sum: number, ship: ShipType) => sum + (ship.maintenanceCost || 10000), 0)
+      activeShips: ships.filter((s: ShipInterface) => s.status === ShipStatus.SAILING || s.status === ShipStatus.LOADING).length,
+      idleShips: ships.filter((s: ShipInterface) => s.status === ShipStatus.IDLE).length,
+      totalCapacity: ships.reduce((sum: number, ship: ShipInterface) => sum + ship.capacity, 0),
+      totalRevenue: ships.reduce((sum: number, ship: ShipInterface) => sum + (ship.totalEarnings || 0), 0),
+      maintenanceCost: ships.reduce((sum: number, ship: ShipInterface) => sum + (ship.maintenanceCost || 10000), 0)
     };
     setFleetStats(stats);
   }, [ships]);
@@ -79,7 +124,7 @@ export const FleetManagementModal: React.FC<FleetManagementModalProps> = ({ isOp
     return `${Math.round(distance).toLocaleString()} km`;
   };
 
-  return (
+  return ReactDOM.createPortal(
     <AnimatePresence>
       {isOpen && (
         <>
@@ -94,9 +139,10 @@ export const FleetManagementModal: React.FC<FleetManagementModalProps> = ({ isOp
 
           {/* Modal */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            initial={{ x: '100%', opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: '100%', opacity: 0 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
             className="fleet-modal"
           >
             {/* Header */}
@@ -161,11 +207,13 @@ export const FleetManagementModal: React.FC<FleetManagementModalProps> = ({ isOp
               </div>
             </div>
 
-            {/* Fleet List */}
+            {/* Fleet List or Purchase View */}
             <div className="fleet-list-container">
-              <h3 className="fleet-section-title">Your Fleet</h3>
-              <div className="fleet-grid">
-                {ships.map((ship: ShipType) => {
+              {!showPurchaseView ? (
+                <>
+                  <h3 className="fleet-section-title">Your Fleet</h3>
+                  <div className="fleet-grid">
+                    {ships.map((ship: ShipInterface) => {
                   const currentPort = ports.find(p => p.id === ship.currentPortId);
                   const destinationPort = ship.destination || (ship.destinationPortId 
                     ? ports.find(p => p.id === ship.destinationPortId)
@@ -291,8 +339,9 @@ export const FleetManagementModal: React.FC<FleetManagementModalProps> = ({ isOp
                   whileHover={{ scale: 1.02 }}
                   className="fleet-card add-ship-card"
                   onClick={() => {
-                    // Handle add ship action
-                    console.log('Add new ship');
+                    setShowPurchaseView(true);
+                    setSelectedShipType(null);
+                    setNewShipName('');
                   }}
                 >
                   <div className="add-ship-content">
@@ -300,11 +349,104 @@ export const FleetManagementModal: React.FC<FleetManagementModalProps> = ({ isOp
                     <span>Purchase New Ship</span>
                   </div>
                 </motion.div>
-              </div>
+                  </div>
+                </>
+              ) : (
+                /* Purchase Ship View */
+                <div className="purchase-ship-view">
+                  <div className="purchase-header">
+                    <button 
+                      className="back-button"
+                      onClick={() => setShowPurchaseView(false)}
+                    >
+                      ← Back to Fleet
+                    </button>
+                    <h3 className="fleet-section-title">Purchase New Ship</h3>
+                    <div className="current-money">
+                      Balance: {formatCurrency(money)}
+                    </div>
+                  </div>
+                  
+                  <div className="ship-types-grid">
+                    {shipTypes.map((shipType) => (
+                      <motion.div
+                        key={shipType.type}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className={`ship-type-card ${selectedShipType === shipType.type ? 'selected' : ''} ${money < shipType.cost ? 'disabled' : ''}`}
+                        onClick={() => {
+                          if (money >= shipType.cost) {
+                            setSelectedShipType(shipType.type);
+                            setNewShipName(shipType.name + ' ' + (ships.length + 1));
+                          }
+                        }}
+                      >
+                        <div className="ship-type-icon">{shipType.icon}</div>
+                        <h4 className="ship-type-name">{shipType.name}</h4>
+                        <p className="ship-type-description">{shipType.description}</p>
+                        
+                        <div className="ship-type-stats">
+                          <div className="stat">
+                            <span className="stat-label">Capacity</span>
+                            <span className="stat-value">{shipType.capacity.toLocaleString()} TEU</span>
+                          </div>
+                          <div className="stat">
+                            <span className="stat-label">Speed</span>
+                            <span className="stat-value">{shipType.speed} knots</span>
+                          </div>
+                        </div>
+                        
+                        <div className="ship-type-cost">
+                          {formatCurrency(shipType.cost)}
+                        </div>
+                        
+                        {money < shipType.cost && (
+                          <div className="insufficient-funds">Insufficient funds</div>
+                        )}
+                      </motion.div>
+                    ))}
+                  </div>
+                  
+                  {selectedShipType && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="purchase-form"
+                    >
+                      <div className="ship-name-input">
+                        <label>Ship Name</label>
+                        <input
+                          type="text"
+                          value={newShipName}
+                          onChange={(e) => setNewShipName(e.target.value)}
+                          placeholder="Enter ship name..."
+                          maxLength={50}
+                        />
+                      </div>
+                      
+                      <button
+                        className="purchase-button"
+                        onClick={() => {
+                          if (selectedShipType && newShipName.trim()) {
+                            purchaseShip(selectedShipType, newShipName.trim());
+                            setShowPurchaseView(false);
+                            setSelectedShipType(null);
+                            setNewShipName('');
+                          }
+                        }}
+                        disabled={!newShipName.trim()}
+                      >
+                        Purchase {shipTypes.find(s => s.type === selectedShipType)?.name}
+                      </button>
+                    </motion.div>
+                  )}
+                </div>
+              )}
             </div>
           </motion.div>
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };

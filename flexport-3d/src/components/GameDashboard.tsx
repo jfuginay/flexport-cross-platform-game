@@ -17,7 +17,8 @@ import { FinancesPanel } from './UI/FinancesPanel';
 // import { PostProcessingEffects } from './PostProcessingEffects';
 import { NewsTicker } from './UI/NewsTicker';
 import { FleetManagementModal } from './FleetManagementModal';
-import { MapboxGlobe } from './MapboxGlobe';
+// import { MapboxGlobe } from './MapboxGlobe';
+import { MapboxGlobeSimple as MapboxGlobe } from './MapboxGlobeSimple';
 import './GameDashboard.css';
 
 interface GameDashboardProps {
@@ -62,7 +63,8 @@ export const GameDashboard: React.FC<GameDashboardProps> = ({ children }) => {
       // Delay scene visibility to prevent flicker
       setTimeout(() => setIsSceneReady(true), 100);
     }
-  }, [isInitialized, ports.length, startGame]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   
   // Game update loop
   useEffect(() => {

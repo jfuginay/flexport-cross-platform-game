@@ -77,3 +77,17 @@ export function interpolateRoute(start: THREE.Vector3, end: THREE.Vector3, t: nu
   
   return interpVector.multiplyScalar(start.length());
 }
+
+// Convert 3D position to latitude/longitude
+export function positionToLatLng(position: THREE.Vector3): GeoCoords {
+  // Normalize the position to get direction
+  const normalized = position.clone().normalize();
+  
+  // Calculate latitude from Y component
+  const lat = Math.asin(normalized.y) * (180 / Math.PI);
+  
+  // Calculate longitude from X and Z components
+  const lng = Math.atan2(normalized.x, normalized.z) * (180 / Math.PI);
+  
+  return { lat, lng };
+}
