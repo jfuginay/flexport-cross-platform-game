@@ -1,7 +1,9 @@
 import React, { useRef, useEffect } from 'react';
 import mapboxgl from 'mapbox-gl';
+import * as THREE from 'three';
 import { useGameStore } from '../store/gameStore';
 import { ShipType } from '../types/game.types';
+import { positionToLatLng } from '../utils/geoUtils';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
 // Set token
@@ -46,8 +48,11 @@ export const SimpleMapboxTest: React.FC = () => {
             box-shadow: 0 2px 4px rgba(0,0,0,0.3);
           `;
           
+          const portVector = new THREE.Vector3(port.position.x, port.position.y, port.position.z);
+          const { lat, lng } = positionToLatLng(portVector);
+          
           new mapboxgl.Marker(el)
-            .setLngLat([port.position.longitude, port.position.latitude])
+            .setLngLat([lng, lat])
             .setPopup(new mapboxgl.Popup().setHTML(`<h3>${port.name}</h3>`))
             .addTo(map.current!);
         });
@@ -63,8 +68,8 @@ export const SimpleMapboxTest: React.FC = () => {
           el.innerHTML = '🚢';
           
           // Convert ship position to lat/lng
-          const lat = Math.asin(ship.position.z / 100) * (180 / Math.PI);
-          const lng = Math.atan2(ship.position.x, ship.position.y) * (180 / Math.PI);
+          const shipVector = new THREE.Vector3(ship.position.x, ship.position.y, ship.position.z);
+          const { lat, lng } = positionToLatLng(shipVector);
           
           new mapboxgl.Marker(el)
             .setLngLat([lng, lat])
@@ -107,8 +112,8 @@ export const SimpleMapboxTest: React.FC = () => {
       el.innerHTML = '🚢';
       
       // Convert ship position to lat/lng
-      const lat = Math.asin(ship.position.z / 100) * (180 / Math.PI);
-      const lng = Math.atan2(ship.position.x, ship.position.y) * (180 / Math.PI);
+      const shipVector = new THREE.Vector3(ship.position.x, ship.position.y, ship.position.z);
+      const { lat, lng } = positionToLatLng(shipVector);
       
       const marker = new mapboxgl.Marker(el)
         .setLngLat([lng, lat])
