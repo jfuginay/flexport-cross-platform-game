@@ -20,6 +20,7 @@ import { NewsTicker } from './UI/NewsTicker';
 import { FleetManagementModal } from './FleetManagementModal';
 import { ShipAssignment } from './UI/ShipAssignment';
 import { ShipTracking } from './UI/ShipTracking';
+import { ShipJourneyTracker } from './UI/ShipJourneyTracker';
 // Mobile components
 import { MobileNavigation } from './mobile/MobileNavigation';
 import { MobileFleetView } from './mobile/MobileFleetView';
@@ -402,6 +403,7 @@ export const GameDashboard: React.FC<GameDashboardProps> = ({ children }) => {
           ) : (
             <>
               <ShipAssignment />
+              <ShipJourneyTracker />
               <div className="quick-actions">
                 <h3>Quick Actions</h3>
                 <button 

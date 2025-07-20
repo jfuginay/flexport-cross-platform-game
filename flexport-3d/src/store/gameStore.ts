@@ -225,17 +225,20 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const contract = state.contracts.find(c => c.id === contractId);
     
     if (ship && contract && contract.status === ContractStatus.ACTIVE) {
-      // Move ship to origin port to load cargo
-      get().moveShip(shipId, contract.origin);
-      
-      // Store contract assignment on the ship (we'll add this field)
+      // Store contract assignment on the ship
       set(state => ({
         fleet: state.fleet.map(s =>
           s.id === shipId
-            ? { ...s, assignedContract: contractId }
+            ? { ...s, assignedContract: contractId, contractStage: 'pickup' }
             : s
         ),
       }));
+      
+      // Move ship to origin port to load cargo
+      get().moveShip(shipId, contract.origin);
+      
+      // Show notification
+      console.log(`🚢 ${ship.name} assigned to contract: ${contract.origin.name} → ${contract.destination.name}`);
     }
   },
   
