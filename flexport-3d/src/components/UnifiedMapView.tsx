@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React, { useState } from 'react';
 import { MapboxTerrain } from './MapboxTerrain';
-import { Globe3DView } from './Globe3DView';
+import { Simple3DGlobe } from './Simple3DGlobe';
 import { ViewToggle } from './UI/ViewToggle';
 
 interface UnifiedMapViewProps {
@@ -30,7 +30,7 @@ export const UnifiedMapView: React.FC<UnifiedMapViewProps> = ({ className }) => 
       {viewMode === '2D' ? (
         <MapboxTerrain className={className} />
       ) : (
-        <Globe3DView className={className} />
+        <Simple3DGlobe className={className} />
       )}
     </div>
   );
