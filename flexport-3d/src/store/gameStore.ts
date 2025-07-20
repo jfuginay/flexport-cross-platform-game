@@ -4,6 +4,7 @@ import { GameState, Ship, Port, Contract, Container, ShipType, ShipStatus, Contr
 import { generateEnhancedContracts, generateDynamicContract } from '../utils/contractGenerator';
 import { getPortPosition, realPortLocations, calculateDistance, interpolateRoute } from '../utils/geoUtils';
 import { isShipOverWater, getWaterRouteBetweenPorts, getNearestWaterPoint } from '../utils/routeValidation';
+import { realWorldPortsGeoJSON, additionalMajorPorts, convertGeoJSONToGamePort } from '../data/realWorldPorts';
 
 interface GameStore extends GameState {
   // Selection state
@@ -625,31 +626,41 @@ export const useGameStore = create<GameStore>((set, get) => ({
 function generateInitialPorts(): Port[] {
   const EARTH_RADIUS = 100; // Match the Earth sphere radius
   
-  // Use first 10 ports from real locations for more variety
-  const selectedPorts = realPortLocations.slice(0, 10);
+  // Use real-world port data from GeoJSON
+  const ports = realWorldPortsGeoJSON.features.map((feature, index) => 
+    convertGeoJSONToGamePort(feature, index, EARTH_RADIUS)
+  );
   
-  return selectedPorts.map((portData, index) => {
-    const position = getPortPosition(portData.name, EARTH_RADIUS);
+  // Add additional major ports
+  additionalMajorPorts.forEach((portData, index) => {
+    const [lng, lat] = portData.coordinates;
+    const phi = (90 - lat) * (Math.PI / 180);
+    const theta = (lng + 180) * (Math.PI / 180);
     
-    return {
-      id: `port-${index}`,
+    const x = -(EARTH_RADIUS * Math.sin(phi) * Math.cos(theta));
+    const y = EARTH_RADIUS * Math.cos(phi);
+    const z = EARTH_RADIUS * Math.sin(phi) * Math.sin(theta);
+    
+    ports.push({
+      id: `port-${ports.length + index}`,
       name: portData.name,
-      position: { 
-        x: position.x, 
-        y: position.y, 
-        z: position.z 
-      },
+      position: { x, y, z, lat, lng },
       country: portData.country,
-      capacity: 1000,
-      currentLoad: Math.random() * 500,
-      isPlayerOwned: index === 0, // Player starts with LA port
-      berths: 10,
-      availableBerths: Math.floor(Math.random() * 5) + 5,
-      loadingSpeed: 50 + Math.floor(Math.random() * 50),
+      capacity: Math.floor(portData.container_traffic_2022_teu / 10000),
+      currentLoad: Math.floor(Math.random() * 0.7 * portData.container_traffic_2022_teu / 10000),
+      isPlayerOwned: false,
+      berths: Math.floor(portData.container_traffic_2022_teu / 1000000) + 5,
+      availableBerths: Math.floor(Math.random() * 5) + 3,
+      loadingSpeed: 50 + Math.floor(portData.container_traffic_2022_teu / 500000),
       dockedShips: [],
       contracts: [],
-    };
+      details: portData.details,
+      realTrafficTEU: portData.container_traffic_2022_teu,
+      worldRank: null
+    });
   });
+  
+  return ports;
 }
 
 function generateInitialContracts(ports: Port[]): Contract[] {

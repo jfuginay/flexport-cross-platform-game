@@ -77,6 +77,9 @@ export const GameDashboard: React.FC<GameDashboardProps> = ({ children }) => {
       // Delay scene visibility to prevent flicker
       setTimeout(() => setIsSceneReady(true), 100);
       
+      // Start real-world weather monitoring
+      crisisEventService.startWeatherMonitoring();
+      
       // Trigger first crisis event after 30 seconds
       setTimeout(() => {
         crisisEventService.triggerUnionCrisis();
@@ -89,7 +92,10 @@ export const GameDashboard: React.FC<GameDashboardProps> = ({ children }) => {
         }
       }, 120000 + Math.random() * 180000); // 2-5 minutes
       
-      return () => clearInterval(crisisInterval);
+      return () => {
+        clearInterval(crisisInterval);
+        // Note: We don't stop weather monitoring as it should persist
+      };
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

@@ -1,5 +1,6 @@
 import { executiveNotificationService, ExecutiveAlert } from './executiveNotificationService';
 import { useGameStore } from '../store/gameStore';
+import { weatherService, WeatherAlert } from './weatherService';
 
 export interface CrisisEvent {
   id: string;
@@ -33,6 +34,7 @@ export interface CrisisOption {
 class CrisisEventService {
   private activeEvents: Map<string, CrisisEvent> = new Map();
   private eventHistory: CrisisEvent[] = [];
+  private weatherMonitoringStarted = false;
 
   public triggerUnionCrisis(): void {
     const crisis: CrisisEvent = {
@@ -417,6 +419,119 @@ class CrisisEventService {
 
   public getActiveEvents(): CrisisEvent[] {
     return Array.from(this.activeEvents.values());
+  }
+
+  // Start monitoring real-world weather
+  public startWeatherMonitoring(): void {
+    if (this.weatherMonitoringStarted) return;
+    
+    this.weatherMonitoringStarted = true;
+    weatherService.startWeatherMonitoring((alert: WeatherAlert) => {
+      this.createWeatherCrisis(alert);
+    });
+  }
+
+  private createWeatherCrisis(weatherAlert: WeatherAlert): void {
+    const severityMap = {
+      'LOW': 'MEDIUM',
+      'MEDIUM': 'HIGH',
+      'HIGH': 'CRITICAL',
+      'EXTREME': 'CRITICAL'
+    };
+
+    const crisis: CrisisEvent = {
+      id: `CRISIS-WEATHER-${Date.now()}`,
+      type: 'WEATHER_DISRUPTION',
+      severity: severityMap[weatherAlert.severity] as any,
+      title: `⚠️ Weather Alert: ${weatherAlert.location.name}`,
+      description: weatherAlert.description,
+      impact: {
+        routes: weatherAlert.affectedRoutes,
+        financialCost: this.calculateWeatherImpactCost(weatherAlert),
+        duration: Math.floor((weatherAlert.endTime.getTime() - weatherAlert.startTime.getTime()) / (1000 * 60 * 60))
+      },
+      options: this.generateWeatherOptions(weatherAlert),
+      expiresIn: 30 // 30 minutes to respond
+    };
+
+    this.triggerCrisis(crisis);
+  }
+
+  private calculateWeatherImpactCost(alert: WeatherAlert): number {
+    const baseCost = {
+      'HURRICANE': 5000000,
+      'STORM': 2000000,
+      'HIGH_WAVES': 1000000,
+      'FOG': 500000,
+      'EXTREME_WEATHER': 3000000
+    };
+
+    const severityMultiplier = {
+      'LOW': 0.5,
+      'MEDIUM': 1,
+      'HIGH': 2,
+      'EXTREME': 4
+    };
+
+    return baseCost[alert.type] * severityMultiplier[alert.severity];
+  }
+
+  private generateWeatherOptions(alert: WeatherAlert): CrisisOption[] {
+    const options: CrisisOption[] = [];
+
+    if (alert.type === 'HURRICANE' || alert.severity === 'EXTREME') {
+      options.push({
+        id: 'recall-all',
+        label: 'Recall All Ships',
+        action: 'recall_all',
+        cost: 1000000,
+        consequences: {
+          financial: -1000000,
+          reputation: 10,
+          resolution: 'All ships ordered to nearest safe port'
+        }
+      });
+    }
+
+    options.push({
+      id: 'reroute',
+      label: 'Reroute Affected Ships',
+      action: 'reroute_ships',
+      cost: 500000,
+      consequences: {
+        financial: -500000,
+        reputation: 5,
+        resolution: 'Ships taking longer but safer routes'
+      }
+    });
+
+    options.push({
+      id: 'risk-it',
+      label: 'Continue Operations',
+      action: 'continue_ops',
+      cost: 0,
+      consequences: {
+        financial: -this.calculateWeatherImpactCost(alert),
+        reputation: -20,
+        resolution: 'Ships at risk of damage or delays'
+      }
+    });
+
+    if (alert.type === 'FOG' || alert.type === 'HIGH_WAVES') {
+      options.push({
+        id: 'wait',
+        label: 'Delay Operations',
+        action: 'delay_ops',
+        cost: 250000,
+        consequences: {
+          financial: -250000,
+          reputation: 0,
+          resolution: 'Operations paused until conditions improve'
+        }
+      });
+    }
+
+    return options;
   }
 }
 
