@@ -1,0 +1,44 @@
+/* Mapbox container styles */
+.mapbox-container {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+}
+
+/* Port marker styles */
+.port-marker {
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.port-marker:hover {
+  transform: scale(1.2);
+  z-index: 1000;
+}
+
+/* Mapbox popup styles */
+.mapboxgl-popup-content {
+  background: rgba(15, 23, 42, 0.95);
+  color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mapboxgl-popup-close-button {
+  color: white;
+  font-size: 18px;
+  padding: 4px 8px;
+}
+
+.mapboxgl-popup-close-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.mapboxgl-popup-tip {
+  border-top-color: rgba(15, 23, 42, 0.95) !important;
+}

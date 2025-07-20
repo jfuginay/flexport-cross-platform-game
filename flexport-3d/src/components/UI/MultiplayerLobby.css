@@ -16,27 +16,31 @@
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
-  padding: 24px;
+  padding: 20px;
   width: 90%;
   max-width: 1400px;
-  height: 85vh;
-  overflow-y: auto;
+  height: calc(100vh - 120px);
+  max-height: 800px;
+  overflow: hidden;
   color: white;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
 }
 
 .lobby-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
-  padding-bottom: 16px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
 }
 
 .lobby-header h2 {
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 700;
   color: #f1f5f9;
   margin: 0;
@@ -79,25 +83,29 @@
 
 .lobby-content {
   display: grid;
-  grid-template-columns: 1fr 400px;
-  gap: 24px;
-  height: calc(100% - 140px);
+  grid-template-columns: 1fr 380px;
+  gap: 20px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .players-section {
   display: flex;
   flex-direction: column;
+  min-height: 0;
 }
 
 .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
+  flex-shrink: 0;
 }
 
 .section-header h3 {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 600;
   color: #f1f5f9;
   margin: 0;
@@ -125,10 +133,12 @@
 
 .players-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
   overflow-y: auto;
   padding-right: 8px;
+  flex: 1;
+  min-height: 0;
 }
 
 .player-card {
@@ -136,7 +146,7 @@
   background: rgba(30, 41, 59, 0.5);
   border: 2px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
-  padding: 16px;
+  padding: 14px;
   transition: all 0.2s;
 }
 
@@ -153,7 +163,7 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .player-info {
@@ -163,7 +173,7 @@
 }
 
 .player-avatar {
-  font-size: 32px;
+  font-size: 28px;
 }
 
 .player-info h4 {
@@ -242,26 +252,28 @@
 .settings-chat-section {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
+  min-height: 0;
 }
 
 .game-settings {
   background: rgba(30, 41, 59, 0.3);
   border-radius: 12px;
-  padding: 20px;
+  padding: 16px;
+  flex-shrink: 0;
 }
 
 .game-settings h3 {
   font-size: 18px;
   font-weight: 600;
   color: #f1f5f9;
-  margin: 0 0 16px 0;
+  margin: 0 0 12px 0;
 }
 
 .settings-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .setting-item {
@@ -288,26 +300,29 @@
   flex: 1;
   background: rgba(30, 41, 59, 0.3);
   border-radius: 12px;
-  padding: 20px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
+  min-height: 0;
 }
 
 .chat-section h3 {
   font-size: 18px;
   font-weight: 600;
   color: #f1f5f9;
-  margin: 0 0 16px 0;
+  margin: 0 0 12px 0;
+  flex-shrink: 0;
 }
 
 .chat-messages {
   flex: 1;
   overflow-y: auto;
   padding-right: 8px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
+  min-height: 0;
 }
 
 .chat-message {
@@ -356,9 +371,10 @@
 .lobby-actions {
   display: flex;
   justify-content: space-between;
-  margin-top: 24px;
-  padding-top: 20px;
+  margin-top: 16px;
+  padding-top: 16px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
 }
 
 .cancel-button,
@@ -429,8 +445,9 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100%;
+  min-height: 500px;
   gap: 32px;
+  padding: 40px 20px;
 }
 
 .lobby-welcome h2 {

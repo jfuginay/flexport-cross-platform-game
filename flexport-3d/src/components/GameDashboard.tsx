@@ -1,17 +1,8 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { useGameStore } from '../store/gameStore';
-import { Canvas } from '@react-three/fiber';
-import { PerspectiveCamera } from '@react-three/drei';
-import * as THREE from 'three';
-import { World } from './World';
-import { Ship } from './Ship';
-import { SphericalCameraController } from './SphericalCameraController';
-import { DayNightCycle } from './DayNightCycle';
-import { Weather, WeatherState } from './Weather';
 import { ShipType } from '../types/game.types';
 import { VesselTracker } from './VesselTracker';
-import { FleetManagement } from './UI/FleetManagement';
 import { ContractsList } from './UI/ContractsList';
 import { PortsOverview } from './UI/PortsOverview';
 import { AIResearchPanel } from './UI/AIResearchPanel';
@@ -28,11 +19,13 @@ import { MobileContractsView } from './mobile/MobileContractsView';
 import { MobileAlertsView } from './mobile/MobileAlertsView';
 // Map components
 import { MapboxMap } from './MapboxMap';
-import { MapSwitcher } from './MapSwitcher';
-import { UnifiedMapView } from './UnifiedMapView';
 import { ExecutiveNotificationIcon } from './UI/ExecutiveNotificationIcon';
 import { SecureMessaging } from './UI/SecureMessaging';
 import { crisisEventService } from '../services/crisisEventService';
+import { RyanPetersenAdvisor } from './AdvisorSystem/RyanPetersenAdvisor';
+import { AICompetitorPanel } from './UI/AICompetitorPanel';
+import { GameTimer } from './UI/GameTimer';
+import { GameMode } from '../types/game.types';
 import './GameDashboard.css';
 
 interface GameDashboardProps {
@@ -70,9 +63,19 @@ export const GameDashboard: React.FC<GameDashboardProps> = ({ children }) => {
   
   // Initialize game world when component mounts
   useEffect(() => {
-    if (!isInitialized && ports.length === 0) {
-      console.log('Initializing game world...');
-      startGame();
+    if (!isInitialized) {
+      console.log('GameDashboard initialization:', {
+        portsLength: ports.length,
+        currentDate: currentDate,
+        fleetLength: fleet.length
+      });
+      
+      // For multiplayer, game is already started by multiplayerService
+      // Only initialize if not already started
+      if (!currentDate && ports.length === 0) {
+        console.log('Starting new game...');
+        startGame(GameMode.INFINITE); // Default to infinite mode
+      }
       setIsInitialized(true);
       // Delay scene visibility to prevent flicker
       setTimeout(() => setIsSceneReady(true), 100);
@@ -205,6 +208,8 @@ export const GameDashboard: React.FC<GameDashboardProps> = ({ children }) => {
     <div className="game-dashboard">
       {/* News Ticker */}
       <NewsTicker onNewsClick={handleNewsClick} />
+      {/* Game Timer */}
+      <GameTimer />
       {/* Top Bar */}
       <div className="top-bar">
         <div className="company-info">
@@ -225,20 +230,6 @@ export const GameDashboard: React.FC<GameDashboardProps> = ({ children }) => {
             <span className="resource-icon">🚢</span>
             <span className="resource-value">{fleet.length} Ships</span>
           </div>
-          {fleet.length === 0 && (
-            <button 
-              className="control-btn"
-              onClick={() => addFreeShip(ShipType.CONTAINER, 'Starter Ship')}
-              style={{ 
-                background: '#10b981', 
-                padding: '8px 16px',
-                borderRadius: '8px',
-                marginLeft: '10px'
-              }}
-            >
-              🚢 Add Starter Ship
-            </button>
-          )}
           <div className="resource-item contract-count">
             <span className="resource-icon">📋</span>
             <span className="resource-value">{contracts.filter(c => c.status === 'ACTIVE').length} Active</span>
@@ -391,7 +382,7 @@ export const GameDashboard: React.FC<GameDashboardProps> = ({ children }) => {
         
         {/* Game View - Unified Map View */}
         <div className="game-view" style={{ opacity: isSceneReady ? 1 : 0, transition: 'opacity 0.5s ease-in-out' }}>
-          <UnifiedMapView className="map-view" />
+          <MapboxMap className="mapbox-container" />
         </div>
         
         {/* Right Sidebar - Selection & Actions */}
@@ -408,6 +399,7 @@ export const GameDashboard: React.FC<GameDashboardProps> = ({ children }) => {
             </div>
           ) : (
             <>
+              <AICompetitorPanel />
               <ShipAssignment />
               <ShipJourneyTracker />
               <div className="quick-actions">
@@ -479,6 +471,9 @@ export const GameDashboard: React.FC<GameDashboardProps> = ({ children }) => {
         isOpen={isSecureMessagingOpen}
         onClose={() => setIsSecureMessagingOpen(false)}
       />
+      
+      {/* Ryan Petersen Advisor System */}
+      <RyanPetersenAdvisor />
     </div>
   );
 };

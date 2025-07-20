@@ -1,0 +1,93 @@
+.game-timer {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  border: 2px solid rgba(0, 212, 255, 0.5);
+  border-radius: 30px;
+  padding: 10px 30px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  z-index: 1000;
+  transition: all 0.3s ease;
+}
+
+.game-timer.urgent {
+  border-color: rgba(255, 200, 0, 0.8);
+  background: rgba(50, 25, 0, 0.9);
+  animation: urgentPulse 1s ease-in-out infinite;
+}
+
+.game-timer.critical {
+  border-color: rgba(255, 50, 50, 0.8);
+  background: rgba(50, 0, 0, 0.9);
+  animation: criticalPulse 0.5s ease-in-out infinite;
+}
+
+@keyframes urgentPulse {
+  0%, 100% {
+    transform: translateX(-50%) scale(1);
+    box-shadow: 0 0 20px rgba(255, 200, 0, 0.5);
+  }
+  50% {
+    transform: translateX(-50%) scale(1.05);
+    box-shadow: 0 0 30px rgba(255, 200, 0, 0.8);
+  }
+}
+
+@keyframes criticalPulse {
+  0%, 100% {
+    transform: translateX(-50%) scale(1);
+    box-shadow: 0 0 30px rgba(255, 50, 50, 0.8);
+  }
+  50% {
+    transform: translateX(-50%) scale(1.1);
+    box-shadow: 0 0 40px rgba(255, 50, 50, 1);
+  }
+}
+
+.timer-label {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.timer-value {
+  font-size: 28px;
+  font-weight: bold;
+  color: #00d4ff;
+  font-family: monospace;
+  min-width: 80px;
+  text-align: center;
+}
+
+.urgent .timer-value {
+  color: #ffcc00;
+}
+
+.critical .timer-value {
+  color: #ff3333;
+}
+
+.timer-warning {
+  position: absolute;
+  bottom: -25px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 12px;
+  color: #ffcc00;
+  white-space: nowrap;
+  animation: warningBlink 1s ease-in-out infinite;
+}
+
+@keyframes warningBlink {
+  0%, 100% {
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 1;
+  }
+}

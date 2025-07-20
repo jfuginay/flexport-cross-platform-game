@@ -94,7 +94,7 @@ class CrisisEventService {
     const crisisTypes = [
       this.createPortStrikeCrisis,
       this.createPiracyCrisis,
-      this.createWeatherCrisis,
+      this.createGenericWeatherCrisis,
       this.createRegulatoryChangeCrisis
     ];
 
@@ -182,7 +182,7 @@ class CrisisEventService {
     };
   }
 
-  private createWeatherCrisis(): CrisisEvent {
+  private createGenericWeatherCrisis(): CrisisEvent {
     return {
       id: `CRISIS-${Date.now()}`,
       type: 'WEATHER_DISRUPTION',

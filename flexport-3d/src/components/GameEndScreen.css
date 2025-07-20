@@ -1,0 +1,228 @@
+.game-end-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100000;
+  animation: fadeIn 0.5s ease-out;
+}
+
+.game-end-screen.victory {
+  background: linear-gradient(135deg, rgba(0, 50, 0, 0.95) 0%, rgba(0, 0, 0, 0.95) 100%);
+}
+
+.game-end-screen.defeat {
+  background: linear-gradient(135deg, rgba(50, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.95) 100%);
+}
+
+.end-screen-content {
+  background: rgba(20, 25, 40, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 60px;
+  max-width: 800px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  animation: slideUp 0.6s ease-out;
+}
+
+.result-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.result-title {
+  font-size: 72px;
+  font-weight: 900;
+  margin: 0 0 10px 0;
+  letter-spacing: 3px;
+  animation: titlePulse 2s ease-in-out infinite;
+}
+
+.victory-text {
+  background: linear-gradient(135deg, #00ff00 0%, #00cc00 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.defeat-text {
+  background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+@keyframes titlePulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.result-subtitle {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 20px;
+  margin: 0;
+}
+
+.score-comparison {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 40px;
+  align-items: center;
+  margin-bottom: 40px;
+}
+
+.score-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 15px;
+  padding: 30px;
+  text-align: center;
+}
+
+.score-card h3 {
+  color: white;
+  font-size: 20px;
+  margin-bottom: 20px;
+  font-weight: 400;
+}
+
+.efficiency-meter {
+  background: rgba(0, 0, 0, 0.3);
+  height: 40px;
+  border-radius: 20px;
+  overflow: hidden;
+  margin-bottom: 10px;
+  position: relative;
+}
+
+.meter-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #00d4ff 0%, #0099cc 100%);
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 15px;
+  transition: width 1s ease-out;
+  animation: fillIn 1s ease-out;
+}
+
+.ai-fill {
+  background: linear-gradient(90deg, #ff6b6b 0%, #ee5a24 100%);
+}
+
+@keyframes fillIn {
+  from {
+    width: 0 !important;
+  }
+}
+
+.efficiency-value {
+  color: white;
+  font-weight: bold;
+  font-size: 18px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.score-label {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 14px;
+  margin: 0;
+}
+
+.vs-divider {
+  font-size: 36px;
+  font-weight: bold;
+  color: rgba(255, 255, 255, 0.3);
+  text-align: center;
+}
+
+.game-stats {
+  display: flex;
+  justify-content: center;
+  gap: 60px;
+  margin-bottom: 30px;
+}
+
+.stat {
+  text-align: center;
+}
+
+.stat-label {
+  display: block;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+
+.stat-value {
+  display: block;
+  color: white;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.victory-message,
+.defeat-message {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.victory-message p,
+.defeat-message p {
+  color: rgba(255, 255, 255, 0.8);
+  margin: 10px 0;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.end-screen-actions {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+}
+
+.action-btn {
+  padding: 15px 40px;
+  font-size: 18px;
+  border: none;
+  border-radius: 30px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: bold;
+}
+
+.action-btn.primary {
+  background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
+  color: white;
+}
+
+.action-btn.primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(0, 212, 255, 0.4);
+}
+
+.action-btn.secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.action-btn.secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+}

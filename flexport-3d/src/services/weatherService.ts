@@ -78,21 +78,20 @@ class WeatherService {
   }
 
   private async fetchRouteWeather(route: any): Promise<any> {
+    // Use regular forecast API with valid parameters
     const params = new URLSearchParams({
       latitude: route.lat.toString(),
       longitude: route.lng.toString(),
       current_weather: 'true',
-      hourly: 'temperature_2m,precipitation,weathercode,windspeed_10m,winddirection_10m,wave_height,visibility',
-      forecast_days: '3',
-      marine: 'wave_height,wave_direction,wave_period'
+      hourly: 'temperature_2m,precipitation,weathercode,windspeed_10m,winddirection_10m,visibility',
+      forecast_days: '3'
     });
 
     try {
-      const response = await fetch(`${this.API_BASE}/marine?${params}`);
+      const response = await fetch(`${this.API_BASE}/forecast?${params}`);
       if (!response.ok) {
-        // Fallback to regular forecast if marine API not available
-        const fallbackResponse = await fetch(`${this.API_BASE}/forecast?${params}`);
-        return fallbackResponse.json();
+        console.warn(`Weather API returned ${response.status} for ${route.name}`);
+        return null;
       }
       return response.json();
     } catch (error) {

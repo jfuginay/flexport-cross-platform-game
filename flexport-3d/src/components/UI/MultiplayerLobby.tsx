@@ -1,6 +1,7 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { multiplayerService, Player, Room, ChatMessage } from '../../services/multiplayerService';
+import { useGameStore } from '../../store/gameStore';
 import './MultiplayerLobby.css';
 
 interface MultiplayerLobbyProps {
@@ -69,7 +70,23 @@ export const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
     setChatMessages(prev => [...prev, message]);
   };
 
+  const { startMultiplayerGame } = useGameStore();
+  
   const handleGameStarting = (data: any) => {
+    console.log('handleGameStarting called, room:', room);
+    // Initialize game with multiplayer settings
+    if (room) {
+      console.log('Starting game with room settings:', room.settings);
+      startMultiplayerGame(room.settings);
+    } else {
+      console.warn('No room available, starting with default settings');
+      startMultiplayerGame({
+        startingCapital: 50000000,
+        gameDuration: '30',
+        maxPlayers: 8,
+        difficulty: 'Normal'
+      });
+    }
     // Show countdown or preparation UI
     setTimeout(() => {
       onStartGame();
@@ -159,7 +176,19 @@ export const MultiplayerLobby: React.FC<MultiplayerLobbyProps> = ({
         <div>
           <div className="error-container">
             <h3>{connectionError}</h3>
-            <button onClick={onStartGame}>Play Offline</button>
+            <button onClick={() => {
+              // Start offline game with default multiplayer settings
+              startMultiplayerGame({
+                startingCapital: 50000000,
+                gameDuration: '30',
+                maxPlayers: 8,
+                difficulty: 'Normal'
+              });
+              // Small delay to ensure game is initialized before navigation
+              setTimeout(() => {
+                onStartGame();
+              }, 100);
+            }}>Play Offline</button>
           </div>
         </div>
       </div>

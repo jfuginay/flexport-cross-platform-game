@@ -417,10 +417,10 @@
 .game-view {
   flex: 1;
   position: relative;
-  background: #000;
   border: 2px solid #2a3f5f;
   overflow: hidden;
   min-height: 400px;
+  display: flex;
 }
 
 /* Map View */
@@ -428,6 +428,14 @@
   width: 100%;
   height: 100%;
   position: relative;
+  flex: 1;
+}
+
+/* Mapbox container */
+.mapbox-container {
+  width: 100% !important;
+  height: 100% !important;
+  flex: 1;
 }
 
 .minimap-overlay {

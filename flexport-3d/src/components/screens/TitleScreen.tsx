@@ -19,16 +19,12 @@ export const TitleScreen: React.FC = () => {
   const menuOptions: MenuOption[] = [
     {
       label: 'New Game',
-      action: () => setGameState(GameState.LOBBY)
+      action: () => setGameState(GameState.MULTIPLAYER_LOBBY)
     },
     {
       label: 'Continue',
       action: () => setGameState(GameState.PLAYING),
       disabled: true // No save game yet
-    },
-    {
-      label: 'Multiplayer',
-      action: () => setGameState(GameState.MULTIPLAYER_LOBBY)
     },
     {
       label: 'Settings',

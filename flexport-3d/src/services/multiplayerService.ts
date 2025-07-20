@@ -45,19 +45,18 @@ class MultiplayerService {
   private eventHandlers: Map<string, Function[]> = new Map();
 
   constructor() {
-    // Use local server in development, production server in production
-    if (process.env.NODE_ENV === 'production') {
-      // Use the custom server URL if provided
-      const customUrl = process.env.REACT_APP_MULTIPLAYER_SERVER_URL;
-      if (customUrl) {
-        this.serverUrl = customUrl;
-      } else {
-        // Use secure domain with SSL
-        this.serverUrl = 'https://flexportglobal.engindearing.soy';
-      }
+    // Check for custom server URL first
+    const customUrl = process.env.REACT_APP_MULTIPLAYER_SERVER_URL;
+    if (customUrl) {
+      this.serverUrl = customUrl;
+    } else if (process.env.NODE_ENV === 'production') {
+      // Use production server on engindearing.soy
+      this.serverUrl = 'https://flexportglobal.engindearing.soy';
     } else {
-      this.serverUrl = 'http://localhost:3001';
+      // Development - also use production server since local isn't available
+      this.serverUrl = 'https://flexportglobal.engindearing.soy';
     }
+    console.log('Multiplayer server URL:', this.serverUrl);
   }
 
   connect(): Promise<void> {
@@ -78,13 +77,18 @@ class MultiplayerService {
       });
 
       this.socket.on('connect', () => {
-        console.log('Connected to multiplayer server');
+        console.log('Connected to multiplayer server at:', this.serverUrl);
         resolve();
       });
 
       this.socket.on('connect_error', (error) => {
         console.error('Connection error:', error);
+        console.error('Failed to connect to:', this.serverUrl);
         reject(error);
+      });
+      
+      this.socket.on('disconnect', (reason) => {
+        console.log('Disconnected from server:', reason);
       });
 
       // Set up event listeners

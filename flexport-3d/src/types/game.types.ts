@@ -16,6 +16,39 @@ export interface GameState {
   contracts: Contract[];
   aiDevelopmentLevel: number;
   isSingularityActive: boolean;
+  gameMode?: GameMode;
+  gameStartTime?: number;
+  gameDuration?: number; // in seconds
+  aiCompetitors: AICompetitor[];
+  playerEfficiency: number;
+  gameResult?: GameResult;
+}
+
+export enum GameMode {
+  QUICK = 'quick',
+  CAMPAIGN = 'campaign',
+  INFINITE = 'infinite'
+}
+
+export interface AICompetitor {
+  id: string;
+  name: string;
+  money: number;
+  efficiency: number; // 0-100
+  shipsOwned: number;
+  contractsCompleted: number;
+  totalRevenue: number;
+  color: string;
+}
+
+export interface GameResult {
+  winner: 'player' | 'ai' | 'singularity';
+  reason: string;
+  finalScore: {
+    player: number;
+    ai: number;
+  };
+  duration: number;
 }
 
 export interface Ship {

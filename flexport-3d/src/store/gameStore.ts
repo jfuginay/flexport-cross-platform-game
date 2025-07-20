@@ -1,10 +1,10 @@
 import { create } from 'zustand';
 import * as THREE from 'three';
-import { GameState, Ship, Port, Contract, Container, ShipType, ShipStatus, ContractStatus, CargoType } from '../types/game.types';
+import { GameState, Ship, Port, Contract, Container, ShipType, ShipStatus, ContractStatus, CargoType, GameMode, AICompetitor, GameResult } from '../types/game.types';
 import { generateEnhancedContracts, generateDynamicContract } from '../utils/contractGenerator';
 import { getPortPosition, realPortLocations, calculateDistance, interpolateRoute } from '../utils/geoUtils';
 import { isShipOverWater, getWaterRouteBetweenPorts, getNearestWaterPoint } from '../utils/routeValidation';
-import { realWorldPortsGeoJSON, additionalMajorPorts, convertGeoJSONToGamePort } from '../data/realWorldPorts';
+import { generatePortsFromWorldData } from '../utils/worldPortsConverter';
 
 interface GameStore extends GameState {
   // Selection state
@@ -12,10 +12,12 @@ interface GameStore extends GameState {
   selectedPortId: string | null;
   
   // Actions
-  startGame: () => void;
+  startGame: (mode: GameMode) => void;
+  startMultiplayerGame: (settings: any) => void;
   pauseGame: () => void;
   resumeGame: () => void;
   setGameSpeed: (speed: number) => void;
+  endGame: (result: GameResult) => void;
   
   // Selection actions
   selectShip: (shipId: string | null) => void;
@@ -47,6 +49,8 @@ interface GameStore extends GameState {
   // AI actions
   incrementAI: (amount: number) => void;
   triggerSingularity: () => void;
+  updateAICompetitors: (deltaTime: number) => void;
+  calculateEfficiency: (isPlayer: boolean, competitorId?: string) => number;
   
   // Game loop
   updateGame: (deltaTime: number) => void;
@@ -65,6 +69,12 @@ const INITIAL_STATE: GameState = {
   contracts: [],
   aiDevelopmentLevel: 0,
   isSingularityActive: false,
+  aiCompetitors: [],
+  playerEfficiency: 25, // Start at 25% efficiency, similar to AI
+  gameMode: undefined,
+  gameStartTime: undefined,
+  gameDuration: undefined,
+  gameResult: undefined,
 };
 
 export const useGameStore = create<GameStore>((set, get) => ({
@@ -75,16 +85,29 @@ export const useGameStore = create<GameStore>((set, get) => ({
   selectShip: (shipId) => set({ selectedShipId: shipId, selectedPortId: null }),
   selectPort: (portId) => set({ selectedPortId: portId, selectedShipId: null }),
   
-  startGame: () => {
-    set({ ...INITIAL_STATE });
+  startGame: (mode: GameMode) => {
+    const gameConfig = getGameModeConfig(mode);
+    
+    set({ 
+      ...INITIAL_STATE,
+      gameMode: mode,
+      gameStartTime: Date.now(),
+      gameDuration: gameConfig.duration,
+      money: gameConfig.startingMoney,
+      gameSpeed: gameConfig.initialSpeed,
+    });
+    
     // Generate initial world
     const ports = generateInitialPorts();
-    const contracts = generateEnhancedContracts(ports, 15);
+    const contracts = generateEnhancedContracts(ports, gameConfig.initialContracts);
     
-    // Create an initial ship for testing visibility
+    // Create AI competitors
+    const aiCompetitors = generateAICompetitors(gameConfig.aiCount);
+    
+    // Create an initial ship for the player
     const homePort = ports[0]; // LA port
-    const testShip: Ship = {
-      id: 'initial-ship-1',
+    const playerShip: Ship = {
+      id: 'player-ship-1',
       name: 'SS FlexPort One',
       type: ShipType.CONTAINER,
       position: { ...homePort.position },
@@ -98,9 +121,123 @@ export const useGameStore = create<GameStore>((set, get) => ({
       value: getShipValue(ShipType.CONTAINER),
       status: ShipStatus.IDLE,
       currentPortId: homePort.id,
+      ownerId: 'player',
     };
     
-    set({ ports, contracts, fleet: [testShip] });
+    // Create initial AI ships
+    const aiShips = aiCompetitors.map((ai, index) => {
+      const aiPort = ports[index + 1] || ports[0];
+      return {
+        id: `ai-ship-${ai.id}`,
+        name: `${ai.name} Vessel`,
+        type: ShipType.CONTAINER,
+        position: { ...aiPort.position },
+        destination: null,
+        cargo: [],
+        capacity: getShipCapacity(ShipType.CONTAINER),
+        speed: getShipSpeed(ShipType.CONTAINER),
+        fuel: 100,
+        condition: 100,
+        health: 100,
+        value: getShipValue(ShipType.CONTAINER),
+        status: ShipStatus.IDLE,
+        currentPortId: aiPort.id,
+        ownerId: ai.id,
+      } as Ship;
+    });
+    
+    set({ 
+      ports, 
+      contracts, 
+      fleet: [playerShip, ...aiShips],
+      aiCompetitors 
+    });
+  },
+  
+  startMultiplayerGame: (settings) => {
+    console.log('Starting multiplayer game with settings:', settings);
+    
+    // Convert multiplayer settings to game config
+    const gameDurationMinutes = parseInt(settings.gameDuration) || 30;
+    const startingMoney = settings.startingCapital || 50000000;
+    const aiCount = settings.maxPlayers ? settings.maxPlayers - 1 : 7; // AI fills remaining slots
+    
+    // Don't reset ports/fleet/contracts yet - we'll set them below
+    const { ports: _, fleet: __, contracts: ___, ...resetState } = INITIAL_STATE;
+    
+    set({ 
+      ...resetState,
+      gameMode: GameMode.CAMPAIGN, // Use campaign mode for multiplayer
+      gameStartTime: Date.now(),
+      gameDuration: gameDurationMinutes * 60 * 1000,
+      money: startingMoney,
+      gameSpeed: 1,
+    });
+    
+    // Generate initial world
+    const ports = generateInitialPorts();
+    console.log('Generated ports:', ports.length);
+    const contracts = generateEnhancedContracts(ports, 20); // More contracts for multiplayer
+    
+    // Create AI competitors based on difficulty
+    const aiCompetitors = generateAICompetitors(aiCount);
+    
+    // Create an initial ship for the player
+    const homePort = ports[0]; // LA port
+    const playerShip: Ship = {
+      id: 'player-ship-1',
+      name: 'SS FlexPort One',
+      type: ShipType.CONTAINER,
+      position: { ...homePort.position },
+      destination: null,
+      cargo: [],
+      capacity: getShipCapacity(ShipType.CONTAINER),
+      speed: getShipSpeed(ShipType.CONTAINER),
+      fuel: 100,
+      condition: 100,
+      health: 100,
+      value: getShipValue(ShipType.CONTAINER),
+      status: ShipStatus.IDLE,
+      currentPortId: homePort.id,
+      ownerId: 'player',
+    };
+    
+    // Create initial AI ships
+    const aiShips = aiCompetitors.map((ai, index) => {
+      const aiPort = ports[index + 1] || ports[0];
+      return {
+        id: `ai-ship-${ai.id}`,
+        name: `${ai.name} Vessel`,
+        type: ShipType.CONTAINER,
+        position: { ...aiPort.position },
+        destination: null,
+        cargo: [],
+        capacity: getShipCapacity(ShipType.CONTAINER),
+        speed: getShipSpeed(ShipType.CONTAINER),
+        fuel: 100,
+        condition: 100,
+        health: 100,
+        value: getShipValue(ShipType.CONTAINER),
+        status: ShipStatus.IDLE,
+        currentPortId: aiPort.id,
+        ownerId: ai.id,
+      } as Ship;
+    });
+    
+    set({ 
+      ports, 
+      contracts, 
+      fleet: [playerShip, ...aiShips],
+      aiCompetitors,
+      currentDate: new Date(),
+    });
+    
+    console.log('Multiplayer game initialized:', {
+      ports: ports.length,
+      contracts: contracts.length,
+      fleet: [playerShip, ...aiShips].length,
+      aiCompetitors: aiCompetitors.length
+    });
   },
   
   pauseGame: () => set({ isPaused: true }),
@@ -123,8 +260,27 @@ export const useGameStore = create<GameStore>((set, get) => ({
   
   purchaseShip: (type, name) => {
     const cost = getShipCost(type);
+    console.log('Attempting to purchase ship:', { type, name, cost });
+    
     if (get().spendMoney(cost)) {
-      const homePort = get().ports.find(p => p.isPlayerOwned) || get().ports[0];
+      const ports = get().ports;
+      console.log('Available ports:', ports.length);
+      
+      if (!ports || ports.length === 0) {
+        console.error('No ports available to spawn ship');
+        // Refund the money
+        get().addMoney(cost);
+        return;
+      }
+      
+      const homePort = ports.find(p => p.isPlayerOwned) || ports[0];
+      if (!homePort) {
+        console.error('No valid home port found');
+        // Refund the money
+        get().addMoney(cost);
+        return;
+      }
+      
       // Ship spawns at port position (port positions are already elevated)
       const spawnPosition = { ...homePort.position };
       
@@ -155,7 +311,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
   
   addFreeShip: (type, name) => {
-    const homePort = get().ports.find(p => p.isPlayerOwned) || get().ports[0];
+    const ports = get().ports;
+    if (!ports || ports.length === 0) {
+      console.error('No ports available to spawn free ship');
+      return;
+    }
+    
+    const homePort = ports.find(p => p.isPlayerOwned) || ports[0];
+    if (!homePort) {
+      console.error('No valid home port found for free ship');
+      return;
+    }
+    
     const spawnPosition = { ...homePort.position };
     
     const newShip: Ship = {
@@ -183,12 +350,22 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const state = get();
     const ship = state.fleet.find(s => s.id === shipId);
     
+    console.log(`moveShip called:`, {
+      shipId,
+      shipFound: !!ship,
+      shipStatus: ship?.status,
+      shipName: ship?.name,
+      destinationName: destination?.name
+    });
+    
     if (ship) {
       // Calculate water route for ships (not planes)
       if (ship.type !== ShipType.CARGO_PLANE) {
         const startPos = new THREE.Vector3(ship.position.x, ship.position.y, ship.position.z);
         const endPos = new THREE.Vector3(destination.position.x, destination.position.y, destination.position.z);
         const waypoints = getWaterRouteBetweenPorts(startPos, endPos, 100);
+        
+        console.log(`Setting ship ${ship.name} to SAILING with ${waypoints.length} waypoints`);
         
         set(state => ({
           fleet: state.fleet.map(s =>
@@ -199,6 +376,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
         }));
       } else {
         // Planes can fly direct routes
+        console.log(`Setting plane ${ship.name} to SAILING (direct route)`);
+        
         set(state => ({
           fleet: state.fleet.map(s =>
             s.id === shipId
@@ -225,6 +404,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const ship = state.fleet.find(s => s.id === shipId);
     const contract = state.contracts.find(c => c.id === contractId);
     
+    console.log(`assignShipToContract called:`, { 
+      shipId, 
+      contractId, 
+      shipFound: !!ship, 
+      contractFound: !!contract,
+      contractStatus: contract?.status,
+      shipStatus: ship?.status
+    });
+    
     if (ship && contract && contract.status === ContractStatus.ACTIVE) {
       // Store contract assignment on the ship
       set(state => ({
@@ -236,6 +424,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       }));
       
       // Move ship to origin port to load cargo
+      console.log(`Moving ship ${ship.name} to origin port ${contract.origin.name}`);
       get().moveShip(shipId, contract.origin);
       
       // Show notification
@@ -405,8 +594,134 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
   
   triggerSingularity: () => {
-    set({ isSingularityActive: true });
-    console.log('🤖 THE SINGULARITY HAS ARRIVED! Humans are now in zoos.');
+    const state = get();
+    const result: GameResult = {
+      winner: 'singularity',
+      reason: 'AI efficiency exceeded human capabilities',
+      finalScore: {
+        player: state.playerEfficiency,
+        ai: Math.max(...state.aiCompetitors.map(ai => ai.efficiency)),
+      },
+      duration: Date.now() - (state.gameStartTime || 0),
+    };
+    set({ isSingularityActive: true, gameResult: result });
+  },
+  
+  endGame: (result: GameResult) => {
+    set({ gameResult: result, isPaused: true });
+  },
+  
+  calculateEfficiency: (isPlayer: boolean, competitorId?: string) => {
+    const state = get();
+    
+    if (isPlayer) {
+      const playerShips = state.fleet.filter(s => s.ownerId === 'player');
+      const activeContracts = state.contracts.filter(c => 
+        c.status === ContractStatus.ACTIVE && 
+        playerShips.some(s => s.assignedContract === c.id)
+      ).length;
+      const completedContracts = state.contracts.filter(c => 
+        c.status === ContractStatus.COMPLETED
+      ).length;
+      const totalCapacity = playerShips.reduce((sum, ship) => sum + ship.capacity, 0);
+      const usedCapacity = playerShips.reduce((sum, ship) => sum + ship.cargo.length * 10, 0);
+      
+      const utilizationRate = totalCapacity > 0 ? (usedCapacity / totalCapacity) * 100 : 0;
+      const completionRate = completedContracts * 10;
+      const fleetSize = playerShips.length * 5;
+      
+      return Math.min(100, (utilizationRate + completionRate + fleetSize) / 3);
+    } else if (competitorId) {
+      // AI efficiency calculation
+      const ai = state.aiCompetitors.find(a => a.id === competitorId);
+      if (!ai) return 0;
+      
+      return ai.efficiency;
+    }
+    
+    return 0;
+  },
+  
+  updateAICompetitors: (deltaTime: number) => {
+    const state = get();
+    if (state.isPaused || state.isSingularityActive) return;
+    
+    const updatedCompetitors = state.aiCompetitors.map(ai => {
+      // AI makes decisions
+      const aiShips = state.fleet.filter(s => s.ownerId === ai.id);
+      
+      // Purchase new ships if profitable
+      if (ai.money > getShipCost(ShipType.CONTAINER) * 2 && aiShips.length < 10) {
+        if (Math.random() < 0.01 * deltaTime) { // 1% chance per second
+          const cost = getShipCost(ShipType.CONTAINER);
+          const newShip: Ship = {
+            id: `ai-ship-${ai.id}-${Date.now()}`,
+            name: `${ai.name} Vessel ${aiShips.length + 1}`,
+            type: ShipType.CONTAINER,
+            position: { ...state.ports[0].position },
+            destination: null,
+            cargo: [],
+            capacity: getShipCapacity(ShipType.CONTAINER),
+            speed: getShipSpeed(ShipType.CONTAINER),
+            fuel: 100,
+            condition: 100,
+            health: 100,
+            value: getShipValue(ShipType.CONTAINER),
+            status: ShipStatus.IDLE,
+            currentPortId: state.ports[0].id,
+            ownerId: ai.id,
+          };
+          
+          set(state => ({ 
+            fleet: [...state.fleet, newShip]
+          }));
+          
+          return {
+            ...ai,
+            money: ai.money - cost,
+            shipsOwned: ai.shipsOwned + 1,
+          };
+        }
+      }
+      
+      // Assign idle ships to contracts (limit to prevent performance issues)
+      const idleShips = aiShips.filter(s => s.status === ShipStatus.IDLE && !s.assignedContract);
+      const availableContracts = state.contracts.filter(c => c.status === ContractStatus.AVAILABLE);
+      const activeAIContracts = state.contracts.filter(c => 
+        c.status === ContractStatus.ACTIVE && 
+        aiShips.some(s => s.assignedContract === c.id)
+      ).length;
+      
+      // Limit to 3 active contracts per AI to prevent overload
+      if (idleShips.length > 0 && availableContracts.length > 0 && activeAIContracts < 3) {
+        const ship = idleShips[0];
+        const contract = availableContracts.sort((a, b) => b.value - a.value)[0]; // Pick highest value
+        
+        // Assign contract with a small delay to prevent simultaneous assignments
+        if (Math.random() < 0.1) { // 10% chance per update to assign
+          get().assignShipToContract(ship.id, contract.id);
+          get().acceptContract(contract.id);
+        }
+      }
+      
+      // Update AI efficiency based on performance
+      const baseEfficiency = ai.efficiency;
+      // Much slower growth: 0.001 per second base, up to 0.002 with full AI development
+      const efficiencyGrowth = deltaTime * 0.001 * (1 + state.aiDevelopmentLevel / 100);
+      const newEfficiency = Math.min(100, baseEfficiency + efficiencyGrowth);
+      
+      // AI earns passive income
+      const passiveIncome = ai.shipsOwned * 1000 * deltaTime;
+      
+      return {
+        ...ai,
+        efficiency: newEfficiency,
+        money: ai.money + passiveIncome,
+        totalRevenue: ai.totalRevenue + passiveIncome,
+      };
+    });
+    
+    set({ aiCompetitors: updatedCompetitors });
   },
   
   generateNewContract: () => {
@@ -421,6 +736,32 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const state = get();
     if (state.isPaused || state.isSingularityActive) return;
     
+    // Check game duration for timed modes
+    if (state.gameMode && state.gameDuration && state.gameStartTime) {
+      const elapsed = (Date.now() - state.gameStartTime) / 1000; // in seconds
+      if (elapsed >= state.gameDuration) {
+        // Time's up - determine winner
+        const playerEfficiency = get().calculateEfficiency(true);
+        const maxAIEfficiency = Math.max(...state.aiCompetitors.map(ai => ai.efficiency));
+        
+        const result: GameResult = {
+          winner: playerEfficiency > maxAIEfficiency ? 'player' : 'ai',
+          reason: 'Time limit reached',
+          finalScore: {
+            player: playerEfficiency,
+            ai: maxAIEfficiency,
+          },
+          duration: elapsed,
+        };
+        
+        get().endGame(result);
+        return;
+      }
+    }
+    
+    // Update AI competitors
+    get().updateAICompetitors(deltaTime);
+    
     // Batch all state updates together to avoid multiple re-renders
     const updates: Partial<GameState> = {};
     
@@ -428,15 +769,21 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const newDate = new Date(state.currentDate.getTime() + deltaTime * state.gameSpeed * 1000);
     updates.currentDate = newDate;
     
-    // Update AI development
-    const aiIncrement = deltaTime * 0.01; // Slow progression
+    // Update player efficiency
+    updates.playerEfficiency = get().calculateEfficiency(true);
+    
+    // Update AI development - much slower progression
+    // 0.0033 per second = 0.2% per minute = 1% per 5 minutes
+    const aiIncrement = deltaTime * 0.0033;
     const newAILevel = Math.min(100, state.aiDevelopmentLevel + aiIncrement);
     updates.aiDevelopmentLevel = newAILevel;
     
-    // Check for singularity
-    if (newAILevel >= 100 && !state.isSingularityActive) {
-      updates.isSingularityActive = true;
-      console.log('🤖 THE SINGULARITY HAS ARRIVED! Humans are now in zoos.');
+    // Check for singularity based on AI efficiency vs player
+    const maxAIEfficiency = Math.max(...state.aiCompetitors.map(ai => ai.efficiency));
+    // Singularity only when AI is significantly ahead (50% more efficient) or AI development is complete
+    if ((newAILevel >= 100 || maxAIEfficiency > state.playerEfficiency + 50) && !state.isSingularityActive) {
+      get().triggerSingularity();
+      return;
     }
     
     // Generate new contracts periodically (every ~30 seconds game time)
@@ -624,42 +971,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
 // Helper functions
 function generateInitialPorts(): Port[] {
-  const EARTH_RADIUS = 100; // Match the Earth sphere radius
-  
-  // Use real-world port data from GeoJSON
-  const ports = realWorldPortsGeoJSON.features.map((feature, index) => 
-    convertGeoJSONToGamePort(feature, index, EARTH_RADIUS)
-  );
-  
-  // Add additional major ports
-  additionalMajorPorts.forEach((portData, index) => {
-    const [lng, lat] = portData.coordinates;
-    const phi = (90 - lat) * (Math.PI / 180);
-    const theta = (lng + 180) * (Math.PI / 180);
-    
-    const x = -(EARTH_RADIUS * Math.sin(phi) * Math.cos(theta));
-    const y = EARTH_RADIUS * Math.cos(phi);
-    const z = EARTH_RADIUS * Math.sin(phi) * Math.sin(theta);
-    
-    ports.push({
-      id: `port-${ports.length + index}`,
-      name: portData.name,
-      position: { x, y, z, lat, lng },
-      country: portData.country,
-      capacity: Math.floor(portData.container_traffic_2022_teu / 10000),
-      currentLoad: Math.floor(Math.random() * 0.7 * portData.container_traffic_2022_teu / 10000),
-      isPlayerOwned: false,
-      berths: Math.floor(portData.container_traffic_2022_teu / 1000000) + 5,
-      availableBerths: Math.floor(Math.random() * 5) + 3,
-      loadingSpeed: 50 + Math.floor(portData.container_traffic_2022_teu / 500000),
-      dockedShips: [],
-      contracts: [],
-      details: portData.details,
-      realTrafficTEU: portData.container_traffic_2022_teu,
-      worldRank: null
-    });
-  });
-  
+  const ports = generatePortsFromWorldData();
+  console.log('generateInitialPorts returning:', ports.length, 'ports');
   return ports;
 }
 
@@ -726,4 +1039,58 @@ function getShipSpeed(type: ShipType): number {
 
 function getShipValue(type: ShipType): number {
   return getShipCost(type);
+}
+
+function getGameModeConfig(mode: GameMode) {
+  switch (mode) {
+    case GameMode.QUICK:
+      return {
+        duration: 300, // 5 minutes
+        startingMoney: 100000000, // $100M
+        initialContracts: 25,
+        aiCount: 3,
+        initialSpeed: 5,
+      };
+    case GameMode.CAMPAIGN:
+      return {
+        duration: 1800, // 30 minutes
+        startingMoney: 50000000, // $50M
+        initialContracts: 15,
+        aiCount: 5,
+        initialSpeed: 1,
+      };
+    case GameMode.INFINITE:
+      return {
+        duration: undefined,
+        startingMoney: 30000000, // $30M
+        initialContracts: 10,
+        aiCount: 8,
+        initialSpeed: 1,
+      };
+  }
+}
+
+function generateAICompetitors(count: number): AICompetitor[] {
+  const aiNames = [
+    'Maersk AI', 'COSCO Digital', 'MSC Quantum', 'Evergreen Logic',
+    'Hapag-Lloyd Neural', 'ONE Algorithm', 'Yang Ming Cyber', 'CMA CGM Matrix',
+    'ZIM Compute', 'HMM Digital', 'PIL Network', 'OOCL Systems'
+  ];
+  
+  const colors = [
+    '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', 
+    '#DDA0DD', '#98D8C8', '#F7DC6F', '#85C1E2',
+    '#F8B195', '#C06C84', '#6C5CE7', '#A29BFE'
+  ];
+  
+  return Array.from({ length: count }, (_, i) => ({
+    id: `ai-${i + 1}`,
+    name: aiNames[i % aiNames.length],
+    money: 50000000 + Math.random() * 50000000, // $50M-$100M
+    efficiency: 15 + Math.random() * 10, // 15-25% starting efficiency - much lower
+    shipsOwned: 1,
+    contractsCompleted: 0,
+    totalRevenue: 0,
+    color: colors[i % colors.length],
+  }));
 }
