@@ -73,7 +73,12 @@ class MultiplayerService {
       }
 
       this.socket = io(this.serverUrl, {
-        transports: ['websocket', 'polling'],
+        transports: ['polling', 'websocket'], // Start with polling, upgrade to websocket
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        timeout: 20000,
       });
 
       this.socket.on('connect', () => {

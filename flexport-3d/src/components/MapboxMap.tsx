@@ -73,6 +73,32 @@ export const MapboxMap: React.FC<MapboxMapProps> = ({ className }) => {
       
       map.on('error', (e) => {
         console.error('MapboxMap error:', e);
+        // Handle WebGL context loss
+        if (e.error && e.error.message && e.error.message.includes('WebGL')) {
+          console.warn('WebGL context lost, attempting to recover...');
+          // Force a style reload which should recover the context
+          setTimeout(() => {
+            if (mapRef.current) {
+              const currentStyle = mapRef.current.getStyle();
+              mapRef.current.setStyle(currentStyle);
+            }
+          }, 1000);
+        }
+      });
+      
+      // Handle WebGL context events directly
+      const canvas = map.getCanvas();
+      canvas.addEventListener('webglcontextlost', (event) => {
+        event.preventDefault();
+        console.warn('WebGL context lost!');
+      });
+      
+      canvas.addEventListener('webglcontextrestored', () => {
+        console.log('WebGL context restored!');
+        // Reload the map style to reinitialize
+        if (mapRef.current) {
+          mapRef.current.setStyle('mapbox://styles/mapbox/satellite-v9');
+        }
       });
 
       // Add navigation controls
@@ -1007,6 +1033,11 @@ export const MapboxMap: React.FC<MapboxMapProps> = ({ className }) => {
         cancelAnimationFrame(animationRef.current);
       }
       if (mapRef.current) {
+        // Remove event listeners
+        const canvas = mapRef.current.getCanvas();
+        canvas.removeEventListener('webglcontextlost', () => {});
+        canvas.removeEventListener('webglcontextrestored', () => {});
+        
         mapRef.current.remove();
         mapRef.current = null;
       }
