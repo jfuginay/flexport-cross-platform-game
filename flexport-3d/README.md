@@ -1,5 +1,7 @@
 # FlexPort Global 🌍🚢
 
+<!-- Vercel deployment configured -->
+
 [![Version](https://img.shields.io/badge/version-1.0.0--beta.1-blue.svg)](https://github.com/yourusername/flexport-global)
 [![React](https://img.shields.io/badge/React-18.3.1-61dafb.svg)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-4.9.5-3178c6.svg)](https://www.typescriptlang.org/)
