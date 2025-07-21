@@ -6,7 +6,9 @@ import { useGameStore } from '../store/gameStore';
 import { getWaterRoute, calculateBearing } from '../services/waterNavigation';
 
 // Set Mapbox access token
-mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_TOKEN || '';
+const mapboxToken = process.env.REACT_APP_MAPBOX_TOKEN || 'pk.eyJ1IjoiamZ1Z2luYXkiLCJhIjoiY21icmNha2hrMGE0azJscHVzdmVuZTVjOSJ9.oiJoYvc_G-tLUmaSzGVsVQ';
+console.log('Mapbox token from env:', process.env.REACT_APP_MAPBOX_TOKEN ? 'Found' : 'Not found, using fallback');
+mapboxgl.accessToken = mapboxToken;
 
 // Realistic ship speeds in knots (nautical miles per hour)
 const SHIP_SPEEDS = {
