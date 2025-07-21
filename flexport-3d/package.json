@@ -2,6 +2,7 @@
   "name": "flexport-3d",
   "version": "1.0.0-beta.1",
   "private": true,
+  "homepage": "https://jfuginay.github.io/flexport-cross-platform-game",
   "dependencies": {
     "@capacitor/haptics": "^7.0.1",
     "@mapbox/tilebelt": "^1.0.2",
@@ -51,7 +52,9 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "server": "node server/index.js",
-    "dev": "concurrently \"npm run server\" \"npm start\""
+    "dev": "concurrently \"npm run server\" \"npm start\"",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build"
   },
   "eslintConfig": {
     "extends": [
@@ -75,6 +78,7 @@
     "@capacitor/cli": "^7.4.2",
     "@capacitor/core": "^7.4.2",
     "@capacitor/ios": "^7.4.2",
-    "concurrently": "^7.6.0"
+    "concurrently": "^7.6.0",
+    "gh-pages": "^6.3.0"
   }
 }
