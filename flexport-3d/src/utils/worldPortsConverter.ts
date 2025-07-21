@@ -62,7 +62,18 @@ export function generatePortsFromWorldData(): Port[] {
   const sortedPorts = portScores.sort((a, b) => b.score - a.score);
   const selectedPorts = sortedPorts.slice(0, 200); // Take top 200 ports
   
+  // Track unique ports to avoid duplicates
+  const uniquePorts = new Set<string>();
+  
   selectedPorts.forEach(({ port, index, score }) => {
+    // Create a unique key for this port
+    const portKey = `${port.CITY}-${port.COUNTRY}`;
+    
+    // Skip if we've already added this port
+    if (uniquePorts.has(portKey)) {
+      return;
+    }
+    uniquePorts.add(portKey);
     const lat = port.LATITUDE;
     const lng = port.LONGITUDE;
     

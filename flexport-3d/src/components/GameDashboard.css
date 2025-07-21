@@ -146,6 +146,42 @@
   color: #f59e0b;
 }
 
+/* No Ships Tooltip */
+.no-ships-tooltip {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 8px;
+  background: #fbbf24;
+  color: #000;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  white-space: nowrap;
+  font-weight: 500;
+  animation: tooltip-pulse 2s infinite;
+  z-index: 10;
+}
+
+.no-ships-tooltip::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-bottom: 6px solid #fbbf24;
+}
+
+@keyframes tooltip-pulse {
+  0%, 100% { opacity: 0.9; transform: translateX(-50%) scale(1); }
+  50% { opacity: 1; transform: translateX(-50%) scale(1.05); }
+}
+
 .game-controls {
   display: flex;
   align-items: center;
@@ -653,4 +689,37 @@
   .resource-value {
     font-size: 14px;
   }
+}/* No Ships Pulse Effect */
+.sidebar-tab.no-ships-pulse {
+  animation: fleet-pulse 2s infinite;
+  border: 1px solid #fbbf24 !important;
+}
+
+@keyframes fleet-pulse {
+  0%, 100% { 
+    background: rgba(251, 191, 36, 0.1);
+    box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.4);
+  }
+  50% { 
+    background: rgba(251, 191, 36, 0.2);
+    box-shadow: 0 0 0 10px rgba(251, 191, 36, 0);
+  }
+}
+
+.new-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: #ef4444;
+  color: white;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 10px;
+  animation: badge-bounce 1s infinite;
+}
+
+@keyframes badge-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
 }

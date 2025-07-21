@@ -4,7 +4,7 @@ import { useGameStore } from '../../store/gameStore';
 import './PortsOverview.css';
 
 export const PortsOverview: React.FC = () => {
-  const { ports, selectPort } = useGameStore();
+  const { ports, selectPort, purchasePort, money } = useGameStore();
   
   const playerPorts = ports.filter(p => p.isPlayerOwned);
   const availablePorts = ports.filter(p => !p.isPlayerOwned);
@@ -21,6 +21,12 @@ export const PortsOverview: React.FC = () => {
         <div className="summary-item">
           <span className="summary-value">{availablePorts.length}</span>
           <span className="summary-label">Available Ports</span>
+        </div>
+        <div className="summary-item">
+          <span className="summary-value">
+            ${playerPorts.reduce((sum, port) => sum + (port.loadingSpeed * 100), 0).toLocaleString()}
+          </span>
+          <span className="summary-label">Daily Revenue</span>
         </div>
       </div>
       
@@ -94,8 +100,19 @@ export const PortsOverview: React.FC = () => {
                 <span className="stat-value">{port.loadingSpeed} TEU/hr</span>
               </div>
               
-              <button className="acquire-btn">
-                💰 Acquire Port
+              <button 
+                className="acquire-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const portCost = 25000000;
+                  if (money >= portCost) {
+                    purchasePort(port.id);
+                  } else {
+                    alert(`Insufficient funds! You need $${((portCost - money) / 1000000).toFixed(1)}M more.`);
+                  }
+                }}
+              >
+                💰 Acquire ($25M)
               </button>
             </div>
           ))}

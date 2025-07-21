@@ -11,7 +11,7 @@ interface MobileFleetViewProps {
 
 export const MobileFleetView: React.FC<MobileFleetViewProps> = ({ onShipSelect, onClose }) => {
   const { fleet, money, selectedShipId, selectShip, ports } = useGameStore();
-  const playerShips = fleet;
+  const playerShips = fleet.filter(ship => ship.ownerId === 'player' || !ship.ownerId);
 
   const handleShipClick = (ship: Ship) => {
     selectShip(ship.id);

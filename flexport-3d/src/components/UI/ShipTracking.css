@@ -70,9 +70,10 @@
 
 .ship-details {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 8px;
   margin-bottom: 8px;
+  font-size: 11px;
 }
 
 .ship-detail {
@@ -114,6 +115,42 @@
 
 .ship-contract {
   color: #f59e0b;
+  justify-content: space-between;
+}
+
+.contract-value {
+  color: #10b981;
+  font-weight: 700;
+  margin-left: auto;
+}
+
+.route-progress {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 12px;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6, #10b981);
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  font-size: 10px;
+  color: #94a3b8;
+  min-width: 32px;
+  text-align: right;
 }
 
 .no-ships {

@@ -8,6 +8,7 @@ export const ShipAssignment: React.FC = () => {
   const { fleet, contracts, assignShipToContract, acceptContract } = useGameStore();
   
   const availableShips = fleet.filter(ship => 
+    (ship.ownerId === 'player' || !ship.ownerId) && // Only player ships
     ship.status === ShipStatus.IDLE && 
     ship.cargo.length === 0 &&
     !(ship as any).assignedContract
@@ -72,7 +73,11 @@ export const ShipAssignment: React.FC = () => {
                   </select>
                 </div>
               ) : (
-                <div className="no-ships">No ships available</div>
+                <div className="no-ships">
+                  {fleet.filter(s => s.ownerId === 'player' || !s.ownerId).length === 0 
+                    ? "Purchase a ship first!" 
+                    : "No idle ships available"}
+                </div>
               )}
             </div>
           ))}

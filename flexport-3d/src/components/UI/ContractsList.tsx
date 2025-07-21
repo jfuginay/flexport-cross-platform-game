@@ -37,7 +37,10 @@ export const ContractsList: React.FC = () => {
     acceptContract(contractId);
   };
   
-  const idleShips = fleet.filter(ship => ship.status === 'IDLE');
+  const idleShips = fleet.filter(ship => 
+    (ship.ownerId === 'player' || !ship.ownerId) && 
+    ship.status === 'IDLE'
+  );
   
   return (
     <div className="contracts-list">

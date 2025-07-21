@@ -27,6 +27,9 @@ interface GameStore extends GameState {
   spendMoney: (amount: number) => boolean;
   addMoney: (amount: number) => void;
   
+  // Port actions
+  purchasePort: (portId: string) => boolean;
+  
   // Fleet actions
   purchaseShip: (type: ShipType, name: string) => void;
   addFreeShip: (type: ShipType, name: string) => void;
@@ -58,7 +61,7 @@ interface GameStore extends GameState {
 }
 
 const INITIAL_STATE: GameState = {
-  money: 50000000, // $50M starting capital
+  money: 250000000, // $250M starting capital (enough for port + multiple ships)
   reputation: 50,
   companyName: 'FlexPort Global',
   isPaused: false,
@@ -104,25 +107,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
     // Create AI competitors
     const aiCompetitors = generateAICompetitors(gameConfig.aiCount);
     
-    // Create an initial ship for the player
-    const homePort = ports[0]; // LA port
-    const playerShip: Ship = {
-      id: 'player-ship-1',
-      name: 'SS FlexPort One',
-      type: ShipType.CONTAINER,
-      position: { ...homePort.position },
-      destination: null,
-      cargo: [],
-      capacity: getShipCapacity(ShipType.CONTAINER),
-      speed: getShipSpeed(ShipType.CONTAINER),
-      fuel: 100,
-      condition: 100,
-      health: 100,
-      value: getShipValue(ShipType.CONTAINER),
-      status: ShipStatus.IDLE,
-      currentPortId: homePort.id,
-      ownerId: 'player',
-    };
+    // No starting ship - player must purchase their first vessel
+    // This encourages strategic thinking about their first ship choice
     
     // Create initial AI ships
     const aiShips = aiCompetitors.map((ai, index) => {
@@ -149,7 +135,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set({ 
       ports, 
       contracts, 
-      fleet: [playerShip, ...aiShips],
+      fleet: [...aiShips], // Only AI ships to start
       aiCompetitors 
     });
   },
@@ -159,7 +145,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     
     // Convert multiplayer settings to game config
     const gameDurationMinutes = parseInt(settings.gameDuration) || 30;
-    const startingMoney = settings.startingCapital || 50000000;
+    const startingMoney = settings.startingCapital || 250000000;
     const aiCount = settings.maxPlayers ? settings.maxPlayers - 1 : 7; // AI fills remaining slots
     
     // Don't reset ports/fleet/contracts yet - we'll set them below
@@ -182,25 +168,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
     // Create AI competitors based on difficulty
     const aiCompetitors = generateAICompetitors(aiCount);
     
-    // Create an initial ship for the player
-    const homePort = ports[0]; // LA port
-    const playerShip: Ship = {
-      id: 'player-ship-1',
-      name: 'SS FlexPort One',
-      type: ShipType.CONTAINER,
-      position: { ...homePort.position },
-      destination: null,
-      cargo: [],
-      capacity: getShipCapacity(ShipType.CONTAINER),
-      speed: getShipSpeed(ShipType.CONTAINER),
-      fuel: 100,
-      condition: 100,
-      health: 100,
-      value: getShipValue(ShipType.CONTAINER),
-      status: ShipStatus.IDLE,
-      currentPortId: homePort.id,
-      ownerId: 'player',
-    };
+    // No starting ship - player must purchase their first vessel
+    // This encourages strategic thinking about their first ship choice
     
     // Create initial AI ships
     const aiShips = aiCompetitors.map((ai, index) => {
@@ -227,7 +196,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set({ 
       ports, 
       contracts, 
-      fleet: [playerShip, ...aiShips],
+      fleet: [...aiShips], // Only AI ships to start - players purchase their own
       aiCompetitors,
       currentDate: new Date(),
     });
@@ -235,7 +204,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     console.log('Multiplayer game initialized:', {
       ports: ports.length,
       contracts: contracts.length,
-      fleet: [playerShip, ...aiShips].length,
+      fleet: aiShips.length,
       aiCompetitors: aiCompetitors.length
     });
   },
@@ -256,6 +225,35 @@ export const useGameStore = create<GameStore>((set, get) => ({
   addMoney: (amount) => {
     const state = get();
     set({ money: state.money + amount });
+  },
+  
+  purchasePort: (portId) => {
+    const state = get();
+    const port = state.ports.find(p => p.id === portId);
+    
+    if (!port || port.isPlayerOwned) {
+      console.error('Port not found or already owned');
+      return false;
+    }
+    
+    const portCost = 25000000; // $25M per port (reduced for better balance)
+    
+    if (state.money >= portCost) {
+      set({
+        money: state.money - portCost,
+        ports: state.ports.map(p => 
+          p.id === portId 
+            ? { ...p, isPlayerOwned: true }
+            : p
+        )
+      });
+      
+      console.log(`Purchased port ${port.name} for $${(portCost / 1000000).toFixed(0)}M`);
+      return true;
+    } else {
+      console.error('Insufficient funds to purchase port');
+      return false;
+    }
   },
   
   purchaseShip: (type, name) => {
@@ -299,6 +297,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         value: getShipValue(type),
         status: ShipStatus.IDLE,
         currentPortId: homePort.id,
+        ownerId: 'player',
       };
       
       console.log(`New ship "${name}" spawned at port "${homePort.name}"`, {
@@ -340,6 +339,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       value: getShipValue(type),
       status: ShipStatus.IDLE,
       currentPortId: homePort.id,
+      ownerId: 'player',
     };
     
     console.log(`Free ship "${name}" added at port "${homePort.name}"`);
@@ -615,7 +615,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const state = get();
     
     if (isPlayer) {
-      const playerShips = state.fleet.filter(s => s.ownerId === 'player');
+      // Include ships without ownerId (legacy) or with ownerId === 'player'
+      const playerShips = state.fleet.filter(s => s.ownerId === 'player' || !s.ownerId);
       const activeContracts = state.contracts.filter(c => 
         c.status === ContractStatus.ACTIVE && 
         playerShips.some(s => s.assignedContract === c.id)
@@ -734,6 +735,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   
   updateGame: (deltaTime) => {
     const state = get();
+    // Reduced logging for performance
+    
     if (state.isPaused || state.isSingularityActive) return;
     
     // Check game duration for timed modes
@@ -802,6 +805,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
         const earthRadius = 100;
         const currentPos = new THREE.Vector3(ship.position.x, ship.position.y, ship.position.z);
         
+        // Debug logging
+        // Reduced logging
+        
         // Handle waypoint navigation for ships
         const waypoints = (ship as any).waypoints;
         const currentWaypointIndex = (ship as any).currentWaypointIndex || 0;
@@ -830,7 +836,20 @@ export const useGameStore = create<GameStore>((set, get) => ({
         
         // Calculate distance to target
         const distance = calculateDistance(currentPos, targetPos, earthRadius);
-        const moveDistance = ship.speed * deltaTime * state.gameSpeed;
+        // Much slower ship speed for realistic movement
+        const speedMultiplier = 20; // Significantly reduced for realistic speed
+        const moveDistance = ship.speed * speedMultiplier * deltaTime * state.gameSpeed;
+        
+        // Log less frequently to reduce console spam
+        if (Math.random() < 0.01) { // 1% chance to log
+          console.log(`Ship ${ship.name} movement:`, {
+            distance: distance.toFixed(2),
+            moveDistance: moveDistance.toFixed(2),
+            speedMultiplier,
+            status: ship.status,
+            destination: ship.destination?.name
+          });
+        }
         
         if (distance < 2) {
           // Reached waypoint or destination
@@ -872,6 +891,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
                   origin: contract.origin,
                   destination: contract.destination,
                 };
+                // After loading cargo, we need to send the ship to the destination
+                // But we'll do this in a separate effect to avoid nested state updates
                 return {
                   ...ship,
                   position: { ...ship.destination.position },
@@ -881,10 +902,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
                   waypoints: undefined,
                   currentWaypointIndex: 0,
                   loadingStartTime: undefined,
+                  contractStage: 'delivery',
+                  needsDestination: true, // Flag to trigger destination assignment
                 } as any;
               }
-            } else if (ship.cargo.length > 0) {
-              // Has cargo, need to unload
+            } else if (ship.cargo.length > 0 && contract && 
+                       ship.destination.id === contract.destination.id) {
+              // Has cargo and at destination port, need to unload
               nextStatus = ShipStatus.UNLOADING;
               // Handle unloading in a separate update cycle
               if (!ship.unloadingStartTime) {
@@ -901,6 +925,49 @@ export const useGameStore = create<GameStore>((set, get) => ({
                 // Unloading complete
                 const cargoValue = ship.cargo.reduce((sum, item) => sum + item.value, 0);
                 updates.money = (updates.money || state.money) + cargoValue;
+                
+                console.log(`${ship.name} unloading complete at ${ship.destination?.name}. Cargo value: $${cargoValue.toLocaleString()}`);
+                
+                // Mark contract as completed
+                const assignedContractId = (ship as any).assignedContract;
+                if (assignedContractId) {
+                  const contract = state.contracts.find(c => c.id === assignedContractId);
+                  if (contract && contract.status === ContractStatus.ACTIVE) {
+                    // Check if delivery is at the correct destination
+                    if (ship.destination && ship.destination.id === contract.destination.id) {
+                      // Update contracts in the batch update
+                      if (!updates.contracts) {
+                        updates.contracts = state.contracts.map(c => 
+                          c.id === assignedContractId 
+                            ? { ...c, status: ContractStatus.COMPLETED }
+                            : c
+                        );
+                      } else {
+                        updates.contracts = updates.contracts.map(c => 
+                          c.id === assignedContractId 
+                            ? { ...c, status: ContractStatus.COMPLETED }
+                            : c
+                        );
+                      }
+                      
+                      // Increase reputation for successful delivery
+                      updates.reputation = Math.min(100, (state.reputation || 50) + 5);
+                      
+                      console.log(`Contract ${assignedContractId} completed! Earned $${cargoValue.toLocaleString()}`);
+                      
+                      // Check if contract was delivered on time
+                      if (contract.deadline && new Date() <= contract.deadline) {
+                        // Bonus for on-time delivery
+                        const bonus = Math.floor(cargoValue * 0.1);
+                        updates.money = (updates.money || state.money) + bonus;
+                        console.log(`On-time delivery bonus: $${bonus.toLocaleString()}`);
+                      }
+                    } else {
+                      console.error(`Ship ${ship.name} delivered to wrong port!`);
+                    }
+                  }
+                }
+                
                 return {
                   ...ship,
                   position: { ...ship.destination.position },
@@ -910,6 +977,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
                   waypoints: undefined,
                   currentWaypointIndex: 0,
                   unloadingStartTime: undefined,
+                  assignedContract: undefined, // Clear contract assignment
+                  contractStage: undefined,
+                  currentPortId: ship.destination.id, // Update current port
                 } as any;
               }
             }
@@ -926,11 +996,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
         } else {
           // Move towards target
           const moveRatio = Math.min(moveDistance / distance, 1);
-          const newPosition = interpolateRoute(currentPos, targetPos, moveRatio);
+          
+          // Simple linear interpolation for debugging
+          const newPosition = new THREE.Vector3(
+            currentPos.x + (targetPos.x - currentPos.x) * moveRatio,
+            currentPos.y + (targetPos.y - currentPos.y) * moveRatio,
+            currentPos.z + (targetPos.z - currentPos.z) * moveRatio
+          );
           
           // Ensure ship stays at proper altitude above Earth surface
           const shipAltitude = ship.type === ShipType.CARGO_PLANE ? 15 : 2;
-          const normalizedPos = newPosition.clone().normalize();
+          const normalizedPos = newPosition.normalize();
           const finalPosition = normalizedPos.multiplyScalar(earthRadius + shipAltitude);
           
           // For ships (not planes), ensure they stay over water
@@ -947,6 +1023,35 @@ export const useGameStore = create<GameStore>((set, get) => ({
           const direction = targetPos.clone().sub(currentPos).normalize();
           const shipRotation = Math.atan2(direction.x, direction.z);
           
+          // Calculate fuel consumption based on distance traveled and cargo load
+          const fuelConsumptionRate = ship.type === ShipType.CARGO_PLANE ? 0.5 : 0.1; // Planes use more fuel
+          const cargoMultiplier = 1 + (ship.cargo.length / ship.capacity) * 0.5; // More cargo = more fuel
+          const fuelConsumed = moveDistance * fuelConsumptionRate * cargoMultiplier * deltaTime;
+          const newFuel = Math.max(0, ship.fuel - fuelConsumed);
+          
+          // If out of fuel, ship stops moving
+          if (newFuel <= 0) {
+            console.warn(`${ship.name} is out of fuel!`);
+            return {
+              ...ship,
+              fuel: 0,
+              status: ShipStatus.IDLE,
+              needsRefuel: true,
+            } as any;
+          }
+          
+          // Ship health degrades slowly while sailing
+          const healthDegradation = 0.01 * deltaTime; // 1% per 100 seconds
+          const newHealth = Math.max(0, (ship.health || ship.condition || 100) - healthDegradation);
+          
+          console.log(`Ship ${ship.name} MOVING:`, {
+            oldPos: { x: ship.position.x, y: ship.position.y, z: ship.position.z },
+            newPos: { x: finalPosition.x, y: finalPosition.y, z: finalPosition.z },
+            moveRatio,
+            distance,
+            moveDistance
+          });
+          
           return {
             ...ship,
             position: {
@@ -955,6 +1060,79 @@ export const useGameStore = create<GameStore>((set, get) => ({
               z: finalPosition.z,
             },
             rotation: shipRotation,
+            fuel: newFuel,
+            health: newHealth,
+          } as any;
+        }
+      }
+      return ship;
+    });
+    
+    // Handle idle ships at ports for refueling and maintenance
+    const refueledFleet = updatedFleet.map(ship => {
+      if (ship.status === ShipStatus.IDLE && ship.currentPortId) {
+        let needsUpdate = false;
+        let updates: any = {};
+        
+        // Refuel ships at port
+        if (ship.fuel < 100) {
+          const refuelRate = 10 * deltaTime; // 10% per second
+          const newFuel = Math.min(100, ship.fuel + refuelRate);
+          updates.fuel = newFuel;
+          needsUpdate = true;
+          
+          if (ship.fuel < 50 && newFuel >= 50) {
+            console.log(`${ship.name} refueled to ${Math.round(newFuel)}%`);
+          }
+        }
+        
+        // Repair ships at port if health is low
+        if (ship.health < 100 || ship.condition < 100) {
+          const repairRate = 5 * deltaTime; // 5% per second
+          const currentHealth = ship.health || ship.condition || 100;
+          const newHealth = Math.min(100, currentHealth + repairRate);
+          updates.health = newHealth;
+          updates.condition = newHealth;
+          needsUpdate = true;
+          
+          if (currentHealth < 75 && newHealth >= 75) {
+            console.log(`${ship.name} repaired to ${Math.round(newHealth)}%`);
+          }
+        }
+        
+        // Clear needsRefuel flag if refueled
+        if ((ship as any).needsRefuel && updates.fuel >= 100) {
+          updates.needsRefuel = undefined;
+        }
+        
+        if (needsUpdate) {
+          return { ...ship, ...updates };
+        }
+      }
+      return ship;
+    });
+    
+    // Handle ships that need destination assignment after loading
+    const finalFleet = refueledFleet.map(ship => {
+      if ((ship as any).needsDestination && (ship as any).assignedContract) {
+        const contract = state.contracts.find(c => c.id === (ship as any).assignedContract);
+        if (contract && ship.cargo.length > 0) {
+          // Ship has loaded cargo, now send it to the destination
+          console.log(`Sending ${ship.name} to destination ${contract.destination.name} for delivery`);
+          
+          // Calculate water route to destination
+          const startPos = new THREE.Vector3(ship.position.x, ship.position.y, ship.position.z);
+          const endPos = new THREE.Vector3(contract.destination.position.x, contract.destination.position.y, contract.destination.position.z);
+          const waypoints = ship.type !== ShipType.CARGO_PLANE ? getWaterRouteBetweenPorts(startPos, endPos, 100) : undefined;
+          
+          return {
+            ...ship,
+            destination: contract.destination,
+            status: ShipStatus.SAILING,
+            needsDestination: undefined,
+            waypoints,
+            routeProgress: 0,
+            currentWaypointIndex: 0,
           } as any;
         }
       }
@@ -962,7 +1140,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
     });
     
     // Apply fleet updates to the batch
-    updates.fleet = updatedFleet;
+    updates.fleet = finalFleet;
+    
+    // Debug sailing ships
+    const sailingShips = finalFleet.filter(s => s.status === ShipStatus.SAILING);
+    if (sailingShips.length > 0) {
+      console.log('UpdateGame fleet update - sailing ships:', sailingShips.map(s => ({
+        name: s.name,
+        pos: s.position,
+        destination: s.destination?.name
+      })));
+    }
     
     // Apply all updates in a single state change to avoid multiple re-renders
     set(updates);
@@ -1046,7 +1234,7 @@ function getGameModeConfig(mode: GameMode) {
     case GameMode.QUICK:
       return {
         duration: 300, // 5 minutes
-        startingMoney: 100000000, // $100M
+        startingMoney: 300000000, // $300M (port + multiple ships + working capital)
         initialContracts: 25,
         aiCount: 3,
         initialSpeed: 5,
@@ -1054,7 +1242,7 @@ function getGameModeConfig(mode: GameMode) {
     case GameMode.CAMPAIGN:
       return {
         duration: 1800, // 30 minutes
-        startingMoney: 50000000, // $50M
+        startingMoney: 250000000, // $250M (port + ships + operations)
         initialContracts: 15,
         aiCount: 5,
         initialSpeed: 1,
@@ -1062,7 +1250,7 @@ function getGameModeConfig(mode: GameMode) {
     case GameMode.INFINITE:
       return {
         duration: undefined,
-        startingMoney: 30000000, // $30M
+        startingMoney: 200000000, // $200M (port + ship + buffer)
         initialContracts: 10,
         aiCount: 8,
         initialSpeed: 1,

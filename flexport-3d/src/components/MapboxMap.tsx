@@ -29,7 +29,8 @@ export const MapboxMap: React.FC<MapboxMapProps> = ({ className }) => {
   const animationRef = useRef<number | null>(null);
   const shipAnimationsRef = useRef<Map<string, any>>(new Map());
   const lastUpdateRef = useRef<number>(Date.now());
-  const { fleet, ports } = useGameStore();
+  const shipPositionsRef = useRef<Map<string, { lat: number; lng: number; timestamp: number }>>(new Map());
+  const { fleet, ports, purchasePort, money } = useGameStore();
 
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
@@ -713,7 +714,12 @@ export const MapboxMap: React.FC<MapboxMapProps> = ({ className }) => {
               6, 20,
               10, 30
             ],
-            'circle-color': '#059669',
+            'circle-color': [
+              'case',
+              ['get', 'isPlayerOwned'],
+              '#10b981', // Green for owned ports
+              '#f59e0b'  // Amber for available ports
+            ],
             'circle-blur': 1,
             'circle-opacity': 0.3
           }
@@ -738,12 +744,10 @@ export const MapboxMap: React.FC<MapboxMapProps> = ({ className }) => {
               10, 25
             ],
             'circle-color': [
-              'interpolate',
-              ['linear'],
-              ['zoom'],
-              2, '#10b981',
-              6, '#059669',
-              10, '#047857'
+              'case',
+              ['get', 'isPlayerOwned'],
+              '#10b981', // Green for owned ports
+              '#f59e0b'  // Amber for available ports
             ],
             'circle-stroke-color': '#ffffff',
             'circle-stroke-width': [
@@ -807,7 +811,12 @@ export const MapboxMap: React.FC<MapboxMapProps> = ({ className }) => {
             'text-radial-offset': 1.5
           },
           paint: {
-            'text-color': '#059669',
+            'text-color': [
+              'case',
+              ['get', 'isPlayerOwned'],
+              '#10b981', // Green for owned ports
+              '#f59e0b'  // Amber for available ports
+            ],
             'text-halo-color': 'rgba(255, 255, 255, 0.9)',
             'text-halo-width': 2,
             'text-halo-blur': 0.5
@@ -881,18 +890,80 @@ export const MapboxMap: React.FC<MapboxMapProps> = ({ className }) => {
         // Port click interaction
         map.on('click', 'ports-circle', (e) => {
           if (e.features && e.features[0]) {
-            const port = e.features[0].properties;
-            new mapboxgl.Popup()
-              .setLngLat(e.lngLat)
-              .setHTML(`
-                <div style="padding: 10px;">
-                  <h3 style="margin: 0 0 10px 0; color: #059669;">${port.name}</h3>
-                  <p style="margin: 5px 0;">Port ID: ${port.id}</p>
-                  <p style="margin: 5px 0;">Status: Active</p>
-                  <p style="margin: 5px 0;">Capacity: High</p>
+            const portFeature = e.features[0].properties;
+            const gamePort = ports.find(p => p.id === portFeature.id);
+            
+            if (!gamePort) return;
+            
+            const portCost = 25000000; // $25M
+            const canAfford = money >= portCost;
+            
+            const popupContent = `
+              <div style="padding: 15px; min-width: 250px;">
+                <h3 style="margin: 0 0 10px 0; color: #059669;">${gamePort.name}</h3>
+                <p style="margin: 5px 0; color: #64748b;">${gamePort.country}</p>
+                <div style="margin: 10px 0; padding: 10px; background: rgba(0,0,0,0.1); border-radius: 5px;">
+                  <p style="margin: 5px 0;"><strong>Capacity:</strong> ${gamePort.capacity} TEU</p>
+                  <p style="margin: 5px 0;"><strong>Berths:</strong> ${gamePort.berths}</p>
+                  <p style="margin: 5px 0;"><strong>Loading Speed:</strong> ${gamePort.loadingSpeed} TEU/hr</p>
                 </div>
-              `)
+                ${!gamePort.isPlayerOwned ? `
+                  <div style="margin-top: 15px;">
+                    <p style="margin: 5px 0; font-weight: bold; color: ${canAfford ? '#10b981' : '#ef4444'};">
+                      Cost: $${(portCost / 1000000).toFixed(0)}M
+                    </p>
+                    ${canAfford ? `
+                      <button 
+                        onclick="window.purchasePort('${gamePort.id}')"
+                        style="
+                          width: 100%;
+                          padding: 10px;
+                          margin-top: 10px;
+                          background: #10b981;
+                          color: white;
+                          border: none;
+                          border-radius: 5px;
+                          font-weight: bold;
+                          cursor: pointer;
+                          font-size: 14px;
+                        "
+                        onmouseover="this.style.background='#059669'"
+                        onmouseout="this.style.background='#10b981'"
+                      >
+                        💰 Acquire Port
+                      </button>
+                    ` : `
+                      <p style="color: #ef4444; font-style: italic; margin-top: 10px;">
+                        Insufficient funds (need $${((portCost - money) / 1000000).toFixed(1)}M more)
+                      </p>
+                    `}
+                  </div>
+                ` : `
+                  <div style="margin-top: 15px; padding: 10px; background: #10b981; border-radius: 5px;">
+                    <p style="margin: 0; color: white; font-weight: bold; text-align: center;">
+                      ✓ You own this port
+                    </p>
+                  </div>
+                `}
+              </div>
+            `;
+            
+            const popup = new mapboxgl.Popup({ maxWidth: '300px' })
+              .setLngLat(e.lngLat)
+              .setHTML(popupContent)
               .addTo(map);
+              
+            // Set up the purchase function on window
+            (window as any).purchasePort = (portId: string) => {
+              if (purchasePort(portId)) {
+                popup.remove();
+                // Refresh the map data
+                const portsSource = map.getSource('ports');
+                if (portsSource) {
+                  map.triggerRepaint();
+                }
+              }
+            };
           }
         });
         
@@ -999,8 +1070,20 @@ export const MapboxMap: React.FC<MapboxMapProps> = ({ className }) => {
 
   // Convert 3D position to lat/lng
   const convertPositionToLatLng = useCallback((position: { x: number; y: number; z: number }) => {
+    // Validate input
+    if (!position || !isFinite(position.x) || !isFinite(position.y) || !isFinite(position.z)) {
+      console.error('Invalid position for conversion:', position);
+      return { lat: 0, lng: 0 }; // Return default position
+    }
+    
     // Normalize position to unit sphere first
     const length = Math.sqrt(position.x * position.x + position.y * position.y + position.z * position.z);
+    
+    if (length === 0) {
+      console.error('Zero-length position vector:', position);
+      return { lat: 0, lng: 0 };
+    }
+    
     const normalized = {
       x: position.x / length,
       y: position.y / length,
@@ -1008,12 +1091,9 @@ export const MapboxMap: React.FC<MapboxMapProps> = ({ className }) => {
     };
     
     // Convert to lat/lng - matching the formula used in worldPortsConverter
-    // Reverse the conversion: 
-    // y = cos(phi), so phi = acos(y/radius)
-    // x = -(sin(phi) * cos(theta))
-    // z = sin(phi) * sin(theta)
-    
-    const phi = Math.acos(normalized.y);
+    // Ensure y is within valid range for acos
+    const clampedY = Math.max(-1, Math.min(1, normalized.y));
+    const phi = Math.acos(clampedY);
     const lat = 90 - (phi * 180 / Math.PI);
     
     // theta = atan2(z, -x)
@@ -1044,7 +1124,7 @@ export const MapboxMap: React.FC<MapboxMapProps> = ({ className }) => {
     }
     
     return { lat, lng };
-  }, [isLikelyWater]);
+  }, []);
 
   // Update ship animations and render
   useEffect(() => {
@@ -1074,8 +1154,20 @@ export const MapboxMap: React.FC<MapboxMapProps> = ({ className }) => {
         });
       }
       
-      // Update destination if ship is sailing
       const anim = animations.get(ship.id);
+      if (!anim) return; // Skip if animation not found
+      
+      // Get the target position from game store
+      const targetLatLng = convertPositionToLatLng(ship.position);
+      
+      // Store this as the target position for interpolation
+      shipPositionsRef.current.set(ship.id, {
+        lat: targetLatLng.lat,
+        lng: targetLatLng.lng,
+        timestamp: Date.now()
+      });
+      
+      // Update destination if ship is sailing
       if (ship.status === 'SAILING' && ship.destination) {
         const destPos = convertPositionToLatLng(ship.destination.position);
         
@@ -1104,11 +1196,20 @@ export const MapboxMap: React.FC<MapboxMapProps> = ({ className }) => {
             anim.route = [anim.currentPosition];
           }
         }
+      } else {
+        // Ship is not sailing, clear route
+        anim.route = [];
+        anim.routeIndex = 0;
+        anim.progress = 0;
       }
     });
     
-    // Animation loop
+    // Animation loop with frame rate limiting
     let frameCount = 0;
+    let lastFrameTime = Date.now();
+    const targetFPS = 30; // Limit to 30 FPS for smoother animation
+    const frameInterval = 1000 / targetFPS;
+    
     const animate = () => {
       // Check if map still exists
       if (!mapRef.current || !mapRef.current.getSource) {
@@ -1116,54 +1217,72 @@ export const MapboxMap: React.FC<MapboxMapProps> = ({ className }) => {
         return;
       }
       
-      frameCount++;
-      if (frameCount % 60 === 0) { // Log every second at 60fps
-        // console.log('Animation running, frame:', frameCount);
-      }
       const now = Date.now();
-      const deltaTime = (now - lastUpdateRef.current) / 1000; // Convert to seconds
-      lastUpdateRef.current = now;
+      const elapsed = now - lastFrameTime;
+      
+      // Only update if enough time has passed (frame rate limiting)
+      if (elapsed > frameInterval) {
+        lastFrameTime = now - (elapsed % frameInterval);
+        
+        frameCount++;
+        const deltaTime = Math.min((now - lastUpdateRef.current) / 1000, 0.1); // Cap deltaTime to prevent jumps
+        lastUpdateRef.current = now;
+        
+        // Interpolation factor for smooth movement (adjusted for 30 FPS)
+        const interpolationFactor = 1 - Math.pow(0.97, deltaTime * 30); // Much smoother interpolation
       
       const features = fleet.map(ship => {
         const anim = animations.get(ship.id);
         if (!anim) return null;
         
-        // Update position along route for sailing ships
-        if (ship.status === 'SAILING' && anim.route.length > 0 && anim.routeIndex < anim.route.length - 1) {
-          const currentWaypoint = anim.route[anim.routeIndex];
-          const nextWaypoint = anim.route[anim.routeIndex + 1];
+        // Get target position from stored positions
+        const targetPos = shipPositionsRef.current.get(ship.id);
+        let latDiff = 0;
+        let lngDiff = 0;
+        
+        if (targetPos) {
+          // Smoothly interpolate to target position
+          latDiff = targetPos.lat - anim.currentPosition.lat;
+          lngDiff = targetPos.lng - anim.currentPosition.lng;
           
-          // Calculate speed based on ship type
-          const speedKnots = SHIP_SPEEDS[ship.type] || SHIP_SPEEDS.CONTAINER;
-          const speedDegreesPerSecond = speedKnots * KNOTS_TO_DEGREES_PER_SECOND;
-          
-          // Calculate distance between waypoints
-          const dx = nextWaypoint.lng - currentWaypoint.lng;
-          const dy = nextWaypoint.lat - currentWaypoint.lat;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-          
-          // Update progress
-          anim.progress += (speedDegreesPerSecond * deltaTime) / distance;
-          
-          if (anim.progress >= 1) {
-            // Move to next waypoint
-            anim.routeIndex++;
-            anim.progress = 0;
-            if (anim.routeIndex >= anim.route.length - 1) {
-              // Reached destination
-              anim.currentPosition = anim.targetPosition;
-              // Ship status will be updated by game logic
-            }
+          // Only interpolate if the difference is significant
+          if (Math.abs(latDiff) > 0.00001 || Math.abs(lngDiff) > 0.00001) {
+            anim.currentPosition.lat += latDiff * interpolationFactor;
+            anim.currentPosition.lng += lngDiff * interpolationFactor;
           } else {
-            // Interpolate position
-            anim.currentPosition = {
-              lat: currentWaypoint.lat + dy * anim.progress,
-              lng: currentWaypoint.lng + dx * anim.progress
-            };
-            
-            // Calculate bearing
-            anim.bearing = calculateBearing(currentWaypoint, nextWaypoint);
+            // Snap to target if very close
+            anim.currentPosition.lat = targetPos.lat;
+            anim.currentPosition.lng = targetPos.lng;
           }
+        }
+        
+        // Debug ship status less frequently
+        if (frameCount % 300 === 0) { // Log once per 5 seconds
+          console.log(`Mapbox ship ${ship.name}:`, {
+            status: ship.status,
+            currentPos: anim.currentPosition,
+            destination: ship.destination?.name
+          });
+        }
+        
+        // Calculate bearing if ship is sailing
+        if (ship.status === 'SAILING' && ship.destination && targetPos) {
+          // Only update bearing if ship has moved significantly
+          const moveDist = Math.abs(latDiff) + Math.abs(lngDiff);
+          if (moveDist > 0.001) {
+            const newBearing = calculateBearing(anim.currentPosition, targetPos);
+            // Smooth bearing changes to prevent sudden rotations
+            const bearingDiff = newBearing - (anim.bearing || 0);
+            // Normalize bearing difference to [-180, 180]
+            const normalizedDiff = ((bearingDiff + 180) % 360) - 180;
+            anim.bearing = (anim.bearing || 0) + normalizedDiff * interpolationFactor;
+          }
+        }
+        
+        // Validate coordinates
+        if (!isFinite(anim.currentPosition.lng) || !isFinite(anim.currentPosition.lat)) {
+          console.error(`Invalid coordinates for ship ${ship.name}:`, anim.currentPosition);
+          return null;
         }
         
         return {
@@ -1177,7 +1296,9 @@ export const MapboxMap: React.FC<MapboxMapProps> = ({ className }) => {
             name: ship.name,
             status: ship.status || 'IDLE',
             bearing: anim.bearing || 0,
-            type: ship.type || 'CONTAINER'
+            type: ship.type || 'CONTAINER',
+            cargo: ship.cargo.length,
+            contractId: (ship as any).assignedContract
           }
         };
       }).filter(f => f !== null);
@@ -1218,17 +1339,20 @@ export const MapboxMap: React.FC<MapboxMapProps> = ({ className }) => {
       
       // Update ships source
       const shipsSource = mapRef.current.getSource('ships');
-      if (shipsSource) {
+      if (shipsSource && features.length > 0) {
         const data = {
           type: 'FeatureCollection',
           features
         };
-        // console.log('Updating ships on map:', features.length, 'ships');
-        // if (features.length > 0) {
-        //   console.log('First ship:', features[0]);
-        // }
+        
+        // Log ship updates less frequently
+        if (frameCount % 600 === 0) { // Every 10 seconds
+          console.log('Ship positions update:', features.length, 'ships');
+        }
+        
         shipsSource.setData(data);
       }
+      } // Close frame rate limiting block
       
       // Continue animation
       animationRef.current = requestAnimationFrame(animate);
@@ -1310,7 +1434,8 @@ export const MapboxMap: React.FC<MapboxMapProps> = ({ className }) => {
         },
         properties: {
           id: port.id,
-          name: port.name
+          name: port.name,
+          isPlayerOwned: port.isPlayerOwned || false
         }
       };
     });

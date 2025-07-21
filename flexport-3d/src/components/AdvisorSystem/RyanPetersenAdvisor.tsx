@@ -23,6 +23,7 @@ export const RyanPetersenAdvisor: React.FC = () => {
   
   const { 
     fleet, 
+    ports,
     contracts, 
     money, 
     reputation, 
@@ -38,15 +39,19 @@ export const RyanPetersenAdvisor: React.FC = () => {
         id: 'intro-1',
         type: 'greeting',
         priority: 'critical',
-        message: `Welcome to FlexPort Global! I'm Ryan Petersen, founder and CEO of Flexport. I'll be your advisor in this game.
+        message: `Welcome to FlexPort Global! I'm Ryan Petersen, founder and CEO of Flexport. I'll be your advisor.
 
-Here's the situation: You have a limited time to build a global shipping empire before AI achieves singularity. Once that happens... well, let's just say humans won't be running logistics anymore.
+You have $${(money / 1000000).toFixed(0)}M to build a global shipping empire. Here's what you need to do:
 
-Your mission: Dominate global trade before the AI development reaches 100%. Currently at ${aiDevelopmentLevel.toFixed(1)}%.`,
+🏢 Step 1: Buy your first port (click on any port on the map)
+🚢 Step 2: Buy your first ship 
+📦 Step 3: Assign it to a contract to start earning
+
+Let's start by purchasing a strategic port!`,
         actions: [
           {
-            label: "Tell me more",
-            callback: () => showTutorial()
+            label: "Show me how",
+            callback: () => showPortTutorial()
           }
         ]
       };
@@ -54,25 +59,94 @@ Your mission: Dominate global trade before the AI development reaches 100%. Curr
       addMessage(greeting);
       setHasShownTutorial(true);
     }
-  }, [hasShownTutorial, aiDevelopmentLevel]);
+  }, [hasShownTutorial, money]);
 
-  const showTutorial = () => {
+  // Check for first port purchase
+  useEffect(() => {
+    const playerPorts = ports.filter(p => p.isPlayerOwned);
+    if (playerPorts.length === 1 && fleet.length === 0) {
+      const shipTutorial: AdvisorMessage = {
+        id: 'ship-tutorial',
+        type: 'tutorial',
+        priority: 'critical',
+        message: `🎉 Great! You bought ${playerPorts[0].name}!
+
+Now you need ships to move cargo. Here's what to do:
+
+1. Click the Fleet button (🚢) in the sidebar
+2. Click "Purchase New Ship"
+3. Start with a Container Ship ($20M) - good balance of speed and capacity
+4. Name your ship something memorable!
+
+Ships are your money makers - without them, you can't fulfill contracts!`,
+        actions: [
+          {
+            label: "I'll buy a ship",
+            callback: () => setCurrentMessage(null)
+          }
+        ]
+      };
+      
+      addMessage(shipTutorial);
+    }
+  }, [ports, fleet]);
+
+  // Check for first ship purchase
+  useEffect(() => {
+    const playerPorts = ports.filter(p => p.isPlayerOwned);
+    const playerShips = fleet.filter(s => s.ownerId === 'player' || !s.ownerId);
+    
+    if (playerPorts.length > 0 && playerShips.length === 1 && playerShips[0].status === 'IDLE') {
+      const contractTutorial: AdvisorMessage = {
+        id: 'contract-tutorial',
+        type: 'tutorial',
+        priority: 'critical',
+        message: `🚢 Excellent! ${playerShips[0].name} is ready for action!
+
+Time to make money! Here's how to assign your ship:
+
+1. Look at the Contracts panel on the right
+2. Find a contract that starts from or near ${playerPorts[0].name}
+3. Click "Assign Ship" and select ${playerShips[0].name}
+4. Your ship will automatically:
+   • Sail to the origin port
+   • Load the cargo
+   • Sail to the destination
+   • Unload and collect payment!
+
+Pro tip: Start with shorter routes to learn the ropes!`,
+        actions: [
+          {
+            label: "Let's make money!",
+            callback: () => setCurrentMessage(null)
+          }
+        ]
+      };
+      
+      addMessage(contractTutorial);
+    }
+  }, [ports, fleet]);
+
+  const showPortTutorial = () => {
     const tutorial: AdvisorMessage = {
-      id: 'tutorial-1',
+      id: 'port-tutorial',
       type: 'tutorial',
-      priority: 'high',
-      message: `Here's how to win:
+      priority: 'critical',
+      message: `🏢 BUYING YOUR FIRST PORT
 
-1. 📦 CONTRACTS: Accept and fulfill shipping contracts to earn money
-2. 🚢 FLEET: Buy ships and assign them to routes
-3. 📈 GROWTH: Expand to more ports and increase capacity
-4. ⚠️ CRISIS: Handle weather, strikes, and other disruptions wisely
-5. 🤖 TIME LIMIT: Beat the AI singularity (currently at ${aiDevelopmentLevel.toFixed(1)}%)
+Ports are your hubs for loading and unloading cargo. Here's how to buy one:
 
-Remember: In logistics, reliability beats speed. Don't overextend your fleet!`,
+1. Click on any green port marker on the map
+2. Look for the "Acquire Port" button in the popup
+3. Strategic ports to consider:
+   • Los Angeles - Gateway to Asia
+   • Singapore - Central hub for Asia-Pacific
+   • Rotterdam - Europe's largest port
+
+Each port costs $25M. You have $${(money / 1000000).toFixed(0)}M, so you can afford multiple ports!`,
       actions: [
         {
-          label: "Got it!",
+          label: "I'll buy a port now",
           callback: () => setCurrentMessage(null)
         }
       ]
@@ -98,7 +172,7 @@ Remember: In logistics, reliability beats speed. Don't overextend your fleet!`,
         };
         
         addMessage(advice);
-      } else if (daysUntilDeadline < 5 && fleet.filter(s => s.status === 'IDLE').length > 0) {
+      } else if (daysUntilDeadline < 5 && fleet.filter(s => (s.ownerId === 'player' || !s.ownerId) && s.status === 'IDLE').length > 0) {
         const warning: AdvisorMessage = {
           id: `contract-warning-${contract.id}`,
           type: 'warning',
@@ -113,23 +187,25 @@ Remember: In logistics, reliability beats speed. Don't overextend your fleet!`,
 
   // Fleet management advice
   useEffect(() => {
-    const idleShips = fleet.filter(s => s.status === 'IDLE').length;
-    const totalShips = fleet.length;
+    // Only count player-owned ships
+    const playerFleet = fleet.filter(s => s.ownerId === 'player' || !s.ownerId);
+    const idleShips = playerFleet.filter(s => s.status === 'IDLE').length;
+    const totalShips = playerFleet.length;
     
     if (idleShips > totalShips * 0.5 && totalShips > 2) {
       const advice: AdvisorMessage = {
-        id: 'fleet-idle-warning',
+        id: `fleet-idle-warning-${idleShips}-${totalShips}`,
         type: 'warning',
         priority: 'high',
-        message: `📊 You have ${idleShips} idle ships! That's burning money. Either assign them to contracts or consider selling some to reduce maintenance costs.`,
+        message: `📊 You have ${idleShips} idle ship${idleShips === 1 ? '' : 's'}! That's burning money. Either assign them to contracts or consider selling some to reduce maintenance costs.`,
       };
       
       addMessage(advice);
     }
     
-    if (money > 10000000 && fleet.length < 3) {
+    if (money > 10000000 && totalShips < 3) {
       const advice: AdvisorMessage = {
-        id: 'fleet-expansion',
+        id: `fleet-expansion-${totalShips}`,
         type: 'advice',
         priority: 'medium',
         message: `💰 You have $${(money / 1000000).toFixed(1)}M in cash. Consider expanding your fleet to handle more contracts. Remember: in logistics, capacity is king!`,

@@ -236,7 +236,7 @@ export const UI: React.FC = () => {
               </button>
               
               <div className="fleet-list">
-                {fleet.map(ship => {
+                {fleet.filter(ship => ship.ownerId === 'player' || !ship.ownerId).map(ship => {
                   const assignedContract = contracts.find(c => c.id === ship.assignedContract);
                   return (
                     <div key={ship.id} className="fleet-item">
@@ -307,7 +307,7 @@ export const UI: React.FC = () => {
                             >
                               <option value="">Assign Ship...</option>
                               {fleet
-                                .filter(s => !s.assignedContract && s.status === 'IDLE')
+                                .filter(s => (s.ownerId === 'player' || !s.ownerId) && !s.assignedContract && s.status === 'IDLE')
                                 .map(ship => (
                                   <option key={ship.id} value={ship.id}>
                                     {ship.name} ({ship.type})

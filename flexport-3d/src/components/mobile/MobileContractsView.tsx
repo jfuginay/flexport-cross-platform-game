@@ -12,7 +12,10 @@ export const MobileContractsView: React.FC<MobileContractsViewProps> = ({ onClos
   const { contracts, acceptContract, fleet, ports, assignShipToContract } = useGameStore();
   const [selectedContract, setSelectedContract] = useState<string | null>(null);
   
-  const playerShips = fleet.filter(ship => ship.cargo.length === 0);
+  const playerShips = fleet.filter(ship => 
+    (ship.ownerId === 'player' || !ship.ownerId) && 
+    ship.cargo.length === 0
+  );
   const availableContracts = contracts.filter(c => c.status === 'AVAILABLE');
 
   const handleAcceptContract = (contractId: string, shipId: string) => {

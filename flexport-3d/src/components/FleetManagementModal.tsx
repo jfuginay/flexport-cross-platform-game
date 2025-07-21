@@ -22,11 +22,21 @@ interface FleetStats {
 }
 
 export const FleetManagementModal: React.FC<FleetManagementModalProps> = ({ isOpen, onClose }) => {
-  const { fleet: ships, ports, contracts, money, purchaseShip } = useGameStore();
+  const { fleet: allShips, ports, contracts, money, purchaseShip } = useGameStore();
   const [selectedShip, setSelectedShip] = useState<string | null>(null);
   const [showPurchaseView, setShowPurchaseView] = useState(false);
   const [selectedShipType, setSelectedShipType] = useState<ShipType | null>(null);
   const [newShipName, setNewShipName] = useState('');
+  
+  // Filter to show only player-owned ships
+  const ships = allShips.filter(ship => ship.ownerId === 'player' || !ship.ownerId);
+  
+  // Auto-show purchase view if player has no ships
+  useEffect(() => {
+    if (ships.length === 0 && isOpen) {
+      setShowPurchaseView(true);
+    }
+  }, [ships.length, isOpen]);
   
   // Ship type configurations
   const shipTypes = [
@@ -213,6 +223,26 @@ export const FleetManagementModal: React.FC<FleetManagementModalProps> = ({ isOp
               {!showPurchaseView ? (
                 <>
                   <h3 className="fleet-section-title">Your Fleet</h3>
+                  {ships.length === 0 ? (
+                    <div className="empty-fleet-guidance">
+                      <div className="guidance-icon">🚢</div>
+                      <h3>Welcome to FlexPort Global!</h3>
+                      <p>You don't have any ships yet. Every shipping empire starts with a single vessel.</p>
+                      <p className="guidance-tip">💡 With your starting capital of $50M, you can afford:</p>
+                      <ul className="ship-options">
+                        <li>🚢 <strong>2 Container Ships</strong> - Great all-around vessels for general cargo</li>
+                        <li>📦 <strong>3 Bulk Carriers</strong> - Perfect for large volume contracts</li>
+                        <li>🛢️ <strong>2 Tankers</strong> - Specialized for liquid cargo with premium rates</li>
+                        <li>✈️ <strong>1 Cargo Plane</strong> - Fast delivery for time-sensitive contracts</li>
+                      </ul>
+                      <button 
+                        className="purchase-first-ship-button"
+                        onClick={() => setShowPurchaseView(true)}
+                      >
+                        Purchase Your First Ship →
+                      </button>
+                    </div>
+                  ) : (
                   <div className="fleet-grid">
                     {ships.map((ship: ShipInterface) => {
                   const currentPort = ports.find(p => p.id === ship.currentPortId);
@@ -351,6 +381,7 @@ export const FleetManagementModal: React.FC<FleetManagementModalProps> = ({ isOp
                   </div>
                 </motion.div>
                   </div>
+                  )}
                 </>
               ) : (
                 /* Purchase Ship View */

@@ -49,8 +49,7 @@ export const GameDashboard: React.FC<GameDashboardProps> = ({ children }) => {
     selectShip,
     selectedShipId,
     selectedPortId,
-    startGame,
-    addFreeShip
+    startGame
   } = useGameStore();
   
   const [activePanel, setActivePanel] = useState<string>('overview');
@@ -120,7 +119,7 @@ export const GameDashboard: React.FC<GameDashboardProps> = ({ children }) => {
     let lastTime = Date.now();
     let animationFrameId: number;
     let accumulatedTime = 0;
-    const MIN_UPDATE_INTERVAL = 1000 / 60; // Cap at 60 FPS
+    const MIN_UPDATE_INTERVAL = 1000 / 30; // Cap at 30 FPS to match visual updates
     
     const gameLoop = () => {
       const currentTime = Date.now();
@@ -228,7 +227,12 @@ export const GameDashboard: React.FC<GameDashboardProps> = ({ children }) => {
           </div>
           <div className="resource-item fleet-count">
             <span className="resource-icon">🚢</span>
-            <span className="resource-value">{fleet.length} Ships</span>
+            <span className="resource-value">
+              {fleet.filter(s => s.ownerId === 'player' || !s.ownerId).length} Ships
+            </span>
+            {fleet.filter(s => s.ownerId === 'player' || !s.ownerId).length === 0 && (
+              <span className="no-ships-tooltip">Click Fleet to purchase your first ship!</span>
+            )}
           </div>
           <div className="resource-item contract-count">
             <span className="resource-icon">📋</span>
@@ -292,12 +296,15 @@ export const GameDashboard: React.FC<GameDashboardProps> = ({ children }) => {
               <span className="tab-label">Overview</span>
             </button>
             <button 
-              className={`sidebar-tab ${activePanel === 'fleet' ? 'active' : ''}`}
+              className={`sidebar-tab ${activePanel === 'fleet' ? 'active' : ''} ${fleet.filter(s => s.ownerId === 'player' || !s.ownerId).length === 0 ? 'no-ships-pulse' : ''}`}
               onClick={() => setIsFleetModalOpen(true)}
               title="Fleet Management"
             >
               <span className="tab-icon">🚢</span>
               <span className="tab-label">Fleet</span>
+              {fleet.filter(s => s.ownerId === 'player' || !s.ownerId).length === 0 && (
+                <span className="new-badge">NEW</span>
+              )}
             </button>
             <button 
               className={`sidebar-tab ${activePanel === 'contracts' ? 'active' : ''}`}
