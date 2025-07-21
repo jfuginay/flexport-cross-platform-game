@@ -1,0 +1,12 @@
+{
+  "files": {
+    "main.css": "/flexport-cross-platform-game/static/css/main.8b089428.css",
+    "main.js": "/flexport-cross-platform-game/static/js/main.e695e840.js",
+    "static/js/455.1184b5b3.chunk.js": "/flexport-cross-platform-game/static/js/455.1184b5b3.chunk.js",
+    "index.html": "/flexport-cross-platform-game/index.html"
+  },
+  "entrypoints": [
+    "static/css/main.8b089428.css",
+    "static/js/main.e695e840.js"
+  ]
+}
