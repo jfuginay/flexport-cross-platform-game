@@ -50,11 +50,18 @@ class MultiplayerService {
     if (customUrl) {
       this.serverUrl = customUrl;
     } else if (process.env.NODE_ENV === 'production') {
-      // Use production server on engindearing.soy
-      this.serverUrl = 'https://flexportglobal.engindearing.soy';
+      // Check if we're on HTTPS - if so, we need an SSL server
+      if (window.location.protocol === 'https:') {
+        // For now, disable multiplayer on HTTPS until SSL is configured
+        console.warn('Multiplayer disabled on HTTPS. Configure SSL on server or use HTTP.');
+        this.serverUrl = '';
+      } else {
+        // Use production server on AWS EC2
+        this.serverUrl = 'http://34.215.161.218:3001';
+      }
     } else {
-      // Development - also use production server since local isn't available
-      this.serverUrl = 'https://flexportglobal.engindearing.soy';
+      // Development - use production server
+      this.serverUrl = 'http://34.215.161.218:3001';
     }
     console.log('Multiplayer server URL:', this.serverUrl);
   }
